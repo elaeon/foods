@@ -47,7 +47,7 @@ def calc_radio_omega_all():
     ndb_nos = Food.alimentos(limit="limit 9000")
     for ndb_no in ndb_nos:
         food = Food(ndb_no, avg=False)
-        query = """INSERT INTO omega VALUES ({ndb_no}, {omega3}, {omega6}, {omega7}, {omega9}, {radio});""".format(
+        query = """INSERT INTO omega VALUES ('{ndb_no}', {omega3}, {omega6}, {omega7}, {omega9}, {radio});""".format(
             ndb_no=ndb_no, 
             omega3=food.omegas.get("omega 3", [0,0])[1],
             omega6=food.omegas.get("omega 6", [0,0])[1],
@@ -59,26 +59,27 @@ def calc_radio_omega_all():
 
 def avg_nutrients_group_nutr(nutr_no, order_by="avg"):
     _, cursor = conection()
-    query = """SELECT fd_group.fdgrp_desc, AVG(nutr_val) as avg
+    query = """SELECT fd_group.fdgrp_desc_es, AVG(nutr_val) as avg
             FROM nut_data, food_des, fd_group
             WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
             AND nut_data.ndb_no=food_des.ndb_no
-            AND nut_data.nutr_no='{nutr_no}' GROUP BY fd_group.fdgrp_desc ORDER BY {order};""".format(nutr_no=nutr_no, order=order_by)
+            AND nut_data.nutr_no='{nutr_no}' GROUP BY fd_group.fdgrp_desc_es ORDER BY {order};""".format(nutr_no=nutr_no, order=order_by)
     cursor.execute(query)
     return cursor.fetchall()
 
 def avg_nutrients_group():
     _, cursor = conection()
-    query = """SELECT nut_data.nutr_no, fd_group.fdgrp_desc, AVG(nutr_val)
+    query = """SELECT nut_data.nutr_no, fd_group.fdgrp_desc_es, AVG(nutr_val)
             FROM nut_data, food_des, fd_group, nutr_def
             WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
             AND nut_data.ndb_no=food_des.ndb_no
-            AND nutr_def.nutr_no=nut_data.nutr_no GROUP BY fd_group.fdgrp_desc, nut_data.nutr_no;"""
+            AND nutr_def.nutr_no=nut_data.nutr_no GROUP BY fd_group.fdgrp_desc_es, nut_data.nutr_no;"""
     cursor.execute(query)
-    nutr = {e[0]:[i, e[0], e[1]] for i, e in enumerate(nutr_features())}
-    for nutr_no, fdgrp_desc, avg in cursor.fetchall():
-        nutr[nutr_no].append(float(avg))
-    return nutr
+    return cursor.fetchall()
+    #nutr = {e[0]:[i, e[0], e[1]] for i, e in enumerate(nutr_features())}
+    #for nutr_no, fdgrp_desc, avg in cursor.fetchall():
+    #    nutr[nutr_no].append(float(avg))
+    #return nutr
 
 def get_omegas():
     _, cursor = conection()
@@ -96,19 +97,62 @@ def mark_caution_nutr(features):
 def category_food():
     _, cursor = conection()
     query = """
-        SELECT fd_group.fdgrp_desc, COUNT(fd_group.fdgrp_desc)
+        SELECT fd_group.fdgrp_desc_es, fd_group.fdgrp_cd, COUNT(fd_group.fdgrp_desc_es)
         FROM food_des, fd_group
-        WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd GROUP BY fd_group.fdgrp_desc ORDER BY fd_group.fdgrp_desc;
+        WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd GROUP BY fd_group.fdgrp_desc_es, fd_group.fdgrp_cd ORDER BY fd_group.fdgrp_desc_es;
     """
     cursor.execute(query)
-    return cursor.fetchall()    
+    return cursor.fetchall()
+
+def category_avg_omegas():
+    _, cursor = conection()
+    query = """
+        SELECT fd_group.fdgrp_desc_es, AVG(omega.radio)
+        FROM food_des, fd_group, omega
+        WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+        AND omega.omega3 > 0
+        AND omega.ndb_no=food_des.ndb_no GROUP BY fd_group.fdgrp_desc_es;
+    """
+    cursor.execute(query)
+    return {food_group:round(avg,1) for food_group, avg in cursor.fetchall()}
 
 def category_food_list():
-    #nutr = avg_nutrients_group()
-    for nutr_no in ["601", "204", "269", "262", "307", "208", "209"]:
-        l = avg_nutrients_group_nutr(nutr_no, order_by="fd_group.fdgrp_desc")
-        #print nutr[nutr_no]
-    
+    from collections import defaultdict
+    nutr = avg_nutrients()
+    category_results = defaultdict(list)
+    category_food_l = category_food()
+    for cat, _, count in category_food_l:
+        category_results[cat] = [None, None, None, None, None, None, None]
+    for i, nutr_no in enumerate(["601", "204", "269", "262", "307", "208", "209"]):
+        cat_nutr = avg_nutrients_group_nutr(nutr_no, order_by="fd_group.fdgrp_desc_es")
+        for cat_avg in cat_nutr:
+            category_results[cat_avg[0]][i] = round(float(cat_avg[1]) - nutr[nutr_no][3] , 1)
+
+    omegas = category_avg_omegas()
+    for category_food_e, cat_id, count in category_food_l:
+        nutr_calif = len(filter(lambda x:x < 0, category_results[category_food_e]))
+        omega_calif = 0 if omegas[category_food_e] > 4 else 1
+        calif = int(((nutr_calif + omega_calif) / (float(len(category_results[category_food_e]) + 1)))*100)
+        yield category_food_e, cat_id, count, category_results[category_food_e], omegas[category_food_e], calif
+
+def alimentos_category(category=None, limit="limit 10"):
+    _, cursor = conection()
+    query  = """SELECT food_des.ndb_no, food_des.long_desc_es, food_des.long_desc
+                FROM food_des, fd_group
+                WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+                AND fd_group.fdgrp_cd='{category}' ORDER BY food_des.long_desc_es {limit}""".format(category=category, limit=limit)
+
+    cursor.execute(query)
+    return cursor.fetchall()
+
+def alimentos_category_name(category):
+    _, cursor = conection()
+    query  = """SELECT fdgrp_desc_es
+                FROM fd_group
+                WHERE fd_group.fdgrp_cd='{category}'""".format(category=category)
+
+    cursor.execute(query)
+    return cursor.fetchall()
 
 caution_nutr = {
     "601": "Cholesterol",
@@ -122,8 +166,7 @@ caution_nutr = {
     "606": "Fatty acids, total saturated",
     "307": "Sodium, Na",
     "208": "Energy",
-    "209": "Starch",
-    "omega 6": "Omega 6"
+    "209": "Starch"
 }
 
 bases = ["n-3", "n-6", "n-7", "n-9"]
@@ -170,14 +213,14 @@ class Food(object):
                     WHERE nut_data.ndb_no=food_des.ndb_no 
                     AND nutr_def.nutr_no=nut_data.nutr_no
                     AND nutr_val > 0
-                    AND food_des.ndb_no = '{ndb_no}' ORDER BY sr_order""".format(ndb_no=ndb_no)
+                    AND food_des.ndb_no='{ndb_no}' ORDER BY sr_order""".format(ndb_no=ndb_no)
         cursor.execute(query)
         return cursor.fetchall()
 
     @classmethod
     def get_food(self, ndb_no):
         _, cursor = conection()
-        query  = """SELECT food_des.long_desc_es, fd_group.fdgrp_desc
+        query  = """SELECT food_des.long_desc_es, fd_group.fdgrp_desc_es
                     FROM food_des, fd_group
                     WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd 
                     AND food_des.ndb_no = '{ndb_no}'""".format(ndb_no=ndb_no)
@@ -313,7 +356,7 @@ class Food(object):
             query  = """SELECT food_des.ndb_no
                         FROM food_des, fd_group
                         WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
-                        AND fd_group.fdgrp_desc='{category} {limit}""".format(category=category)
+                        AND fd_group.fdgrp_cd='{category}' {limit}""".format(category=category, limit=limit)
         else:
             query  = """SELECT food_des.ndb_no
                         FROM food_des, fd_group

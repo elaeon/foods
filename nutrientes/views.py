@@ -6,9 +6,9 @@ import json
 
 # Create your views here.
 def search(request):
-    from nutrientes.utils import category_food
+    from nutrientes.utils import category_food_list
     
-    return render(request, "busqueda.html", {"category_food": category_food()})
+    return render(request, "busqueda.html", {"category_food": category_food_list()})
 
 
 def ajax_search(request):
@@ -74,3 +74,10 @@ def set_comparation(request, ndb_no, operation):
                 food_compare[ndb_no] = name
                 request.session["food_compare"] = food_compare
     return HttpResponse(name, content_type='text/plain')
+
+
+def list_food_category(request, category_id):
+    from nutrientes.utils import alimentos_category, alimentos_category_name
+    foods = alimentos_category(category=category_id, limit="limit 9000")
+    categoria = alimentos_category_name(category_id)[0][0]
+    return render(request, "food_category.html", {"foods": foods, "categoria": categoria})

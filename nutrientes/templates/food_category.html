@@ -1,0 +1,11 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<h2>Alimentos</h2>
+<h3>{{ categoria }}</h3>
+{% for food_id, food, food_ in foods %}
+<div><a href="{% url 'view_food' food_id %}">{{ food }}</a></div>
+{% endfor %}
+{% endblock %}
+

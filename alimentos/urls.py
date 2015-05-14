@@ -25,4 +25,5 @@ urlpatterns = [
     url(r'^romega/$', views.romega, name="view_romega"),
     url(r'^set_comparation/(?P<ndb_no>\w+)/(?P<operation>\w+)/$', views.set_comparation, name="view_set_comparation"),
     url(r'^food_compare/$', views.food_compare, name="food_compare"),
+    url(r'^category_food/(?P<category_id>\w+)/$', views.list_food_category, name="list_food_category"),
 ]

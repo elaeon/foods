@@ -30,19 +30,47 @@
 <thead>
 <th>Categoria</th>
 <th>Alimentos</th>
+<th>Calificación</th>
 <th>Colesterol</th>
+<th>Grasa</th>
 <th>Azucares</th>
 <th>Cafeina</th>
-<th>Grasas Saturadas</th>
 <th>Sal</th>
 <th>Calorias</th>
 <th>Almidones</th>
-<th>Omega 6</th>
+<th>Omega6:Omega3</th>
 </thead>
-{% for category, total in category_food %}
+{% for category, cat_id, total, nutrs, radio, calification in category_food %}
 <tr>
-    <td><a href="#">{{ category }}</a></td>
-    <td style="text-align: right;">{{ total }}</td>
+<td><a href="{% url 'list_food_category' cat_id %}">{{ category }}</a></td>
+<td style="text-align: right;">{{ total }}</td>
+{% if calification <= 50 %}
+<td style="background-color: #f00;">{{ calification }}</td>
+{% else %}
+{% if calification <= 75 %}
+<td style="background-color: #0f0;">{{ calification }}</td>
+{% else %}
+<td style="background-color: #090;">{{ calification }}</td>
+{% endif %}
+{% endif %}
+{% for nutr in nutrs %}
+    {% if nutr == None %}
+    <td>-</td>
+    {% else %}
+    {% if nutr > 0 %}
+    <td style="text-align: right; background-color:#ff0000">
+    {% else %}
+    <td style="text-align: right; background-color:#00ff00">
+    {% endif %}
+    {{ nutr }}</td>
+    {% endif %}
+{% endfor %}
+{% if radio > 4 %}
+<td style="background-color:#ff0000">
+{% else %}
+<td style="background-color:#00ff00">
+{% endif %}
+{{ radio }}:1</span></td>
 </tr>
 {% endfor %}
 </table>
