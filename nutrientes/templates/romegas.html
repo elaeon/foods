@@ -1,0 +1,14 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<h2>Radio Omegas</h2>
+{% for name, ndb_no, omega3, omega6, radio_omega in romegas %}
+{% if omega3 > 0 %}
+<div><a href="{% url 'view_food' ndb_no %}">{{ name }}</a> {{ radio_omega }}:1</div>
+{% else %}
+<div><a href="{% url 'view_food' ndb_no %}">{{ name }}</a> {{ radio_omega }}:0</div>
+{% endif %}
+{% endfor %}
+{% endblock %}
+

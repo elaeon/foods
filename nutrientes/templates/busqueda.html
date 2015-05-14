@@ -1,0 +1,97 @@
+{% load staticfiles %}
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<script type="text/javascript" src="{% static 'jquery.1.9.1.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'jquery.autocomplete.1.2.7.js' %}"></script>
+<style>
+.autocomplete-suggestions {
+    background-color: #fff;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
+}
+</style>
+</head>
+
+<body>
+<form id="search-form">
+    <div id="search-input">
+        <label>
+        <input id="text-input" type="text">
+        </label>            
+    </div>
+    <button type="button" id="search-button"><span class="button">Buscar</span></button>
+</form>
+
+{% block contenido_base %}{% endblock %}
+
+<table>
+<thead>
+<th>Categoria</th>
+<th>Alimentos</th>
+<th>Colesterol</th>
+<th>Azucares</th>
+<th>Cafeina</th>
+<th>Grasas Saturadas</th>
+<th>Sal</th>
+<th>Calorias</th>
+<th>Almidones</th>
+<th>Omega 6</th>
+</thead>
+{% for category, total in category_food %}
+<tr>
+    <td><a href="#">{{ category }}</a></td>
+    <td style="text-align: right;">{{ total }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<script type="text/javascript">
+function preg_quote( str ) {
+    // http://kevin.vanzonneveld.net
+    // +   original by: booeyOH
+    // +   improved by: Ates Goral (http://magnetiq.com)
+    // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+    // +   bugfixed by: Onno Marsman
+    // *     example 1: preg_quote("$40");
+    // *     returns 1: '\$40'
+    // *     example 2: preg_quote("*RRRING* Hello?");
+    // *     returns 2: '\*RRRING\* Hello\?'
+    // *     example 3: preg_quote("\\.+*?[^]$(){}=!<>|:");
+    // *     returns 3: '\\\.\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:'
+
+    return (str+'').replace(/([\\\.\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:])/g, "\\$1");
+}
+function highlight( data, search )
+{
+    return data.replace( new RegExp( "(" + preg_quote( search ) + ")" , 'gi' ), "<b>$1</b>" );
+}
+$('#text-input').autocomplete({
+	serviceUrl:'/ajax_search/',
+	minChars:2,
+	maxHeight:500,
+	width:500,
+	zIndex: 9999,
+	deferRequestBy: 0,
+	noCache: true,
+    showNoSuggestionNotice: true,
+    autoSelectFirst: false,
+    tabDisabled: false,
+    formatResult: function(suggestion, currentValue) {
+        if(suggestion.value.length > 50) {
+            var sugges = suggestion.value.substring(0, 50) + "...";
+        } else {
+            var sugges = suggestion.value;
+        }
+        //return '<p><span>'+ sugges +'</span>'+'<span style="position:absolute;float:right;right:10px;font-size:80%;">'+x+'</span></p>';
+        return '<p><span>'+highlight( sugges, currentValue )+'</span>'
+    },
+	onSelect: function(suggestion) {
+        window.location.replace("/food/"+suggestion.data.id+"/")
+    },
+});
+</script>
+{% block js %}{% endblock %}
+</body>
+</html>

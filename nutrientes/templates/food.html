@@ -1,0 +1,116 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<h2>{{ food.name }}</h2>
+<img src="http://lorempixel.com/400/200/"></img>
+<h3>Radio {{ food.radio }} [Omega6:Omega3]</h3><a href="{% url 'view_romega' %}">todos</a>
+<div style="font-size:70%">
+{% for ndb_no, other_food, distance in food.similarity %}
+<div><a href="{% url 'view_food' ndb_no %}">{{ other_food }}</a> {{ distance }}</div>
+{% endfor %}
+</div>
+<div>
+<div id="comparationContainer">
+{% for ndb_no, name in food_compare.items %}
+<div id="comparationContainer-{{ ndb_no }}">
+    <a href="#" onclick="javascript:borrar('{{ ndb_no }}');">Borrar</a>
+    <div>{{ name }}</div>
+</div>
+{% endfor %}
+</div>
+Comparar:
+<button onclick="javascript:agregar();">Add</button>
+<form action="{% url 'food_compare' %}" method="POST">
+{% csrf_token %}
+<button type="submit">Ver</button>
+</form>
+</div>
+<div id="chartContainer"></div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{% static 'd3.js' %}"></script>
+<script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
+
+<script type="text/javascript">
+function agregar() {
+    var request = $.ajax({
+        type: "POST",
+        url: "{% url 'view_set_comparation' food.ndb_no 'add' %}",
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}'}
+    });
+    request.done(function(data) {
+        if(data) {
+            $("<div></div>", 
+                {"id": 'comparationContainer-{{ food.ndb_no }}'}).appendTo("#comparationContainer");
+            $("<a></a>", {"text": "Borrar", 
+            "href": "#", 
+            click: function(e) {
+                borrar("{{ food.ndb_no }}")
+            }}).appendTo("#comparationContainer-{{ food.ndb_no }}");
+            $("<div></div>", 
+                {"style": "font-size:120%;", "text": data}).appendTo("#comparationContainer-{{ food.ndb_no }}");
+        }
+    });
+}
+function borrar(id) {
+    var request = $.ajax({
+        type: "POST",
+        url: "/set_comparation/" + id + '/delete/',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}'}
+    });
+    request.done(function(data) {
+        if(data) {
+            $("#comparationContainer-"+data).remove();
+        }
+    });
+}
+
+</script>
+
+<script type="text/javascript">
+function transform(value) {
+    if(value == "0")
+        return "ok";
+    return "cuidado";
+}
+var data = [];
+{% for _, nutrient, value, unit, caution in food.mark_caution_nutrients %}
+data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: "{{ food.name_limit }}", caution: transform("{{ caution }}")})
+{% endfor %}
+{% for _, nutrient, value, _, caution in food.nutr_avg %}
+data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '', tipo: 'promedio', caution: "ok"})
+{% endfor %}
+
+var svg = dimple.newSvg("#chartContainer", 900, 600);
+var myChart = new dimple.chart(svg, data);
+myChart.assignColor("{{ food.name_limit }}", "#0066ff", null, .5);
+myChart.assignColor("promedio", "#aa0000", null, .5);
+myChart.assignColor("cuidado", "#aa0000", null, .7);
+myChart.assignColor("ok", "#000000", null, .1);
+myChart.setBounds(60, 30, 750, 305);
+var x = myChart.addCategoryAxis("x", "nutr");
+//var x = myChart.addCategoryAxis("x", ["nutr", "tipo"]);
+//x.showGridlines = true;
+var y = myChart.addMeasureAxis("y", "value");
+var s = myChart.addSeries(["tipo", "caution"], dimple.plot.scatter);
+var l = myChart.addSeries("tipo", dimple.plot.line);
+//var s = myChart.addSeries("tipo", dimple.plot.bar);
+l.stacked = false;
+s.stacked = false;
+x.addOrderRule("nutr");
+
+l.interpolation = "step";
+//l.interpolation = "cardinal";
+myChart.addLegend(60, 10, 700, 20, "right");
+//myChart.setStoryboard("nutr");
+y.useLog = true;
+y.logBase = 10;
+myChart.draw();
+x.titleShape.text("Nutriente");
+y.tickFormat = ',.2f';
+</script>
+{% endblock %}

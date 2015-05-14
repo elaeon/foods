@@ -1,0 +1,51 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+{% for food in foods %}
+<h2>{{ food.name }}</h2>
+<img src="http://lorempixel.com/400/200/"></img>
+<h3>Radio {{ food.radio }} [Omega6:Omega3]</h3>
+{% endfor %}
+
+<div id="chartContainer"></div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{% static 'd3.js' %}"></script>
+<script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
+
+<script type="text/javascript">
+var data = [];
+{% for food in foods %}
+    {% for _, nutrient, value, unit in food.nutrients %}
+    data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: '{{ food.name }}'})
+    {% endfor %}
+{% endfor %}
+
+var svg = dimple.newSvg("#chartContainer", 900, 600);
+var myChart = new dimple.chart(svg, data);
+myChart.assignColor("normal", "#0066ff", null, .5);
+myChart.assignColor("avg", "#aa0000", null, .3);
+myChart.setBounds(60, 30, 750, 305);
+var x = myChart.addCategoryAxis("x", "nutr");
+//var x = myChart.addCategoryAxis("x", ["nutr", "tipo"]);
+//x.showGridlines = true;
+var y = myChart.addMeasureAxis("y", "value");
+//var s = myChart.addSeries("tipo", dimple.plot.scatter);
+var l = myChart.addSeries("tipo", dimple.plot.line);
+//var s = myChart.addSeries("tipo", dimple.plot.bar);
+//l.stacked = false;
+//x.addOrderRule("nutr");
+
+//l.interpolation = "step";
+l.interpolation = "cardinal";
+myChart.addLegend(60, 10, 700, 20, "right");
+//myChart.setStoryboard("nutr");
+y.useLog = true;
+y.logBase = 10;
+myChart.draw();
+x.titleShape.text("Nutriente");
+y.tickFormat = ',.2f';
+</script>
+{% endblock %}
