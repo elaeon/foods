@@ -154,6 +154,35 @@ def alimentos_category_name(category):
     cursor.execute(query)
     return cursor.fetchall()
 
+def best_of(nutr_no_list):
+    _, cursor = conection()
+    nutr = Food.get_matrix("nutavg.p")
+    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
+
+    querys = []
+    for nutr_no, (avg, caution) in nutr_avg.items():
+        if caution:
+            querys.append("""
+                SELECT food_des.ndb_no 
+                FROM nut_data, food_des, nutr_def 
+                WHERE nut_data.ndb_no=food_des.ndb_no 
+                AND nutr_def.nutr_no=nut_data.nutr_no 
+                AND nutr_val < {avg}
+                AND nut_data.nutr_no='{nutr_no}'
+            """.format(avg=avg, nutr_no=nutr_no))
+        else:
+            querys.append("""
+                SELECT food_des.ndb_no 
+                FROM nut_data, food_des, nutr_def 
+                WHERE nut_data.ndb_no=food_des.ndb_no 
+                AND nutr_def.nutr_no=nut_data.nutr_no 
+                AND nutr_val >= {avg}
+                AND nut_data.nutr_no='{nutr_no}'
+            """.format(avg=avg, nutr_no=nutr_no))
+
+    cursor.execute(" INTERSECT ".join(querys))
+    print cursor.fetchall()
+
 caution_nutr = {
     "601": "Cholesterol",
     "204": "Total lipid (fat)",
@@ -244,7 +273,8 @@ class Food(object):
                 self.save_matrix("nutavg.p", nutavg_vector)
 
             all_nutr, omegas = self.subs_omegas(nutavg_vector)
-            self.nutr_avg = self.exclude_features(all_nutr) + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
+            omegas = filter(lambda x: x[1] is not None, ((key, omegas.get(key, None)) for key in self.omegas.keys()))
+            self.nutr_avg = self.exclude_features(all_nutr) + [(v[0], k, v[1], v[2]) for k, v in omegas]
 
     @classmethod
     def subs_omegas(self, features):
@@ -379,18 +409,15 @@ class Food(object):
             self.save_matrix('matrix.p', matrix)
 
     def filter_caution_nutr(self):
-        #nutr_no, _, v, _, caution
+        #nutr_no, nutr, v, u, caution
+        return filter(lambda x: x[1], ((t[1], t[4]) for t in self.mark_caution_good_nutrients()))
+
+    def mark_caution_good_nutrients(self):
+        #nutr_no, nutr, v, u, caution, good
         nutrients = self.mark_nutrients()
-        nutr_avg = self.mark_nutr_avg()
-        return filter(lambda x: x[1], ((n[1], (n[2] > avg[2]) and n[4]) for n, avg in izip(nutrients, nutr_avg)))
-        
-    def mark_caution_nutrients(self):
-        nutrients = self.mark_nutrients()
-        nutr_avg = self.mark_nutr_avg()
-        return ((n[0], n[1], n[2], n[3], int((n[2] > avg[2]) and n[4])) for n, avg in izip(nutrients, nutr_avg))
+        return ((n[0], n[1], n[2], n[3], int((n[2] > avg[2]) and n[4]), int((n[2] > avg[2]) and not n[4])) 
+            for n, avg in izip(nutrients, self.nutr_avg))
 
     def mark_nutrients(self):
         return mark_caution_nutr(self.nutrients)
 
-    def mark_nutr_avg(self):
-        return mark_caution_nutr(self.nutr_avg)

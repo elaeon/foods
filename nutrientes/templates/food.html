@@ -72,17 +72,22 @@ function borrar(id) {
 </script>
 
 <script type="text/javascript">
-function transform(value) {
+function transform_bad(value) {
     if(value == "0")
-        return "ok";
+        return "-";
     return "cuidado";
 }
+function transform_good(value) {
+    if(value == "1")
+        return "ok";
+    return "-";
+}
 var data = [];
-{% for _, nutrient, value, unit, caution in food.mark_caution_nutrients %}
-data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: "{{ food.name_limit }}", caution: transform("{{ caution }}")})
+{% for _, nutrient, value, unit, caution, good in food.mark_caution_good_nutrients %}
+data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: "{{ food.name_limit }}", caution: transform_bad("{{ caution }}"), good: transform_good('{{ good }}')})
 {% endfor %}
-{% for _, nutrient, value, _, caution in food.nutr_avg %}
-data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '', tipo: 'promedio', caution: "ok"})
+{% for _, nutrient, value, _ in food.nutr_avg %}
+data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '', tipo: 'promedio', caution: "-", good: "-"})
 {% endfor %}
 
 var svg = dimple.newSvg("#chartContainer", 900, 600);
@@ -90,17 +95,18 @@ var myChart = new dimple.chart(svg, data);
 myChart.assignColor("{{ food.name_limit }}", "#0066ff", null, .5);
 myChart.assignColor("promedio", "#aa0000", null, .5);
 myChart.assignColor("cuidado", "#aa0000", null, .7);
-myChart.assignColor("ok", "#000000", null, .1);
+myChart.assignColor("ok", "#00ff00", null, .7);
+myChart.assignColor("-", "#000000", null, .1);
 myChart.setBounds(60, 30, 750, 305);
 var x = myChart.addCategoryAxis("x", "nutr");
 //var x = myChart.addCategoryAxis("x", ["nutr", "tipo"]);
 //x.showGridlines = true;
 var y = myChart.addMeasureAxis("y", "value");
-var s = myChart.addSeries(["tipo", "caution"], dimple.plot.scatter);
+var s = myChart.addSeries(["tipo", "good"], dimple.plot.scatter);
+var r = myChart.addSeries(["tipo", "caution"], dimple.plot.scatter);
 var l = myChart.addSeries("tipo", dimple.plot.line);
 //var s = myChart.addSeries("tipo", dimple.plot.bar);
 l.stacked = false;
-s.stacked = false;
 x.addOrderRule("nutr");
 
 l.interpolation = "step";

@@ -5,10 +5,13 @@ from nutrientes.utils import conection
 import json
 
 # Create your views here.
-def search(request):
-    from nutrientes.utils import category_food_list
+def index(request):
+    from nutrientes.utils import category_food_list, nutr_features, Food
     
-    return render(request, "busqueda.html", {"category_food": category_food_list()})
+    features = nutr_features()
+    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, None) for e in features])
+    nutr = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
+    return render(request, "index.html", {"category_food": category_food_list(), "nutr": nutr})
 
 
 def ajax_search(request):
@@ -80,4 +83,12 @@ def list_food_category(request, category_id):
     from nutrientes.utils import alimentos_category, alimentos_category_name
     foods = alimentos_category(category=category_id, limit="limit 9000")
     categoria = alimentos_category_name(category_id)[0][0]
+    return render(request, "food_category.html", {"foods": foods, "categoria": categoria})
+
+
+def best_of_nutrients(request):
+    if request.method == "POST":
+        print request.POST
+    foods = []
+    categoria = ""
     return render(request, "food_category.html", {"foods": foods, "categoria": categoria})

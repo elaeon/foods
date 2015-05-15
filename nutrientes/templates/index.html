@@ -1,0 +1,68 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<form action="{% url 'best_of_nutrients' %}" method="POST">
+{% csrf_token %}
+{% for nutr_no, name in nutr %}
+<div class="checkbox">
+<label>
+<input name="nutr_no" type="checkbox" value="{{ nutr_no }}"> {{ name }}
+</label>
+</div>
+{% endfor %}
+<button class="btn btn-default" type="submit">Button</button>
+</form>
+<div class="table-responsive">
+<table class="table table-striped table-hover table-condensed">
+<thead>
+<th>Categoria</th>
+<th>Alimentos</th>
+<th>Calificación</th>
+<th>Colesterol</th>
+<th>Grasa</th>
+<th>Azucares</th>
+<th>Cafeina</th>
+<th>Sal</th>
+<th>Calorias</th>
+<th>Almidones</th>
+<th>Omega6:Omega3</th>
+</thead>
+<tbody>
+{% for category, cat_id, total, nutrs, radio, calification in category_food %}
+<tr>
+<td><a href="{% url 'list_food_category' cat_id %}">{{ category }}</a></td>
+<td style="text-align: right;">{{ total }}</td>
+{% if calification <= 50 %}
+<td class="danger">{{ calification }}</td>
+{% else %}
+{% if calification <= 75 %}
+<td class="success">{{ calification }}</td>
+{% else %}
+<td class="info">{{ calification }}</td>
+{% endif %}
+{% endif %}
+{% for nutr in nutrs %}
+    {% if nutr == None %}
+    <td>-</td>
+    {% else %}
+    {% if nutr > 0 %}
+    <td style="text-align: right;" class="danger">
+    {% else %}
+    <td style="text-align: right;" class="info">
+    {% endif %}
+    {{ nutr }}</td>
+    {% endif %}
+{% endfor %}
+{% if radio > 4 %}
+<td class="danger">
+{% else %}
+<td class="info">
+{% endif %}
+{{ radio }}:1</span></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

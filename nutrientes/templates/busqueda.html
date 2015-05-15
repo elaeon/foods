@@ -1,9 +1,11 @@
 {% load staticfiles %}
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<script type="text/javascript" src="{% static 'jquery.1.9.1.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'jquery.autocomplete.1.2.7.js' %}"></script>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 <style>
 .autocomplete-suggestions {
     background-color: #fff;
@@ -11,70 +13,31 @@
     border-right: 1px solid #000;
     border-bottom: 1px solid #000;
 }
+.autocomplete-suggestions p {
+    margin-left: 5px;
+}
+.autocomplete-selected {
+    background-color: #ccc;
+}
 </style>
 </head>
 
 <body>
-<form id="search-form">
-    <div id="search-input">
-        <label>
-        <input id="text-input" type="text">
-        </label>            
+
+<form id="search-form" class="form-inline">
+    <div class="form-group">
+        <label class="sr-only" for="exampleInputAmount">Busqueda</label>
+        <div class="input-group">
+            <input id="text-input" type="text" style="width: 500px;" class="form-control" placeholder="Busqueda">
+            <div class="input-group-addon"><span class="glyphicon glyphicon-search"aria-hidden="true"></span></div>
+        </div>
     </div>
-    <button type="button" id="search-button"><span class="button">Buscar</span></button>
 </form>
 
 {% block contenido_base %}{% endblock %}
 
-<table>
-<thead>
-<th>Categoria</th>
-<th>Alimentos</th>
-<th>Calificación</th>
-<th>Colesterol</th>
-<th>Grasa</th>
-<th>Azucares</th>
-<th>Cafeina</th>
-<th>Sal</th>
-<th>Calorias</th>
-<th>Almidones</th>
-<th>Omega6:Omega3</th>
-</thead>
-{% for category, cat_id, total, nutrs, radio, calification in category_food %}
-<tr>
-<td><a href="{% url 'list_food_category' cat_id %}">{{ category }}</a></td>
-<td style="text-align: right;">{{ total }}</td>
-{% if calification <= 50 %}
-<td style="background-color: #f00;">{{ calification }}</td>
-{% else %}
-{% if calification <= 75 %}
-<td style="background-color: #0f0;">{{ calification }}</td>
-{% else %}
-<td style="background-color: #090;">{{ calification }}</td>
-{% endif %}
-{% endif %}
-{% for nutr in nutrs %}
-    {% if nutr == None %}
-    <td>-</td>
-    {% else %}
-    {% if nutr > 0 %}
-    <td style="text-align: right; background-color:#ff0000">
-    {% else %}
-    <td style="text-align: right; background-color:#00ff00">
-    {% endif %}
-    {{ nutr }}</td>
-    {% endif %}
-{% endfor %}
-{% if radio > 4 %}
-<td style="background-color:#ff0000">
-{% else %}
-<td style="background-color:#00ff00">
-{% endif %}
-{{ radio }}:1</span></td>
-</tr>
-{% endfor %}
-</table>
-
+<script type="text/javascript" src="{% static 'jquery.1.9.1.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'jquery.autocomplete.1.2.7.js' %}"></script>
 <script type="text/javascript">
 function preg_quote( str ) {
     // http://kevin.vanzonneveld.net
