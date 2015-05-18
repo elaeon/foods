@@ -4,11 +4,8 @@ import pickle
 
 from itertools import izip
 
-USERNAME = 'agmartinez'
+USERNAME = 'alejandro'
 
-VALUE = """
-Omega 3
-"""
 
 def conection():
     conn_string = "host='' dbname='alimentos' user='{username}'".format(username=USERNAME)
@@ -163,7 +160,7 @@ def best_of(nutr_no_list):
     for nutr_no, (avg, caution) in nutr_avg.items():
         if caution:
             querys.append("""
-                SELECT food_des.ndb_no 
+                SELECT food_des.ndb_no, food_des.long_desc_es
                 FROM nut_data, food_des, nutr_def 
                 WHERE nut_data.ndb_no=food_des.ndb_no 
                 AND nutr_def.nutr_no=nut_data.nutr_no 
@@ -172,7 +169,7 @@ def best_of(nutr_no_list):
             """.format(avg=avg, nutr_no=nutr_no))
         else:
             querys.append("""
-                SELECT food_des.ndb_no 
+                SELECT food_des.ndb_no, food_des.long_desc_es
                 FROM nut_data, food_des, nutr_def 
                 WHERE nut_data.ndb_no=food_des.ndb_no 
                 AND nutr_def.nutr_no=nut_data.nutr_no 
@@ -181,7 +178,7 @@ def best_of(nutr_no_list):
             """.format(avg=avg, nutr_no=nutr_no))
 
     cursor.execute(" INTERSECT ".join(querys))
-    print cursor.fetchall()
+    return cursor.fetchall()
 
 caution_nutr = {
     "601": "Cholesterol",
@@ -198,7 +195,22 @@ caution_nutr = {
     "209": "Starch"
 }
 
-bases = ["n-3", "n-6", "n-7", "n-9"]
+exclude_nutr = {
+    "268": "Energy",
+    "269": "Sugars, total",
+    "605": "Fatty acids, total trans",
+    "606": "Fatty acids, total saturated",
+    "645": "Fatty acids, total monounsaturated",
+    "646": "Fatty acids, total polyunsaturated",
+    "208": "Energy",
+    "695": "Fatty acids, total trans-polyenoic",
+    "693": "Fatty acids, total trans-monoenoic",
+    "204": "Total lipid (fat)",
+    #"205": "Carbohydrate, by difference",
+    "203": "Protein",
+    #"318": "Vitamin A, IU" 
+}
+
 OMEGAS = {
     "omega 3": ["16:3", "18:3", "18:4", "20:3", "20:4", "20:5", "21:5", "22:5", "22:6", "24:5", "24:6"],
     "omega 6": ["18:2", "18:3", "20:2", "20:3", "20:4", "22:2", "22:4", "22:5", "24:4", "24:5"],
@@ -295,13 +307,21 @@ class Food(object):
                 else:
                     tipo_molecula_txt = None
 
-                if molecula_txt in OMEGAS["omega 3"] or tipo_molecula_txt == "n-3":
+                if tipo_molecula_txt == "n-3":
                     omega = "omega 3"
-                elif molecula_txt in OMEGAS["omega 6"] or tipo_molecula_txt == "n-6":
+                elif tipo_molecula_txt == "n-6":
                     omega = "omega 6"
-                elif molecula_txt in OMEGAS["omega 7"] or tipo_molecula_txt == "n-7":
+                elif tipo_molecula_txt == "n-7":
                     omega = "omega 7"
-                elif molecula_txt in OMEGAS["omega 9"] or tipo_molecula_txt == "n-9":
+                elif tipo_molecula_txt == "n-9":
+                    omega = "omega 9"
+                elif molecula_txt in OMEGAS["omega 3"]:
+                    omega = "omega 3"
+                elif molecula_txt in OMEGAS["omega 6"]:
+                    omega = "omega 6"
+                elif molecula_txt in OMEGAS["omega 7"]:
+                    omega = "omega 7"
+                elif molecula_txt in OMEGAS["omega 9"]:
                     omega = "omega 9"
                 else:
                     omega = None
@@ -351,14 +371,13 @@ class Food(object):
         #return heapq.nlargest(15, distances, key=lambda x: x[1])
 
     @classmethod
-    def create_vector(self, nutrients):
+    def create_vector_fields(self):
         features = nutr_features()
         fields, omegas = self.subs_omegas([(e[0], e[1], 0, None) for e in features])
         fields = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
-        exclude = set(["208", "268"]) #Energy#ENERC_KCAL", "Energy#ENERC_KJ"
+        #exclude = set(["208", "268"]) #Energy#ENERC_KCAL", "Energy#ENERC_KJ"
         base = set([v[0] for v in fields])
-        fields = [e for e in base.difference(exclude)]
-        return self.vector_features(fields, nutrients)
+        return [e for e in base.difference(set(exclude_nutr.keys()))]
 
     @classmethod
     def get_matrix(self, name):
@@ -374,7 +393,8 @@ class Food(object):
 
     def similarity(self):
         matrix = self.get_matrix('matrix.p')
-        vector_base = self.create_vector(self.nutrients)
+        fields = self.create_vector_fields()
+        vector_base = self.vector_features(fields, self.nutrients)
         foods = self.min_distance((self.ndb_no, vector_base.values()), matrix)
         return [(ndb_no, self.get_food(ndb_no), v) for ndb_no, v in foods]
 
@@ -398,13 +418,14 @@ class Food(object):
     @classmethod
     def train(self):
         matrix = self.get_matrix('matrix.p')
+        fields = self.create_vector_fields()
         if len(matrix) == 0:
             print "Not pickle"
             ndb_nos = self.alimentos(limit="limit 9000")#"Fruits and Fruit Juices"
             for ndb_no in ndb_nos:
                 records = self.get_raw_nutrients(ndb_no)
-                nutrients = group_data(records)
-                vector = self.create_vector(nutrients.values()[0])
+                nutrients = group_data(records, exclude=set(exclude_nutr.keys()))
+                vector = self.vector_features(fields, nutrients.values()[0])
                 matrix.append((ndb_no, vector.values()))
             self.save_matrix('matrix.p', matrix)
 

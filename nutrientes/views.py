@@ -87,8 +87,12 @@ def list_food_category(request, category_id):
 
 
 def best_of_nutrients(request):
+    from nutrientes.utils import best_of
+
     if request.method == "POST":
         print request.POST
-    foods = []
+        foods = best_of(request.POST["nutr_no"])
+    else:
+        foods = []
     categoria = ""
     return render(request, "food_category.html", {"foods": foods, "categoria": categoria})
