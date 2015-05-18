@@ -4,7 +4,7 @@ import pickle
 
 from itertools import izip
 
-USERNAME = 'alejandro'
+USERNAME = 'agmartinez'
 
 
 def conection():
@@ -21,9 +21,21 @@ def group_data(data, exclude=set([])):
             group[food_desc].append((nutr_no, nut, float(v), u))
     return group
 
-def nutr_features():
+def nutr_features(order_by="sr_order"):
     _, cursor = conection()
-    query  = """SELECT nutr_no, nutrdesc FROM nutr_def order by sr_order""";
+    query  = """SELECT nutr_no, nutrdesc FROM nutr_def ORDER BY {order_by}""".format(order_by=order_by)
+    cursor.execute(query)
+    return cursor.fetchall()
+
+def nutr_features_ids(ids):
+    _, cursor = conection()
+    query  = """SELECT nutr_no, nutrdesc FROM nutr_def WHERE nutr_no IN {ids}""".format(ids=ids)
+    cursor.execute(query)
+    return cursor.fetchall()
+
+def categories_foods():
+    _, cursor = conection()
+    query  = """SELECT fdgrp_cd, fdgrp_desc_es FROM fd_group ORDER BY fdgrp_desc_es"""
     cursor.execute(query)
     return cursor.fetchall()
 
@@ -151,7 +163,7 @@ def alimentos_category_name(category):
     cursor.execute(query)
     return cursor.fetchall()
 
-def best_of(nutr_no_list):
+def best_of(nutr_no_list, category_food):
     _, cursor = conection()
     nutr = Food.get_matrix("nutavg.p")
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
@@ -166,7 +178,8 @@ def best_of(nutr_no_list):
                 AND nutr_def.nutr_no=nut_data.nutr_no 
                 AND nutr_val < {avg}
                 AND nut_data.nutr_no='{nutr_no}'
-            """.format(avg=avg, nutr_no=nutr_no))
+                AND food_des.fdgrp_cd='{category_food}'
+            """.format(avg=avg, nutr_no=nutr_no, category_food=category_food))
         else:
             querys.append("""
                 SELECT food_des.ndb_no, food_des.long_desc_es
@@ -175,10 +188,89 @@ def best_of(nutr_no_list):
                 AND nutr_def.nutr_no=nut_data.nutr_no 
                 AND nutr_val >= {avg}
                 AND nut_data.nutr_no='{nutr_no}'
-            """.format(avg=avg, nutr_no=nutr_no))
+                AND food_des.fdgrp_cd='{category_food}'
+            """.format(avg=avg, nutr_no=nutr_no,category_food=category_food))
 
+    print " INTERSECT ".join(querys)
     cursor.execute(" INTERSECT ".join(querys))
     return cursor.fetchall()
+
+def best_of_query(nutr_no_list, category_food):
+    _, cursor = conection()
+    nutr = Food.get_matrix("nutavg.p")
+    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
+
+    querys = []
+    for nutr_no, (avg, caution) in nutr_avg.items():
+        if caution:
+            querys.append((nutr_no, caution, """
+                SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val
+                FROM nut_data, food_des, nutr_def 
+                WHERE nut_data.ndb_no=food_des.ndb_no 
+                AND nutr_def.nutr_no=nut_data.nutr_no 
+                AND nutr_val < {avg}
+                AND nut_data.nutr_no='{nutr_no}'
+                AND food_des.fdgrp_cd='{category_food}'
+            """.format(avg=avg, nutr_no=nutr_no, category_food=category_food)))
+        else:
+            querys.append((nutr_no, caution, """
+                SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val
+                FROM nut_data, food_des, nutr_def 
+                WHERE nut_data.ndb_no=food_des.ndb_no 
+                AND nutr_def.nutr_no=nut_data.nutr_no 
+                AND nutr_val >= {avg}
+                AND nut_data.nutr_no='{nutr_no}'
+                AND food_des.fdgrp_cd='{category_food}'
+            """.format(avg=avg, nutr_no=nutr_no,category_food=category_food)))
+
+    def get_categories(querys):
+        cat = {}
+        for nutr_no, caution, query in querys:
+            cursor.execute(query)
+            cat[nutr_no] = {"caution": caution, "data": {}}
+            for ndb_no, long_desc_es, nutr_val in cursor.fetchall():
+                cat[nutr_no]["data"][ndb_no] = (nutr_val, long_desc_es)
+        return cat
+
+    def get_ids_intersection(cat):
+        set_base = set(cat.values()[0]["data"].keys())
+        for v in cat.values()[1:]:
+            set_base = set_base.intersection(set(v["data"].keys()))
+        return set_base
+    
+    def ids2data_sorted(cat, set_base):
+        nuevas_cat = {}
+        for nutr_no in cat.keys():
+            nuevas_cat.setdefault(nutr_no, [])
+            for ndb_no in set_base:
+                nutr_val, long_desc_es = cat[nutr_no]["data"][ndb_no]
+                nuevas_cat[nutr_no].append((ndb_no, long_desc_es, float(nutr_val)))
+            reverse = not bool(cat[nutr_no]["caution"])
+            #print reverse
+            nuevas_cat[nutr_no].sort(reverse=True, key=lambda x: x[2])
+        return nuevas_cat
+
+    def enumerateX(data):
+        indice = 0
+        data_tmp = data + [(None, None, 0)]
+        for x, y in zip(data_tmp, data_tmp[1:]):
+            if x[2] - y[2] > 0:
+                yield indice, x
+                indice += 1
+            else:
+                yield indice, x
+    
+    def sorted_data(nuevas_cat):
+        positions = {}
+        for nutr_no in nuevas_cat.keys():
+            for i, v in enumerateX(nuevas_cat[nutr_no]):
+                positions.setdefault(v[0], {"attr": v[:2], "i": 0, "val": []})
+                positions[v[0]]["i"] += i
+                positions[v[0]]["val"].append(v[2])
+        return sorted(positions.values(), key=lambda x: x["i"])
+
+    cat = get_categories(querys)
+    return [[d["attr"], d["val"]] for d in sorted_data(ids2data_sorted(cat, get_ids_intersection(cat)))]
 
 caution_nutr = {
     "601": "Cholesterol",

@@ -4,8 +4,10 @@
 {% block contenido_base %}
 <h2>Alimentos</h2>
 <h3>{{ categoria }}</h3>
-{% for food_id, food, _ in foods %}
-<div><a href="{% url 'view_food' food_id %}">{{ food }}</a></div>
+
+
+{% for food_id, food, val in foods %}
+<div><a href="{% url 'view_food' food_id %}">{{ food }}</a>{{ val }}</div>
 {% endfor %}
 {% endblock %}
 

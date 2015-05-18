@@ -1,0 +1,15 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<h2>Alimentos</h2>
+<h3>{{ categoria }}</h3>
+{% for nutr in nutrs %}
+    {{ nutr.1 }},
+{% endfor %}
+
+{% for food, val in foods %}
+<div><a href="{% url 'view_food' food.0 %}">{{ food.1 }}</a>{{ val }}</div>
+{% endfor %}
+{% endblock %}
+

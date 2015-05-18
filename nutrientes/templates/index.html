@@ -4,6 +4,12 @@
 {% block contenido_base %}
 <form action="{% url 'best_of_nutrients' %}" method="POST">
 {% csrf_token %}
+<select name="category_food">
+<option value="0">---</option>
+{% for fdgrp_cd, fdgrp_desc_es in categories %}
+<option value="{{ fdgrp_cd }}">{{ fdgrp_desc_es }}</option>
+{% endfor %}
+</select>
 {% for nutr_no, name in nutr %}
 <div class="checkbox">
 <label>

@@ -7,11 +7,13 @@ import json
 # Create your views here.
 def index(request):
     from nutrientes.utils import category_food_list, nutr_features, Food
+    from nutrientes.utils import categories_foods
     
-    features = nutr_features()
+    features = nutr_features(order_by="nutrdesc")
     fields, omegas = Food.subs_omegas([(e[0], e[1], 0, None) for e in features])
     nutr = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
-    return render(request, "index.html", {"category_food": category_food_list(), "nutr": nutr})
+    categories = categories_foods()
+    return render(request, "index.html", {"category_food": category_food_list(), "nutr": nutr, "categories": categories})
 
 
 def ajax_search(request):
@@ -87,12 +89,23 @@ def list_food_category(request, category_id):
 
 
 def best_of_nutrients(request):
-    from nutrientes.utils import best_of
+    from nutrientes.utils import best_of, nutr_features_ids, alimentos_category_name
+    from nutrientes.utils import best_of_query
 
     if request.method == "POST":
         print request.POST
-        foods = best_of(request.POST["nutr_no"])
+        nutr_nos = tuple(map(str, request.POST.getlist("nutr_no")))
+        if len(nutr_nos) == 1:
+            nutr_nos = "('" + nutr_nos[0] + "')"
+        category_food = request.POST.get("category_food", None)
+        #foods = best_of(nutr_nos, category_food)
+        foods = best_of_query(nutr_nos, category_food)
+        nutrs = nutr_features_ids(nutr_nos)
+        categoria = alimentos_category_name(category_food)[0][0]
     else:
         foods = []
-    categoria = ""
-    return render(request, "food_category.html", {"foods": foods, "categoria": categoria})
+        categoria = ""
+    return render(request, "food_attr_check.html", {
+        "foods": foods, 
+        "categoria": categoria, 
+        "nutrs": nutrs})
