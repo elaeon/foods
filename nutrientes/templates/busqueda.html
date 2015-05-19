@@ -70,8 +70,8 @@ $('#text-input').autocomplete({
     autoSelectFirst: false,
     tabDisabled: false,
     formatResult: function(suggestion, currentValue) {
-        if(suggestion.value.length > 50) {
-            var sugges = suggestion.value.substring(0, 50) + "...";
+        if(suggestion.value.length > 70) {
+            var sugges = suggestion.value.substring(0, 70) + "...";
         } else {
             var sugges = suggestion.value;
         }

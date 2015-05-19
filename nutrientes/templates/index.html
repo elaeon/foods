@@ -10,10 +10,10 @@
 <option value="{{ fdgrp_cd }}">{{ fdgrp_desc_es }}</option>
 {% endfor %}
 </select>
-{% for nutr_no, name in nutr %}
+{% for nutr_no, name, _, group in nutr %}
 <div class="checkbox">
 <label>
-<input name="nutr_no" type="checkbox" value="{{ nutr_no }}"> {{ name }}
+<input name="nutr_no" type="checkbox" value="{{ nutr_no }}"> {{ name }} {{ group }}
 </label>
 </div>
 {% endfor %}

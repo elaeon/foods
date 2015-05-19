@@ -6,11 +6,11 @@ import json
 
 # Create your views here.
 def index(request):
-    from nutrientes.utils import category_food_list, nutr_features, Food
+    from nutrientes.utils import category_food_list, nutr_features_group, Food
     from nutrientes.utils import categories_foods
     
-    features = nutr_features(order_by="nutrdesc")
-    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, None) for e in features])
+    features = nutr_features_group(order_by="nutrdesc")
+    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, e[2]) for e in features])
     nutr = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
     categories = categories_foods()
     return render(request, "index.html", {"category_food": category_food_list(), "nutr": nutr, "categories": categories})
@@ -19,12 +19,29 @@ def index(request):
 def ajax_search(request):
     if request.is_ajax():
         conn, cursor = conection()
-        search_word = request.GET.get("query", "")
-        query = """SELECT ndb_no, long_desc_es FROM food_des WHERE long_desc_es IS NOT NULL AND long_desc_es ilike '%{term}%' LIMIT 10;""".format(term=search_word)
+        search_word = request.GET.get("query", "").strip()
+        #search_word = " & ".join(search_word.split(" "))
+        #query = """SELECT ndb_no, long_desc_es FROM food_des WHERE long_desc_es IS NOT NULL AND long_desc_es ilike '%{term}%' LIMIT 10;""".format(term=search_word)
+
+        query = []
+        for term in search_word.split(" "):
+            query.append("""
+                (SELECT searchall_index.ndb_no, searchall_index.long_desc_es, ts_rank_cd(document, query) as r FROM 
+                (SELECT word
+                    FROM unique_lexeme
+                    WHERE  word <-> '{term}' < 1
+                    ORDER BY word <-> '{term}' LIMIT 2) as words, searchall_index, to_tsquery('spanish', words.word) as query
+                WHERE document @@ query)
+            """.format(term=term))
+        if len(query) > 1:
+            query = " INTERSECT ".join(query) + "ORDER BY r DESC LIMIT 15"
+        else:
+            query = "".join(query) + "ORDER BY long_desc_es ASC LIMIT 15"
+        #print query
         cursor.execute(query)
         records = cursor.fetchall()
         suggestions = []    
-        for ndb_no, long_desc_es in records:
+        for ndb_no, long_desc_es, _ in records:
             suggestions.append({
                 "value": long_desc_es.decode("utf8", "replace") ,
                 "data": {
@@ -89,7 +106,7 @@ def list_food_category(request, category_id):
 
 
 def best_of_nutrients(request):
-    from nutrientes.utils import best_of, nutr_features_ids, alimentos_category_name
+    from nutrientes.utils import nutr_features_ids, alimentos_category_name
     from nutrientes.utils import best_of_query
 
     if request.method == "POST":
@@ -97,14 +114,18 @@ def best_of_nutrients(request):
         nutr_nos = tuple(map(str, request.POST.getlist("nutr_no")))
         if len(nutr_nos) == 1:
             nutr_nos = "('" + nutr_nos[0] + "')"
-        category_food = request.POST.get("category_food", None)
-        #foods = best_of(nutr_nos, category_food)
+        category_food = request.POST.get("category_food", '0')
+        category_food = None if category_food == '0' else category_food
         foods = best_of_query(nutr_nos, category_food)
         nutrs = nutr_features_ids(nutr_nos)
-        categoria = alimentos_category_name(category_food)[0][0]
+        try:
+            categoria = alimentos_category_name(category_food)[0][0]
+        except IndexError:
+            categoria = ""
     else:
         foods = []
         categoria = ""
+        nutrs = []
     return render(request, "food_attr_check.html", {
         "foods": foods, 
         "categoria": categoria, 

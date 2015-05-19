@@ -8,8 +8,8 @@
     {{ nutr.1 }},
 {% endfor %}
 
-{% for food, val in foods %}
-<div><a href="{% url 'view_food' food.0 %}">{{ food.1 }}</a>{{ val }}</div>
+{% for i, food in foods %}
+<div>{{ i }}<a href="{% url 'view_food' food.attr.0 %}">{{ food.attr.1 }}</a>{{ food.val }}</div>
 {% endfor %}
 {% endblock %}
 
