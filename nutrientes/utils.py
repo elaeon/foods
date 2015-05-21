@@ -218,21 +218,25 @@ def best_of_query(nutr_no_list, category_food):
     return rank.order(cat, get_ids_intersection(cat))
 
 class Rank(object):
+    def __init__(self):
+        self.foods = {}
+
     def get_categories_nutr(self, querys):
         category_nutr = {}
         for nutr_no, caution, result_query in querys:
             category_nutr[nutr_no] = {"caution": caution, "data": {}}
             for ndb_no, long_desc_es, nutr_val in result_query:
                 category_nutr[nutr_no]["data"][ndb_no] = (nutr_val, long_desc_es)
+                self.foods[ndb_no] = long_desc_es
         return category_nutr
 
-    def ids2data_sorted(self, category_nutr, set_base, names={}):
+    def ids2data_sorted(self, category_nutr, set_base):
         data = {}
         for nutr_no in category_nutr.keys():
             data.setdefault(nutr_no, [])
             reverse = not bool(category_nutr[nutr_no]["caution"])
             for ndb_no in set_base:
-                nutr_val, long_desc_es = category_nutr[nutr_no]["data"].get(ndb_no, ([0, names.get(ndb_no, None)]))
+                nutr_val, long_desc_es = category_nutr[nutr_no]["data"].get(ndb_no, ([0, self.foods.get(ndb_no, None)]))
                 data[nutr_no].append((ndb_no, long_desc_es, float(nutr_val)))
             data[nutr_no].sort(reverse=reverse, key=lambda x: x[2])
         return data
@@ -265,8 +269,8 @@ class Rank(object):
                 index += 1
             yield index, d
     
-    def order(self, category_nutr, base_food, names={}):
-        return self.rank2natural(self.sorted_data(self.ids2data_sorted(category_nutr, base_food, names=names)))
+    def order(self, category_nutr, base_food):
+        return self.rank2natural(self.sorted_data(self.ids2data_sorted(category_nutr, base_food)))
 
 def best_of_general(name, category):
     from collections import namedtuple
@@ -308,10 +312,10 @@ def best_of_general(name, category):
         total.append((calif, n.ndb_no))
     print [foods[ndb_no].name for _, ndb_no in sorted(total, reverse=True)[:100]]
     
-def best_of_general_2(name, category):
+def best_of_general_2(category, name=None):
     _, cursor = conection()
     nutr = Food.get_matrix("nutavg.p")
-    # haseamos las llaves para mantener el orden
+    # hasheamos las llaves para mantener el orden
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
     querys = []
     def query_build(nutr_no, category_food):
@@ -335,25 +339,10 @@ def best_of_general_2(name, category):
         cursor.execute(query)
         querys.append((nutr_no, caution, cursor.fetchall()))
 
-    good = querys
     rank = Rank()
-    category_nutr = rank.get_categories_nutr(good)
-    foods = {e[0]: e[1] for _, _, food in good for e in food}
-    rg = rank.order(category_nutr, set(foods.keys()), names=foods)
-    #nd = {d["attr"][0]: (d["i"], d["attr"][0], d["attr"][1]) for _, d in rg}
-
-    #category_nutr = rank.get_categories_nutr(bad)
-    #foods = {e[0]: e[1] for _, _, food in bad for e in food}
-    #rb = rank.order(category_nutr, set(foods.keys()), names=foods)
-    #nb = {d["attr"][0]: (d["i"], d["attr"][0], d["attr"][1]) for _, d in rb}
-    
-    #t = [(nd[k][0] + nb[k][0], nd[k][1], nd[k][2]) for k in nd.keys()]
-    #t = sorted(t)
-    #for e in t:
-    #    print e
-
-    #for e in rg:
-    #    print e[0], e[1]["attr"][1]
+    category_nutr = rank.get_categories_nutr(querys)
+    rank_foods = rank.order(category_nutr, set(rank.foods.keys()))
+    return rank_foods
 
     
 caution_nutr = {

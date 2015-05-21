@@ -6,8 +6,16 @@
 <h3>{{ categoria }}</h3>
 
 
+{% if order == "alfanumeric" %}
+<a href="{% url 'list_food_category' category_id 'best' %}">Alfanumérico</a>
 {% for food_id, food, val in foods %}
 <div><a href="{% url 'view_food' food_id %}">{{ food }}</a>{{ val }}</div>
 {% endfor %}
+{% else %}
+<a href="{% url 'list_food_category' category_id 'alfanumeric' %}">Alfanumérico</a>
+{% for i, food in foods %}
+<div>{{ i }}<a href="{% url 'view_food' food.attr.0 %}">{{ food.attr.1 }}</a></div>
+{% endfor %}
+{% endif %}
 {% endblock %}
 

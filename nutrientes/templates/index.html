@@ -37,7 +37,7 @@
 <tbody>
 {% for category, cat_id, total, nutrs, radio, calification in category_food %}
 <tr>
-<td><a href="{% url 'list_food_category' cat_id %}">{{ category }}</a></td>
+<td><a href="{% url 'list_food_category' cat_id 'best' %}">{{ category }}</a></td>
 <td style="text-align: right;">{{ total }}</td>
 {% if calification <= 50 %}
 <td class="danger">{{ calification }}</td>

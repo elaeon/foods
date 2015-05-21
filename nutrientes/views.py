@@ -98,11 +98,23 @@ def set_comparation(request, ndb_no, operation):
     return HttpResponse(name, content_type='text/plain')
 
 
-def list_food_category(request, category_id):
+def list_food_category(request, category_id, order):
     from nutrientes.utils import alimentos_category, alimentos_category_name
-    foods = alimentos_category(category=category_id, limit="limit 9000")
+    from nutrientes.utils import best_of_general_2
+
     categoria = alimentos_category_name(category_id)[0][0]
-    return render(request, "food_category.html", {"foods": foods, "categoria": categoria})
+    print order
+    if order == u"alfanumeric":
+        foods = alimentos_category(category=category_id, limit="limit 9000")        
+    else:
+        foods = best_of_general_2(category_id)
+
+    print category_id
+    return render(request, "food_category.html", {
+        "foods": foods, 
+        "categoria": categoria, 
+        "order": order, 
+        "category_id": category_id})
 
 
 def best_of_nutrients(request):
