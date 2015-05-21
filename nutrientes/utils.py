@@ -226,14 +226,14 @@ class Rank(object):
                 category_nutr[nutr_no]["data"][ndb_no] = (nutr_val, long_desc_es)
         return category_nutr
 
-    def ids2data_sorted(self, category_nutr, set_base):
+    def ids2data_sorted(self, category_nutr, set_base, names={}):
         data = {}
         for nutr_no in category_nutr.keys():
             data.setdefault(nutr_no, [])
-            for ndb_no in set_base:
-                nutr_val, long_desc_es = category_nutr[nutr_no]["data"][ndb_no]
-                data[nutr_no].append((ndb_no, long_desc_es, float(nutr_val)))
             reverse = not bool(category_nutr[nutr_no]["caution"])
+            for ndb_no in set_base:
+                nutr_val, long_desc_es = category_nutr[nutr_no]["data"].get(ndb_no, ([0, names.get(ndb_no, None)]))
+                data[nutr_no].append((ndb_no, long_desc_es, float(nutr_val)))
             data[nutr_no].sort(reverse=reverse, key=lambda x: x[2])
         return data
 
@@ -265,8 +265,8 @@ class Rank(object):
                 index += 1
             yield index, d
     
-    def order(self, category_nutr, base_food):
-        return self.rank2natural(self.sorted_data(self.ids2data_sorted(category_nutr, base_food)))
+    def order(self, category_nutr, base_food, names={}):
+        return self.rank2natural(self.sorted_data(self.ids2data_sorted(category_nutr, base_food, names=names)))
 
 def best_of_general(name, category):
     from collections import namedtuple
@@ -311,6 +311,7 @@ def best_of_general(name, category):
 def best_of_general_2(name, category):
     _, cursor = conection()
     nutr = Food.get_matrix("nutavg.p")
+    # haseamos las llaves para mantener el orden
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
     querys = []
     def query_build(nutr_no, category_food):
@@ -330,12 +331,31 @@ def best_of_general_2(name, category):
         return (nutr_no, caution, query)
 
     for nutr_no, (avg, caution) in nutr_avg.items():
-        nutr_no, caution, query = query_build(nutr_no, category_food)
+        nutr_no, caution, query = query_build(nutr_no, category)
         cursor.execute(query)
         querys.append((nutr_no, caution, cursor.fetchall()))
 
-    print querys
+    good = querys
+    rank = Rank()
+    category_nutr = rank.get_categories_nutr(good)
+    foods = {e[0]: e[1] for _, _, food in good for e in food}
+    rg = rank.order(category_nutr, set(foods.keys()), names=foods)
+    #nd = {d["attr"][0]: (d["i"], d["attr"][0], d["attr"][1]) for _, d in rg}
 
+    #category_nutr = rank.get_categories_nutr(bad)
+    #foods = {e[0]: e[1] for _, _, food in bad for e in food}
+    #rb = rank.order(category_nutr, set(foods.keys()), names=foods)
+    #nb = {d["attr"][0]: (d["i"], d["attr"][0], d["attr"][1]) for _, d in rb}
+    
+    #t = [(nd[k][0] + nb[k][0], nd[k][1], nd[k][2]) for k in nd.keys()]
+    #t = sorted(t)
+    #for e in t:
+    #    print e
+
+    #for e in rg:
+    #    print e[0], e[1]["attr"][1]
+
+    
 caution_nutr = {
     "601": "Cholesterol",
     "204": "Total lipid (fat)",
@@ -528,7 +548,7 @@ class Food(object):
         #return heapq.nlargest(15, distances, key=lambda x: x[1])
 
     @classmethod
-    def create_vector_fields(self):
+    def create_vector_fields_nutr(self):
         features = nutr_features()
         fields, omegas = self.subs_omegas([(e[0], e[1], 0, None) for e in features])
         fields = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
@@ -550,7 +570,7 @@ class Food(object):
 
     def similarity(self):
         matrix = self.get_matrix('matrix.p')
-        fields = self.create_vector_fields()
+        fields = self.create_vector_fields_nutr()
         vector_base = self.vector_features(fields, self.nutrients)
         foods = self.min_distance((self.ndb_no, vector_base.values()), matrix)
         return [(ndb_no, self.get_food(ndb_no), v) for ndb_no, v in foods]
@@ -574,14 +594,15 @@ class Food(object):
     @classmethod
     def train(self):
         matrix = self.get_matrix('matrix.p')
-        fields = self.create_vector_fields()
+        fields = self.create_vector_fields_nutr()
         if len(matrix) == 0:
             print "Not pickle"
             ndb_nos = self.alimentos(limit="limit 9000")#"Fruits and Fruit Juices"
             for ndb_no in ndb_nos:
                 records = self.get_raw_nutrients(ndb_no)
-                nutrients = group_data(records, exclude=set(exclude_nutr.keys()))
-                vector = self.vector_features(fields, nutrients.values()[0])
+                vector = self.vector_features(fields, records)
+                #nutrients = group_data(records, exclude=set(exclude_nutr.keys()))
+                #vector = self.vector_features(fields, nutrients.values()[0])
                 matrix.append((ndb_no, vector.values()))
             self.save_matrix('matrix.p', matrix)
 
