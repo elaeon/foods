@@ -18,9 +18,9 @@
     <div class="col-md-5 col-md-pull-6">
         <img src="http://lorempixel.com/400/200/" class="img-rounded"></img>
         <div style="font-size:80%">
+            <button onclick="javascript:agregar();">Agregar</button>
             <form action="{% url 'food_compare' %}" method="POST">
-            {% csrf_token %}
-            <button onclick="javascript:agregar();">Agregar</button>            
+            {% csrf_token %}            
             <button type="submit">Comparar</button>
             </form>
             <div id="comparationContainer">
@@ -35,6 +35,7 @@
     </div>
 </div>
 
+<br>
 <div id="chartContainer"></div>
 </div>
 </div>
@@ -56,12 +57,14 @@ function agregar() {
         if(data) {
             $("<div></div>", 
                 {"id": 'comparationContainer-{{ food.ndb_no }}'}).appendTo("#comparationContainer");
-            $("<a></a>", {"text": "Borrar", 
-            "href": "#", 
-            click: function(e) {
-                borrar("{{ food.ndb_no }}")
+            $("<a></a>", {
+                "aria-hidden": "true",
+                "href": "#", 
+                "class": "glyphicon glyphicon-remove-sign",
+                click: function(e) {
+                    borrar("{{ food.ndb_no }}")
             }}).appendTo("#comparationContainer-{{ food.ndb_no }}");
-            $("<div></div>", 
+            $("<span></span>", 
                 {"style": "font-size:120%;", "text": data}).appendTo("#comparationContainer-{{ food.ndb_no }}");
         }
     });

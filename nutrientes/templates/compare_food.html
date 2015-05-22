@@ -2,13 +2,20 @@
 {% load staticfiles %}
 
 {% block contenido_base %}
+<div class="container">
+<div class="starter-template">
+<div class="row">
 {% for food in foods %}
-<h2>{{ food.name }}</h2>
-<img src="http://lorempixel.com/400/200/"></img>
-<h3>Radio {{ food.radio }} [Omega6:Omega3]</h3>
+<div class="col-md-3" style="padding: 20px;">
+<p>{{ food.name }}</p>
+<p>Radio {{ food.radio }}</p>
+</div>
 {% endfor %}
+</div>
 
 <div id="chartContainer"></div>
+</div>
+</div>
 {% endblock %}
 
 {% block js %}

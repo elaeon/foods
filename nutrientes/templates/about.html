@@ -1,0 +1,17 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div class="container">
+    <div class="starter-template">
+    <h2 style="text-align: center;">Acerca de.</h2>
+    <div style="-moz-column-count: 3; -webkit-column-count: 3; -moz-column-gap: 40px;-webkit-column-gap: 40px; text-align: justify;">
+        Actualmente existe una gran variedad de páginas web que muestran listados de alimentos y sus beneficios,
+        sin embargo no especifican de forma clara, el rumbo que tomaron para llegar a esas conclusiones.
+        <a href="http://lc3-inmegen.github.io/">Nosotros</a>, en base a la base de datos versión 27 que ofrece el <a href="http://www.ars.usda.gov/Services/docs.htm?docid=8964">Deparatamento de Agricultura de los Estados Unidos</a> analizamos 140 nutrientes de los 8,618 alimentos que contiene. 
+        Con estos datos y de acuerdo a la bibliografía médica, sobre que nutrientes ayudan o perjudican a la salud, mostramos los alimentos (y cuales no tanto) pueden ser benéficos para la salud humana.
+        <b>Debe de tomarse en cuenta que esta página solo ofrece una caracterización básica de los alimentos, el usuario bajo su propio riesgo utilizará esta información para integrarla a su dieta.</b>
+    </div>
+    </div>
+</div>
+{% endblock %}

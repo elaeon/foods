@@ -150,3 +150,6 @@ def best_of_nutrients(request):
         "foods": foods, 
         "categoria": categoria, 
         "nutrs": nutrs})
+
+def about(request):
+    return render(request, "about.html", {})
