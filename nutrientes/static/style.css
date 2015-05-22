@@ -1,0 +1,35 @@
+.color-swatches {
+    margin: 0 -5px;
+    overflow: hidden;
+}
+.color-swatches .brand-primary {
+    background-color: #337ab7;
+}
+.color-swatch {
+    height: 100px;
+    width: 100px;
+}
+.color-swatch {
+    border-radius: 3px;
+    float: left;
+    height: 30px;
+    margin: 0 5px;
+    width: 160px;
+}
+
+.autocomplete-suggestions {
+    background-color: #fff;
+    border-left: 1px solid #000;
+    border-right: 1px solid #000;
+    border-bottom: 1px solid #000;
+}
+.autocomplete-suggestions p {
+    margin-left: 5px;
+}
+.autocomplete-selected {
+    background-color: #ccc;
+}
+.starter-template {
+  padding: 40px 15px;
+}
+

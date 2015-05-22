@@ -138,7 +138,9 @@ def category_food_list():
     category_food_l = category_food()
     for cat, _, count in category_food_l:
         category_results[cat] = [None, None, None, None, None, None, None]
-    for i, nutr_no in enumerate(["601", "204", "269", "262", "307", "208", "209"]):
+    # 606 grasa saturada
+    # 204 total grasas
+    for i, nutr_no in enumerate(["601", "606", "269", "262", "307", "208", "209"]):
         cat_nutr = avg_nutrients_group_nutr(nutr_no, order_by="fd_group.fdgrp_desc_es")
         for cat_avg in cat_nutr:
             category_results[cat_avg[0]][i] = round(float(cat_avg[1]) - nutr[nutr_no][3] , 1)

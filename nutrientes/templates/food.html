@@ -2,31 +2,42 @@
 {% load staticfiles %}
 
 {% block contenido_base %}
+<div class="container">
+<div class="starter-template">
 <h2>{{ food.name }}</h2>
-<img src="http://lorempixel.com/400/200/"></img>
-<h3>Radio {{ food.radio }} [Omega6:Omega3]</h3><a href="{% url 'view_romega' %}">todos</a>
-<div style="font-size:70%">
-{% for ndb_no, other_food, distance in food.similarity %}
-<div><a href="{% url 'view_food' ndb_no %}">{{ other_food }}</a> {{ distance }}</div>
-{% endfor %}
+<div class="row">
+    <div class="col-md-6 col-md-push-5">
+        <p>Radio de Omegas: {{ food.radio }} <a role="button" class="btn btn-primary btn-xs" href="{% url 'view_romega' %}">ver más</a></p>
+        <p>Alimentos relacionados</p>
+        <div style="font-size:70%">
+        {% for ndb_no, other_food, distance in food.similarity %}
+        <div><a href="{% url 'view_food' ndb_no %}">{{ other_food.0.0 }}</a></div>
+        {% endfor %}
+        </div>
+    </div>
+    <div class="col-md-5 col-md-pull-6">
+        <img src="http://lorempixel.com/400/200/" class="img-rounded"></img>
+        <div style="font-size:80%">
+            <form action="{% url 'food_compare' %}" method="POST">
+            {% csrf_token %}
+            <button onclick="javascript:agregar();">Agregar</button>            
+            <button type="submit">Comparar</button>
+            </form>
+            <div id="comparationContainer">
+            {% for ndb_no, name in food_compare.items %}
+            <div id="comparationContainer-{{ ndb_no }}">
+                <a aria-hidden="true" class="glyphicon glyphicon-remove-sign" href="#" onclick="javascript:borrar('{{ ndb_no }}');"></a>
+                <span>{{ name }}</span>
+            </div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
 </div>
-<div>
-<div id="comparationContainer">
-{% for ndb_no, name in food_compare.items %}
-<div id="comparationContainer-{{ ndb_no }}">
-    <a href="#" onclick="javascript:borrar('{{ ndb_no }}');">Borrar</a>
-    <div>{{ name }}</div>
-</div>
-{% endfor %}
-</div>
-Comparar:
-<button onclick="javascript:agregar();">Add</button>
-<form action="{% url 'food_compare' %}" method="POST">
-{% csrf_token %}
-<button type="submit">Ver</button>
-</form>
-</div>
+
 <div id="chartContainer"></div>
+</div>
+</div>
 {% endblock %}
 
 {% block js %}
@@ -84,10 +95,10 @@ function transform_good(value) {
 }
 var data = [];
 {% for _, nutrient, value, unit, caution, good in food.mark_caution_good_nutrients %}
-data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: "{{ food.name_limit }}", caution: transform_bad("{{ caution }}"), good: transform_good('{{ good }}')})
+data.push({nombre: '{{ nutrient }}', valor: {{ value }}, unidad: '{{ unit }}', tipo: "{{ food.name_limit }}", caution: transform_bad("{{ caution }}"), good: transform_good('{{ good }}')})
 {% endfor %}
 {% for _, nutrient, value, _ in food.nutr_avg %}
-data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '', tipo: 'promedio', caution: "-", good: "-"})
+data.push({nombre: '{{ nutrient }}', valor: {{ value }}, unidad: '', tipo: 'promedio', caution: "-", good: "-"})
 {% endfor %}
 
 var svg = dimple.newSvg("#chartContainer", 900, 600);
@@ -98,25 +109,33 @@ myChart.assignColor("cuidado", "#aa0000", null, .7);
 myChart.assignColor("ok", "#00ff00", null, .7);
 myChart.assignColor("-", "#000000", null, .1);
 myChart.setBounds(60, 30, 750, 305);
-var x = myChart.addCategoryAxis("x", "nutr");
-//var x = myChart.addCategoryAxis("x", ["nutr", "tipo"]);
-//x.showGridlines = true;
-var y = myChart.addMeasureAxis("y", "value");
+var x = myChart.addCategoryAxis("x", ["nombre", "unidad"]);
+x.showGridlines = true;
+var y = myChart.addMeasureAxis("y", "valor");
+y.showGridlines = false;
 var s = myChart.addSeries(["tipo", "good"], dimple.plot.scatter);
 var r = myChart.addSeries(["tipo", "caution"], dimple.plot.scatter);
 var l = myChart.addSeries("tipo", dimple.plot.line);
 //var s = myChart.addSeries("tipo", dimple.plot.bar);
 l.stacked = false;
-x.addOrderRule("nutr");
+x.addOrderRule("nombre");
 
 l.interpolation = "step";
 //l.interpolation = "cardinal";
-myChart.addLegend(60, 10, 700, 20, "right");
+myChart.addLegend(900, 100, 60, 300, "right");
 //myChart.setStoryboard("nutr");
 y.useLog = true;
 y.logBase = 10;
 myChart.draw();
 x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';
+y.titleShape.text("Cantidad por cada 100g");
+svg.append("text")
+   .attr("x", myChart._xPixels() + myChart._widthPixels() / 2)
+   .attr("y", myChart._yPixels() - 20)
+   .style("text-anchor", "middle")
+   .style("font-family", "sans-serif")
+   .style("font-weight", "bold")
+   .text("Gráfica de nutrientes")
 </script>
 {% endblock %}

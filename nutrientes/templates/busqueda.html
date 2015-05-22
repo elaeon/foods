@@ -6,33 +6,32 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-<style>
-.autocomplete-suggestions {
-    background-color: #fff;
-    border-left: 1px solid #000;
-    border-right: 1px solid #000;
-    border-bottom: 1px solid #000;
-}
-.autocomplete-suggestions p {
-    margin-left: 5px;
-}
-.autocomplete-selected {
-    background-color: #ccc;
-}
-</style>
+<link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
 
 <body>
-
-<form id="search-form" class="form-inline">
-    <div class="form-group">
-        <label class="sr-only" for="exampleInputAmount">Busqueda</label>
-        <div class="input-group">
-            <input id="text-input" type="text" style="width: 500px;" class="form-control" placeholder="Busqueda">
-            <div class="input-group-addon"><span class="glyphicon glyphicon-search"aria-hidden="true"></span></div>
-        </div>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+  <div class="container">
+    <div class="navbar-header">
+      <a href="{% url 'index' %}" class="navbar-brand">Alimentos y sus Nutrientes</a>
     </div>
-</form>
+    <div class="navbar-collapse collapse" id="navbar">
+        <ul class="nav navbar-nav">
+            <li><a href="#about">Acerca de</a></li>
+            <li><a href="#contact">Contacto</a></li>
+        </ul>
+        <form id="search-form" class="navbar-form navbar-right form-inline">
+            <div class="form-group">
+                <label class="form-control sr-only" for="exampleInputAmount">Busqueda</label>
+                <div class="input-group">
+                    <input id="text-input" type="text" style="width: 500px;" class="form-control" placeholder="Busqueda">
+                    <div class="input-group-addon"><span class="glyphicon glyphicon-search"aria-hidden="true"></span></div>
+                </div>
+            </div>
+        </form>
+    </div><!--/.navbar-collapse -->
+  </div>
+</nav>
 
 {% block contenido_base %}{% endblock %}
 

@@ -3,17 +3,25 @@ from django.http import HttpResponse
 
 from nutrientes.utils import conection
 import json
+import random
 
 # Create your views here.
 def index(request):
     from nutrientes.utils import category_food_list, nutr_features_group, Food
     from nutrientes.utils import categories_foods
     
-    features = nutr_features_group(order_by="nutrdesc")
-    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, e[2]) for e in features])
-    nutr = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
-    categories = categories_foods()
-    return render(request, "index.html", {"category_food": category_food_list(), "nutr": nutr, "categories": categories})
+    #features = nutr_features_group(order_by="nutrdesc")
+    #fields, omegas = Food.subs_omegas([(e[0], e[1], 0, e[2]) for e in features])
+    #nutr = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
+    #categories = categories_foods()
+    width_img_rand = random.uniform(0, 60)
+    height_img_rand = random.uniform(70, 100)
+    return render(request, "index.html", {
+        "category_food": category_food_list(), 
+        #"nutr": nutr, 
+        #"categories": categories,
+        "width_img_rand": width_img_rand,
+        "height_img_rand": height_img_rand})
 
 
 def ajax_search(request):

@@ -2,7 +2,24 @@
 {% load staticfiles %}
 
 {% block contenido_base %}
-<form action="{% url 'best_of_nutrients' %}" method="POST">
+<div class="jumbotron" style="background: url(http://upload.wikimedia.org/wikipedia/commons/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg) {{ width_img_rand }}% {{ height_img_rand }}% no-repeat; background-size: auto;">
+    <div class="container">
+    <h1 style="color: #fff !important;">¡Una guia más para tu alimentación!</h1>
+    <p style="color: #fff !important">Este sitio te ayudará a comparar, analizar e informarte sobre los alimentos y sus nutrientes.</p>
+    <p>
+    <a role="button" href="#" class="btn btn-primary btn-lg">Acerca de</a>
+    <a role="button" href="#" class="btn btn-primary btn-lg">Ver más »</a></p>
+    </div>
+</div>
+<p class="text-muted" style="margin-left: 10px;">En esta tabla se muestran las categorias de los alimentos, junto con los nutrientes más comunes causantes de enfermedades.</p>
+
+<div class="color-swatches">
+  <div class="color-swatch bg-info" style="padding: 5px; text-align: center;">Excelente</div>
+  <div class="color-swatch bg-success" style="padding: 5px; text-align: center;">Bueno</div>
+  <div class="color-swatch bg-danger" style="padding: 5px; text-align: center;">Cuidado</div>
+</div>
+
+<!--<form action="{% url 'best_of_nutrients' %}" method="POST">
 {% csrf_token %}
 <select name="category_food">
 <option value="0">---</option>
@@ -19,17 +36,18 @@
 {% endfor %}
 <button class="btn btn-default" type="submit">Button</button>
 </form>
+-->
 <div class="table-responsive">
 <table class="table table-striped table-hover table-condensed">
-<thead>
+<thead style="font-size: 90%">
 <th>Categoria</th>
-<th>Alimentos</th>
+<th>#Alimentos</th>
 <th>Calificación</th>
 <th>Colesterol</th>
-<th>Grasa</th>
+<th>Grasa Saturada</th>
 <th>Azucares</th>
 <th>Cafeina</th>
-<th>Sal</th>
+<th>Sodio</th>
 <th>Calorias</th>
 <th>Almidones</th>
 <th>Omega6:Omega3</th>
@@ -55,15 +73,19 @@
     {% if nutr > 0 %}
     <td style="text-align: right;" class="danger">
     {% else %}
-    <td style="text-align: right;" class="info">
+    <td style="text-align: right;" class="success">
     {% endif %}
     {{ nutr }}</td>
     {% endif %}
 {% endfor %}
-{% if radio > 4 %}
-<td class="danger">
-{% else %}
+{% if radio < 4 %}
 <td class="info">
+{% else %}
+{% if radio < 9 %}
+<td class="success">
+{% else %}
+<td class="danger">
+{% endif %}
 {% endif %}
 {{ radio }}:1</span></td>
 </tr>

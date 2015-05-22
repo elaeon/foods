@@ -2,20 +2,22 @@
 {% load staticfiles %}
 
 {% block contenido_base %}
-<h2>Alimentos</h2>
-<h3>{{ categoria }}</h3>
-
+<div class="container">
+<div class="starter-template">
+<h2>{{ categoria }}</h2>
 
 {% if order == "alfanumeric" %}
-<a href="{% url 'list_food_category' category_id 'best' %}">Alfanumérico</a>
+<p>Los alimentos están ordenados alfanuméricamente. Desea cambiar el orden a <a role="button" class="btn btn-primary" href="{% url 'list_food_category' category_id 'best' %}">Mejores</a>
 {% for food_id, food, val in foods %}
 <div><a href="{% url 'view_food' food_id %}">{{ food }}</a>{{ val }}</div>
 {% endfor %}
 {% else %}
-<a href="{% url 'list_food_category' category_id 'alfanumeric' %}">Alfanumérico</a>
+<p>Los alimentos están ordenados por sus beneficios alimenticios. Desea cambiar el orden a <a role="button" class="btn btn-primary" href="{% url 'list_food_category' category_id 'alfanumeric' %}">Alfanumérico</a></p>
 {% for i, food in foods %}
-<div>{{ i }}<a href="{% url 'view_food' food.attr.0 %}">{{ food.attr.1 }}</a></div>
+<div>{{ i }}.- <a href="{% url 'view_food' food.attr.0 %}">{{ food.attr.1 }}</a></div>
 {% endfor %}
 {% endif %}
+</div>
+</div>
 {% endblock %}
 
