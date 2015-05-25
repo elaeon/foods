@@ -57,6 +57,14 @@ def avg_nutrients():
         nutr[nutr_no].append(float(avg))
     return nutr
 
+def avg_omega():
+    from collections import namedtuple
+    Omegas = namedtuple('Omega', 'omega3 omega6 omega7 omega9 radio')
+    _, cursor = conection()
+    query = """SELECT AVG(omega3), AVG(omega6), AVG(omega7), AVG(omega9), AVG(radio) FROM omega"""
+    cursor.execute(query)
+    return Omegas(*map(float, cursor.fetchall()[0]))
+
 def normalize(raw_data, index, base):
     return [list(value[0:index]) + [value[index] / base] + list(value[index+1:len(value)]) for value in raw_data]
 
@@ -180,7 +188,10 @@ def best_of_query(nutr_no_list, category_food):
     nutr = Food.get_matrix("nutavg.p")
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
     querys = []
+    #print nutr_avg
     def query_build(nutr_no, avg, caution, category_food):
+        #if nutr_no.startswith("omega"):
+        #    print nutr_no
         query = """
             SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val, units
             FROM nut_data, food_des, nutr_def 
@@ -229,7 +240,8 @@ class Rank(object):
         return category_nutr
 
     def ids2data_sorted(self):
-        data = {}
+        from collections import OrderedDict
+        data = OrderedDict()
         if self.base_food is None:
             self.base_food = set(self.foods.keys())
         for nutr_no in self.category_nutr.keys():
@@ -245,6 +257,7 @@ class Rank(object):
 
     def enumerateX(self, data):
         indice = 0
+        # added extra tuple, because the last element in the list need to be evaluate
         data_tmp = data + [(None, None, 0)]
         for x, y in zip(data_tmp, data_tmp[1:]):
             if abs(x[2] - y[2]) > 0:
@@ -259,7 +272,7 @@ class Rank(object):
             for i, v in self.enumerateX(category_nutr[nutr_no]):
                 positions.setdefault(v[0], {"attr": v[:2], "i": 0, "val": []})
                 positions[v[0]]["i"] += i
-                # we evaluate if is caution
+                # we evaluate if is 'caution' v[5]
                 diff_avg = v[2] - v[3] if not v[5] else v[3] - v[2]
                 positions[v[0]]["val"].append((v[2], diff_avg, v[4]))
         return sorted(positions.values(), key=lambda x: x["i"])
@@ -450,7 +463,10 @@ class Food(object):
         if avg:
             nutavg_vector = self.get_matrix("nutavg.p")
             if len(nutavg_vector) == 0:
-                nutavg_vector = [e[1:] + [""] for e in sorted(avg_nutrients().values())]
+                #append the units with blank ''
+                omegas = avg_omega()
+                nutavg_vector = [e[1:] + [""] for e in sorted(avg_nutrients().values())] +\
+                                zip(omegas._fields[:-1], sorted(OMEGAS.keys()), omegas[:-1], ['g'] * len(omegas[:-1]))
                 self.save_matrix("nutavg.p", nutavg_vector)
 
             all_nutr, omegas = self.subs_omegas(nutavg_vector)
@@ -496,7 +512,7 @@ class Food(object):
                     omega = None
             
                 if omega is not None:
-                    omegas.setdefault(omega, [omega, 0, u])
+                    omegas.setdefault(omega, [omega.replace(" ", ""), 0, u])
                     omegas[omega][1] += v
             else:
                 n_features.append((nutr_no, nut, v, u))
