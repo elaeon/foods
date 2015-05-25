@@ -1,3 +1,5 @@
+---CREATE EXTENSION unaccent
+---CREATE EXTENSION pg_trgm
 
 ---- Fast search
 DROP MATERIALIZED VIEW searchall_index;
