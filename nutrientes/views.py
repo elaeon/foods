@@ -7,21 +7,33 @@ import random
 
 # Create your views here.
 def index(request):
-    from nutrientes.utils import category_food_list, nutr_features_group, Food
-    from nutrientes.utils import categories_foods
+    from nutrientes.utils import category_food_list
     
-    #features = nutr_features_group(order_by="nutrdesc")
-    #fields, omegas = Food.subs_omegas([(e[0], e[1], 0, e[2]) for e in features])
-    #nutr = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
-    #categories = categories_foods()
     width_img_rand = random.uniform(0, 60)
     height_img_rand = random.uniform(70, 100)
     return render(request, "index.html", {
         "category_food": category_food_list(), 
-        #"nutr": nutr, 
-        #"categories": categories,
         "width_img_rand": width_img_rand,
         "height_img_rand": height_img_rand})
+
+
+def nutrient_selection(request):
+    from collections import defaultdict
+    from nutrientes.utils import nutr_features_group, categories_foods, Food
+
+    features = nutr_features_group(order_by="nutrdesc")
+    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, e[2]) for e in features])
+    nutr = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
+    categories = categories_foods()
+    
+    nutr_group = defaultdict(list)
+    for nutr_no, name, _, group_name in nutr:
+        nutr_group[group_name].append((nutr_no, name))
+
+    nutr_group_order = sorted(nutr_group.items())
+    return render(request, "nutrient_selection.html", {
+        "nutr_group": nutr_group_order, 
+        "categories": categories})
 
 
 def ajax_search(request):
@@ -111,13 +123,11 @@ def list_food_category(request, category_id, order):
     from nutrientes.utils import best_of_general_2
 
     categoria = alimentos_category_name(category_id)[0][0]
-    print order
     if order == u"alfanumeric":
         foods = alimentos_category(category=category_id, limit="limit 9000")        
     else:
         foods = best_of_general_2(category_id)
 
-    print category_id
     return render(request, "food_category.html", {
         "foods": foods, 
         "categoria": categoria, 
@@ -130,14 +140,12 @@ def best_of_nutrients(request):
     from nutrientes.utils import best_of_query
 
     if request.method == "POST":
-        print request.POST
-        nutr_nos = tuple(map(str, request.POST.getlist("nutr_no")))
-        if len(nutr_nos) == 1:
-            nutr_nos = "('" + nutr_nos[0] + "')"
+        #print request.POST
+        nutr_nos = request.POST.getlist("nutr_no")
         category_food = request.POST.get("category_food", '0')
         category_food = None if category_food == '0' else category_food
-        foods = best_of_query(nutr_nos, category_food)
-        nutrs = nutr_features_ids(nutr_nos)
+        rank = best_of_query(nutr_nos, category_food)
+        nutrs = nutr_features_ids(rank.category_nutr.keys())
         try:
             categoria = alimentos_category_name(category_food)[0][0]
         except IndexError:
@@ -147,7 +155,7 @@ def best_of_nutrients(request):
         categoria = ""
         nutrs = []
     return render(request, "food_attr_check.html", {
-        "foods": foods, 
+        "foods": rank.order, 
         "categoria": categoria, 
         "nutrs": nutrs})
 

@@ -1,0 +1,2 @@
+import from ascii files
+\copy TABLE_NAME FROM 'FILENAME.txt' (FORMAT CSV, DELIMITER '^', QUOTE '~');

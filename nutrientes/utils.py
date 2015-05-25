@@ -35,7 +35,10 @@ def nutr_features_group(order_by="sr_order"):
 
 def nutr_features_ids(ids):
     _, cursor = conection()
-    query  = """SELECT nutr_no, nutrdesc FROM nutr_def WHERE nutr_no IN {ids}""".format(ids=ids)
+    ids_order = ",".join(("(%s,'%s')" % (i, id) for i, id in enumerate(ids)))
+    query = """SELECT nutr_def.nutr_no, nutrdesc 
+                FROM nutr_def JOIN (VALUES {ids}) as x (ordering, nutr_no) 
+                ON nutr_def.nutr_no = x.nutr_no ORDER BY x.ordering""".format(ids=ids_order)
     cursor.execute(query)
     return cursor.fetchall()
 
@@ -178,24 +181,13 @@ def best_of_query(nutr_no_list, category_food):
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
     querys = []
     def query_build(nutr_no, avg, caution, category_food):
-        if caution:
-            query = """
-                SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val
-                FROM nut_data, food_des, nutr_def 
-                WHERE nut_data.ndb_no=food_des.ndb_no 
-                AND nutr_def.nutr_no=nut_data.nutr_no 
-                AND nutr_val < {avg}
-                AND nut_data.nutr_no='{nutr_no}'
-            """
-        else:
-            query = """
-                SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val
-                FROM nut_data, food_des, nutr_def 
-                WHERE nut_data.ndb_no=food_des.ndb_no 
-                AND nutr_def.nutr_no=nut_data.nutr_no 
-                AND nutr_val >= {avg}
-                AND nut_data.nutr_no='{nutr_no}'
-            """
+        query = """
+            SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val, units
+            FROM nut_data, food_des, nutr_def 
+            WHERE nut_data.ndb_no=food_des.ndb_no 
+            AND nutr_def.nutr_no=nut_data.nutr_no 
+            AND nut_data.nutr_no='{nutr_no}'
+        """
 
         if category_food:
             query += """ AND food_des.fdgrp_cd='{category_food}'"""
@@ -207,7 +199,7 @@ def best_of_query(nutr_no_list, category_food):
     for nutr_no, (avg, caution) in nutr_avg.items():
         nutr_no, caution, query = query_build(nutr_no, avg, caution, category_food)
         cursor.execute(query)
-        querys.append((nutr_no, caution, cursor.fetchall()))
+        querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
     def get_ids_intersection(cat):
         set_base = set(cat.values()[0]["data"].keys())
@@ -215,31 +207,39 @@ def best_of_query(nutr_no_list, category_food):
             set_base = set_base.intersection(set(v["data"].keys()))
         return set_base
 
-    rank = Rank()
-    cat = rank.get_categories_nutr(querys)
-    return rank.order(cat, get_ids_intersection(cat))
+    rank = Rank(querys)
+    rank.base_food = get_ids_intersection(rank.category_nutr)
+    return rank
 
 class Rank(object):
-    def __init__(self):
+    def __init__(self, base_food_querys):
         self.foods = {}
+        self.category_nutr = {}
+        self.base_food = None
+        self.base_food_querys = base_food_querys
+        self.category_nutr = self.get_categories_nutr()
 
-    def get_categories_nutr(self, querys):
+    def get_categories_nutr(self):
         category_nutr = {}
-        for nutr_no, caution, result_query in querys:
-            category_nutr[nutr_no] = {"caution": caution, "data": {}}
-            for ndb_no, long_desc_es, nutr_val in result_query:
-                category_nutr[nutr_no]["data"][ndb_no] = (nutr_val, long_desc_es)
+        for nutr_no, caution, avg, result_query in self.base_food_querys:
+            category_nutr[nutr_no] = {"caution": caution, "data": {}, "avg": avg}
+            for ndb_no, long_desc_es, nutr_val, units in result_query:
+                category_nutr[nutr_no]["data"][ndb_no] = (nutr_val, long_desc_es, units)
                 self.foods[ndb_no] = long_desc_es
         return category_nutr
 
-    def ids2data_sorted(self, category_nutr, set_base):
+    def ids2data_sorted(self):
         data = {}
-        for nutr_no in category_nutr.keys():
+        if self.base_food is None:
+            self.base_food = set(self.foods.keys())
+        for nutr_no in self.category_nutr.keys():
             data.setdefault(nutr_no, [])
-            reverse = not bool(category_nutr[nutr_no]["caution"])
-            for ndb_no in set_base:
-                nutr_val, long_desc_es = category_nutr[nutr_no]["data"].get(ndb_no, ([0, self.foods.get(ndb_no, None)]))
-                data[nutr_no].append((ndb_no, long_desc_es, float(nutr_val)))
+            reverse = not bool(self.category_nutr[nutr_no]["caution"])
+            avg = self.category_nutr[nutr_no]["avg"]
+            for ndb_no in self.base_food:
+                nutr_val, long_desc_es, units = self.category_nutr[nutr_no]["data"].get(ndb_no, ([0, self.foods.get(ndb_no, None), '']))
+                nutr_val = float(nutr_val)
+                data[nutr_no].append((ndb_no, long_desc_es, nutr_val, avg, units, not reverse))
             data[nutr_no].sort(reverse=reverse, key=lambda x: x[2])
         return data
 
@@ -259,7 +259,9 @@ class Rank(object):
             for i, v in self.enumerateX(category_nutr[nutr_no]):
                 positions.setdefault(v[0], {"attr": v[:2], "i": 0, "val": []})
                 positions[v[0]]["i"] += i
-                positions[v[0]]["val"].append(v[2])
+                # we evaluate if is caution
+                diff_avg = v[2] - v[3] if not v[5] else v[3] - v[2]
+                positions[v[0]]["val"].append((v[2], diff_avg, v[4]))
         return sorted(positions.values(), key=lambda x: x["i"])
 
     def rank2natural(self, data):
@@ -271,8 +273,8 @@ class Rank(object):
                 index += 1
             yield index, d
     
-    def order(self, category_nutr, base_food):
-        return self.rank2natural(self.sorted_data(self.ids2data_sorted(category_nutr, base_food)))
+    def order(self):
+        return self.rank2natural(self.sorted_data(self.ids2data_sorted()))
 
 def best_of_general(name, category):
     from collections import namedtuple
@@ -322,7 +324,7 @@ def best_of_general_2(category, name=None):
     querys = []
     def query_build(nutr_no, category_food):
         query = """
-            SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val
+            SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val, units
             FROM nut_data, food_des, nutr_def 
             WHERE nut_data.ndb_no=food_des.ndb_no 
             AND nutr_def.nutr_no=nut_data.nutr_no 
@@ -339,11 +341,10 @@ def best_of_general_2(category, name=None):
     for nutr_no, (avg, caution) in nutr_avg.items():
         nutr_no, caution, query = query_build(nutr_no, category)
         cursor.execute(query)
-        querys.append((nutr_no, caution, cursor.fetchall()))
+        querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
-    rank = Rank()
-    category_nutr = rank.get_categories_nutr(querys)
-    rank_foods = rank.order(category_nutr, set(rank.foods.keys()))
+    rank = Rank(querys)
+    rank_foods = rank.order()
     return rank_foods
 
     

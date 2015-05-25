@@ -1,0 +1,32 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div class="container">
+    <div class="starter-template">
+        <form action="{% url 'best_of_nutrients' %}" method="POST">
+        {% csrf_token %}
+        <select name="category_food">
+        <option value="0">Todas las categorias</option>
+        {% for fdgrp_cd, fdgrp_desc_es in categories %}
+        <option value="{{ fdgrp_cd }}">{{ fdgrp_desc_es }}</option>
+        {% endfor %}
+        </select>
+        <button class="btn btn-default" type="submit">Consultar</button>
+        <h3>Seleccione los nutrientes que desea buscar en los alimentos</h3>
+        {% for group, values in nutr_group %}
+        <div class="col-md-2">
+        <b>{{ group }}</b>
+        {% for nutr_no, nutr_name in values %}
+        <div class="checkbox">
+        <label>
+        <input name="nutr_no" type="checkbox" value="{{ nutr_no }}"> {{ nutr_name }}
+        </label>
+        </div>
+        {% endfor %}
+        </div>
+        {% endfor %}
+        </form>
+    </div>
+</div>
+{% endblock %}

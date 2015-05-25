@@ -28,4 +28,5 @@ urlpatterns = [
     url(r'^category_food/(?P<category_id>\w+)/(?P<order>\w+)/$', views.list_food_category, name="list_food_category"),
     url(r'^best_of_nutrients/$', views.best_of_nutrients, name="best_of_nutrients"),
     url(r'^about/$', views.about, name="about"),
+    url(r'^nutrient_selection/$', views.nutrient_selection, name="nutrient_selection"),
 ]
