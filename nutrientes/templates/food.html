@@ -23,7 +23,7 @@
         </div>
     </div>
     <div class="col-md-5 col-md-pull-6">
-        <img src="http://lorempixel.com/400/200/" class="img-rounded"></img>
+        <img src="http://lorempixel.com/400/200/" class="img-rounded">
         <div style="font-size:80%">
             <button onclick="javascript:agregar();">Agregar</button>
             <form action="{% url 'food_compare' %}" method="POST" onSubmit="return check_submit();">
@@ -53,8 +53,7 @@
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
 
 <script type="text/javascript">
-var num_foods_added_l = {{ food_compare.items|safe }};
-var num_foods_added = num_foods_added_l.length;
+var num_foods_added = {{ food_compare|length }};
 
 function check_submit() {
     if(num_foods_added >= 0) {

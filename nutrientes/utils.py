@@ -336,13 +336,14 @@ def best_of_general(name, category):
         total.append((calif, n.ndb_no))
     print [foods[ndb_no].name for _, ndb_no in sorted(total, reverse=True)[:100]]
     
-def best_of_general_2(category, name=None):
+def best_of_general_2(category=None, name=None):
     _, cursor = conection()
     nutr = Food.get_matrix("nutavg.p")
     # hasheamos las llaves para mantener el orden
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
     querys = []
-    def query_build(nutr_no, category_food):
+    def query_build(nutr_no, category_food, name=None):
+        attrs = {"nutr_no": nutr_no}
         query = """
             SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val, units
             FROM nut_data, food_des, nutr_def 
@@ -351,11 +352,15 @@ def best_of_general_2(category, name=None):
             AND nut_data.nutr_no='{nutr_no}'
         """
 
+        if name is not None:
+            query += """ AND long_desc_es ilike '%{name}%'"""
+            attrs["name"] = name
+
         if category_food:
             query += """ AND food_des.fdgrp_cd='{category_food}'"""
-            query = query.format(nutr_no=nutr_no, category_food=category_food)
-        else:
-            query = query.format(nutr_no=nutr_no)
+            attrs["category_food"] = category_food
+
+        query = query.format(**attrs)
         return (nutr_no, caution, query)
 
     for nutr_no, (avg, caution) in nutr_avg.items():
@@ -364,10 +369,14 @@ def best_of_general_2(category, name=None):
         querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
     rank = Rank(querys)
-    rank_foods = rank.order()
-    return rank_foods
+    return rank.order()
 
-    
+def best_all():
+    ranking_list = Food.get_matrix("ranking.p")
+    if len(ranking_list) == 0:
+        ranking_list = [(i, food["attr"][0]) for i, food in best_of_general_2()]
+        Food.save_matrix("ranking.p", ranking_list)
+
 caution_nutr = {
     "601": "Cholesterol",
     "204": "Total lipid (fat)",
