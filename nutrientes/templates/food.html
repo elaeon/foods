@@ -5,9 +5,16 @@
 <div class="container">
 <div class="starter-template">
 <h2>{{ food.name }}</h2>
+<h4><a href="{% url 'list_food_category' food.group.id 'best' %}">{{ food.group.name }}</a></h4>
 <div class="row">
     <div class="col-md-6 col-md-push-5">
-        <p>Radio de Omegas: {{ food.radio }} <a role="button" class="btn btn-primary btn-xs" href="{% url 'view_romega' %}">ver más</a></p>
+        <p>Radio de Omegas: 
+            {% if food.radio_omega_raw > 4 %}
+                <span style="color: red;">
+            {% else %}
+                <span style="color: green;">
+            {% endif %}
+            {{ food.radio }}</span> <a role="button" class="btn btn-primary btn-xs" href="{% url 'view_romega' %}">ver más</a></p>
         <p>Alimentos relacionados</p>
         <div style="font-size:70%">
         {% for ndb_no, other_food, distance in food.similarity %}
@@ -19,7 +26,7 @@
         <img src="http://lorempixel.com/400/200/" class="img-rounded"></img>
         <div style="font-size:80%">
             <button onclick="javascript:agregar();">Agregar</button>
-            <form action="{% url 'food_compare' %}" method="POST">
+            <form action="{% url 'food_compare' %}" method="POST" onSubmit="return check_submit();">
             {% csrf_token %}            
             <button type="submit">Comparar</button>
             </form>
@@ -46,6 +53,17 @@
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
 
 <script type="text/javascript">
+var num_foods_added_l = {{ food_compare.items|safe }};
+var num_foods_added = num_foods_added_l.length;
+
+function check_submit() {
+    if(num_foods_added >= 0) {
+        alert("Agregue otro producto para compararlo.");
+        return false;
+    }
+    return true;
+}
+
 function agregar() {
     var request = $.ajax({
         type: "POST",
@@ -55,6 +73,7 @@ function agregar() {
     });
     request.done(function(data) {
         if(data) {
+            num_foods_added += 1;
             $("<div></div>", 
                 {"id": 'comparationContainer-{{ food.ndb_no }}'}).appendTo("#comparationContainer");
             $("<a></a>", {
@@ -78,6 +97,7 @@ function borrar(id) {
     });
     request.done(function(data) {
         if(data) {
+            num_foods_added -= 1;
             $("#comparationContainer-"+data).remove();
         }
     });

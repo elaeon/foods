@@ -13,13 +13,8 @@ def conection():
     cursor = conn.cursor()
     return conn, cursor
 
-def group_data(data, exclude=set([])):
-    from collections import defaultdict
-    group = defaultdict(list)
-    for food_desc, nutr_no, nut, v, u in data:
-        if not nutr_no in exclude:
-            group[food_desc].append((nutr_no, nut, float(v), u))
-    return group
+def exclude_data(data, exclude=set([])):
+    return [(nutr_no, nut, float(v), u) for nutr_no, nut, v, u in data if not nutr_no in exclude]
 
 def nutr_features(order_by="sr_order"):
     _, cursor = conection()
@@ -36,11 +31,21 @@ def nutr_features_group(order_by="sr_order"):
 def nutr_features_ids(ids):
     _, cursor = conection()
     ids_order = ",".join(("(%s,'%s')" % (i, id) for i, id in enumerate(ids)))
+    omegas = set([omega.replace(" ", "") for omega in OMEGAS.keys()])
+    omegas_index = []
+    for omega in omegas:
+        try:
+            omegas_index.append((ids.index(omega), omega))
+        except ValueError:
+            pass
     query = """SELECT nutr_def.nutr_no, nutrdesc 
                 FROM nutr_def JOIN (VALUES {ids}) as x (ordering, nutr_no) 
                 ON nutr_def.nutr_no = x.nutr_no ORDER BY x.ordering""".format(ids=ids_order)
     cursor.execute(query)
-    return cursor.fetchall()
+    data = cursor.fetchall()
+    for index, omega in omegas_index:
+        data.insert(index, (omega, omega))
+    return data
 
 def categories_foods():
     _, cursor = conection()
@@ -188,17 +193,19 @@ def best_of_query(nutr_no_list, category_food):
     nutr = Food.get_matrix("nutavg.p")
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
     querys = []
-    #print nutr_avg
     def query_build(nutr_no, avg, caution, category_food):
-        #if nutr_no.startswith("omega"):
-        #    print nutr_no
-        query = """
-            SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val, units
-            FROM nut_data, food_des, nutr_def 
-            WHERE nut_data.ndb_no=food_des.ndb_no 
-            AND nutr_def.nutr_no=nut_data.nutr_no 
-            AND nut_data.nutr_no='{nutr_no}'
-        """
+        if nutr_no.startswith("omega"):
+            query = """
+                SELECT food_des.ndb_no, food_des.long_desc_es, {omega}, 'g'
+                FROM food_des, omega 
+                WHERE omega.ndb_no=food_des.ndb_no""".format(omega=nutr_no)
+        else:
+            query = """
+                SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val, units
+                FROM nut_data, food_des, nutr_def 
+                WHERE nut_data.ndb_no=food_des.ndb_no 
+                AND nutr_def.nutr_no=nut_data.nutr_no 
+                AND nut_data.nutr_no='{nutr_no}'"""
 
         if category_food:
             query += """ AND food_des.fdgrp_cd='{category_food}'"""
@@ -404,6 +411,7 @@ class Food(object):
     def __init__(self, ndb_no=None, avg=True):
         self.nutrients = None
         self.name = None
+        self.group = None
         self.radio_omega_raw = 0
         self.nutr_avg = None
         self.ndb_no = ndb_no
@@ -431,19 +439,18 @@ class Food(object):
     @classmethod
     def get_raw_nutrients(self, ndb_no):
         _, cursor = conection()
-        query  = """SELECT food_des.long_desc_es, nutr_def.nutr_no, nutrdesc, nutr_val, units
-                    FROM food_des, nut_data, nutr_def
-                    WHERE nut_data.ndb_no=food_des.ndb_no 
-                    AND nutr_def.nutr_no=nut_data.nutr_no
+        query  = """SELECT nutr_def.nutr_no, nutrdesc, nutr_val, units
+                    FROM nut_data, nutr_def
+                    WHERE nutr_def.nutr_no=nut_data.nutr_no
                     AND nutr_val > 0
-                    AND food_des.ndb_no='{ndb_no}' ORDER BY sr_order""".format(ndb_no=ndb_no)
+                    AND nut_data.ndb_no='{ndb_no}' ORDER BY sr_order""".format(ndb_no=ndb_no)
         cursor.execute(query)
         return cursor.fetchall()
 
     @classmethod
     def get_food(self, ndb_no):
         _, cursor = conection()
-        query  = """SELECT food_des.long_desc_es, fd_group.fdgrp_desc_es
+        query  = """SELECT food_des.long_desc_es, fd_group.fdgrp_desc_es, fd_group.fdgrp_cd
                     FROM food_des, fd_group
                     WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd 
                     AND food_des.ndb_no = '{ndb_no}'""".format(ndb_no=ndb_no)
@@ -454,9 +461,11 @@ class Food(object):
         if self.ndb_no is None and ndb_no is not None:
             self.ndb_no = ndb_no
         records = self.get_raw_nutrients(self.ndb_no)
-        g_data = group_data(records, exclude=set(["268"])) #Energy#ENERC_KJ
-        self.name = g_data.keys().pop()
-        features, omegas = self.subs_omegas(g_data.values()[0])
+        e_data = exclude_data(records, exclude=set(["268"])) #Energy#ENERC_KJ
+        food = self.get_food(self.ndb_no)
+        self.name = food[0][0]
+        self.group = {"name": food[0][1], "id": food[0][2]}
+        features, omegas = self.subs_omegas(e_data)
         self.nutrients = features + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
         self.radio_omega_raw = self.radio_raw(omegas.get("omega 6", [0,0,0])[1], omegas.get("omega 3", [0,0,0])[1])
         self.omegas = omegas
@@ -600,17 +609,15 @@ class Food(object):
         return (x[0] for x in cursor.fetchall())
 
     @classmethod
-    def train(self):
+    def train(self, force=False):
         matrix = self.get_matrix('matrix.p')
         fields = self.create_vector_fields_nutr()
-        if len(matrix) == 0:
+        if len(matrix) == 0 or force is True:
             print "Not pickle"
             ndb_nos = self.alimentos(limit="limit 9000")#"Fruits and Fruit Juices"
             for ndb_no in ndb_nos:
                 records = self.get_raw_nutrients(ndb_no)
                 vector = self.vector_features(fields, records)
-                #nutrients = group_data(records, exclude=set(exclude_nutr.keys()))
-                #vector = self.vector_features(fields, nutrients.values()[0])
                 matrix.append((ndb_no, vector.values()))
             self.save_matrix('matrix.p', matrix)
 

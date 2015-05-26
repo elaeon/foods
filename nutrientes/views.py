@@ -155,7 +155,7 @@ def best_of_nutrients(request):
         categoria = ""
         nutrs = []
     return render(request, "food_attr_check.html", {
-        "foods": rank.order, 
+        "foods": rank.order(),
         "categoria": categoria, 
         "nutrs": nutrs})
 

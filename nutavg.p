@@ -1050,4 +1050,33 @@ aS'Theobromine'
 p451
 aF7.696649029982363
 ag4
-aa.
+aa(S'omega3'
+p452
+S'omega 3'
+p453
+F0.30014933859364124
+S'g'
+p454
+tp455
+a(S'omega6'
+p456
+S'omega 6'
+p457
+F2.0074470874912973
+g454
+tp458
+a(S'omega7'
+p459
+S'omega 7'
+p460
+F4.496133905778603
+g454
+tp461
+a(S'omega9'
+p462
+S'omega 9'
+p463
+F0.0
+g454
+tp464
+a.

@@ -12,7 +12,7 @@
           <div class="color-swatch bg-danger" style="padding: 5px; text-align: center;">Debajo del promedio</div>
         </div>
         <table class="table table-striped table-hover table-condensed">
-        <thead>
+        <thead style="font-size: 90%">
         <th></th>
         {% for nutr in nutrs %}
            <th>{{ nutr.1 }}</th>
@@ -23,9 +23,9 @@
             <td>{{ i }}.- <a href="{% url 'view_food' food.attr.0 %}">{{ food.attr.1 }}</a></td>
             {% for val in food.val %}
             {% if val.1 < 0 %}
-                <td class="danger">{{ val.0 }}{{ val.2 }}</td>
+                <td  style="font-size: 90%" class="danger">{{ val.0 }}{{ val.2 }}</td>
             {% else %}
-                <td class="info">{{ val.0 }}{{ val.2 }}</td>
+                <td  style="font-size: 90%" class="info">{{ val.0 }}{{ val.2 }}</td>
             {% endif %}
             {% endfor %}
         </tr>
