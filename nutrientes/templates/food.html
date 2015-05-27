@@ -8,13 +8,14 @@
 <h4><a href="{% url 'list_food_category' food.group.id 'best' %}">{{ food.group.name }}</a></h4>
 <div class="row">
     <div class="col-md-6 col-md-push-5">
-        <p>Radio de Omegas: 
+        <p>Ranking: {{ food.ranking.total }} {{ food.ranking.category }}</p>
+        <p><a href="{% url 'view_romega' %}">Radio de Omegas:</a>
             {% if food.radio_omega_raw > 4 %}
                 <span style="color: red;">
             {% else %}
                 <span style="color: green;">
             {% endif %}
-            {{ food.radio }}</span> <a role="button" class="btn btn-primary btn-xs" href="{% url 'view_romega' %}">ver más</a></p>
+            {{ food.radio }}</span></p>
         <p>Alimentos relacionados</p>
         <div style="font-size:70%">
         {% for ndb_no, other_food, distance in food.similarity %}
@@ -56,7 +57,7 @@
 var num_foods_added = {{ food_compare|length }};
 
 function check_submit() {
-    if(num_foods_added >= 0) {
+    if(num_foods_added < 2) {
         alert("Agregue otro producto para compararlo.");
         return false;
     }

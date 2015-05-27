@@ -193,26 +193,6 @@ def best_of_query(nutr_no_list, category_food):
     nutr = Food.get_matrix("nutavg.p")
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
     querys = []
-    def query_build(nutr_no, avg, caution, category_food):
-        if nutr_no.startswith("omega"):
-            query = """
-                SELECT food_des.ndb_no, food_des.long_desc_es, {omega}, 'g'
-                FROM food_des, omega 
-                WHERE omega.ndb_no=food_des.ndb_no""".format(omega=nutr_no)
-        else:
-            query = """
-                SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val, units
-                FROM nut_data, food_des, nutr_def 
-                WHERE nut_data.ndb_no=food_des.ndb_no 
-                AND nutr_def.nutr_no=nut_data.nutr_no 
-                AND nut_data.nutr_no='{nutr_no}'"""
-
-        if category_food:
-            query += """ AND food_des.fdgrp_cd='{category_food}'"""
-            query = query.format(avg=avg, nutr_no=nutr_no, category_food=category_food)
-        else:
-            query = query.format(avg=avg, nutr_no=nutr_no)
-        return (nutr_no, caution, query)
 
     for nutr_no, (avg, caution) in nutr_avg.items():
         nutr_no, caution, query = query_build(nutr_no, avg, caution, category_food)
@@ -240,10 +220,12 @@ class Rank(object):
     def get_categories_nutr(self):
         category_nutr = {}
         for nutr_no, caution, avg, result_query in self.base_food_querys:
-            category_nutr[nutr_no] = {"caution": caution, "data": {}, "avg": avg}
+            category_nutr[nutr_no] = {"caution": caution, "data": {}, "avg": avg, "units": None}
+            units = None
             for ndb_no, long_desc_es, nutr_val, units in result_query:
-                category_nutr[nutr_no]["data"][ndb_no] = (nutr_val, long_desc_es, units)
+                category_nutr[nutr_no]["data"][ndb_no] = (nutr_val, long_desc_es)
                 self.foods[ndb_no] = long_desc_es
+            category_nutr[nutr_no]["units"] = units
         return category_nutr
 
     def ids2data_sorted(self):
@@ -254,11 +236,10 @@ class Rank(object):
         for nutr_no in self.category_nutr.keys():
             data.setdefault(nutr_no, [])
             reverse = not bool(self.category_nutr[nutr_no]["caution"])
-            avg = self.category_nutr[nutr_no]["avg"]
             for ndb_no in self.base_food:
-                nutr_val, long_desc_es, units = self.category_nutr[nutr_no]["data"].get(ndb_no, ([0, self.foods.get(ndb_no, None), '']))
+                nutr_val, long_desc_es = self.category_nutr[nutr_no]["data"].get(ndb_no, ([0, self.foods.get(ndb_no, None)]))
                 nutr_val = float(nutr_val)
-                data[nutr_no].append((ndb_no, long_desc_es, nutr_val, avg, units, not reverse))
+                data[nutr_no].append((ndb_no, long_desc_es, nutr_val))
             data[nutr_no].sort(reverse=reverse, key=lambda x: x[2])
         return data
 
@@ -280,8 +261,10 @@ class Rank(object):
                 positions.setdefault(v[0], {"attr": v[:2], "i": 0, "val": []})
                 positions[v[0]]["i"] += i
                 # we evaluate if is 'caution' v[5]
-                diff_avg = v[2] - v[3] if not v[5] else v[3] - v[2]
-                positions[v[0]]["val"].append((v[2], diff_avg, v[4]))
+                avg = self.category_nutr[nutr_no]["avg"]
+                caution = self.category_nutr[nutr_no]["caution"]
+                diff_avg = v[2] - avg if not caution else avg - v[2]
+                positions[v[0]]["val"].append((v[2], diff_avg, self.category_nutr[nutr_no]["units"]))
         return sorted(positions.values(), key=lambda x: x["i"])
 
     def rank2natural(self, data):
@@ -336,46 +319,76 @@ def best_of_general(name, category):
         total.append((calif, n.ndb_no))
     print [foods[ndb_no].name for _, ndb_no in sorted(total, reverse=True)[:100]]
     
-def best_of_general_2(category=None, name=None):
-    _, cursor = conection()
-    nutr = Food.get_matrix("nutavg.p")
-    # hasheamos las llaves para mantener el orden
-    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
-    querys = []
-    def query_build(nutr_no, category_food, name=None):
-        attrs = {"nutr_no": nutr_no}
+
+def query_build(nutr_no, category_food, name=None):
+    attrs = {"nutr_no": nutr_no}
+    if nutr_no.startswith("omega"):
+        query = """
+            SELECT food_des.ndb_no, food_des.long_desc_es, {omega}, 'g'
+            FROM food_des, omega 
+            WHERE omega.ndb_no=food_des.ndb_no"""
+        attrs["omega"] = nutr_no
+    else:
         query = """
             SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val, units
             FROM nut_data, food_des, nutr_def 
             WHERE nut_data.ndb_no=food_des.ndb_no 
             AND nutr_def.nutr_no=nut_data.nutr_no 
-            AND nut_data.nutr_no='{nutr_no}'
-        """
+            AND nut_data.nutr_no='{nutr_no}'"""
 
-        if name is not None:
-            query += """ AND long_desc_es ilike '%{name}%'"""
-            attrs["name"] = name
+    if name is not None:
+        query += """ AND long_desc_es ilike '%{name}%'"""
+        attrs["name"] = name
 
-        if category_food:
-            query += """ AND food_des.fdgrp_cd='{category_food}'"""
-            attrs["category_food"] = category_food
+    if category_food:
+        query += """ AND food_des.fdgrp_cd='{category_food}'"""
+        attrs["category_food"] = category_food
 
-        query = query.format(**attrs)
-        return (nutr_no, caution, query)
+    query = query.format(**attrs)
+    return query
 
+def best_of_general_2(category=None, name=None):
+    _, cursor = conection()
+    nutr = Food.get_matrix("nutavg.p")
+    # hasheamos las llaves para mantener el orden
+    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
+
+    querys_good = []
+    querys_bad = []
     for nutr_no, (avg, caution) in nutr_avg.items():
-        nutr_no, caution, query = query_build(nutr_no, category)
+        query = query_build(nutr_no, category)
         cursor.execute(query)
-        querys.append((nutr_no, caution, avg, cursor.fetchall()))
+        if caution:
+            querys_bad.append((nutr_no, caution, avg, cursor.fetchall()))
+        else:
+            querys_good.append((nutr_no, caution, avg, cursor.fetchall()))
 
-    rank = Rank(querys)
-    return rank.order()
+    rank = Rank(querys_good)
+    order_good = rank.order()
+    rank = Rank(querys_bad)
+    order_bad = rank.order()
+    good = ((i, food["attr"][0], food["attr"][1]) for i, food in order_good)
+    bad =  ((i, food["attr"][0], food["attr"][1]) for i, food in order_bad)
+
+    total = {ndb_no: {"g": i, "name": name} for i, ndb_no, name in good}
+        
+    for i, ndb_no, name in bad:
+        if ndb_no in total:
+            total[ndb_no]["b"] = i
+            total[ndb_no]["name"] = name
+        else:
+            total[ndb_no] = {"b": i, "name": name}
+    results = [(v.get("g", 10000) + v.get("b", 0) * 5, ndb_no, v["name"], v.get("g", "-"), v.get("b", "-")) 
+                for ndb_no, v in total.items()]
+    results.sort()
+    return results
 
 def best_all():
     ranking_list = Food.get_matrix("ranking.p")
     if len(ranking_list) == 0:
-        ranking_list = [(i, food["attr"][0]) for i, food in best_of_general_2()]
+        ranking_list = [(v, ndb_no) for v, ndb_no, _, _, _ in best_of_general_2()]
         Food.save_matrix("ranking.p", ranking_list)
+    return ranking_list
 
 caution_nutr = {
     "601": "Cholesterol",
@@ -439,6 +452,12 @@ class Food(object):
         except ZeroDivisionError:
             return 0
 
+    def ranking(self):
+        ranking_list = Food.get_matrix("ranking.p")
+        d = {ndb_no: i for i, (_, ndb_no) in enumerate(ranking_list, 1)}
+        d1 = {ndb_no: i for i, (v, ndb_no, _, _, _) in enumerate(best_of_general_2(self.group["id"]), 1)}
+        return {"total": d[self.ndb_no], "category": d1[self.ndb_no]}
+
     def radio(self):
         if self.radio_omega_raw == 0 and self.omegas.get("omega3", [0,0])[1] == 0:
             return "%s:0" % (round(self.omegas.get("omega6", [0,0])[1], 2),)
@@ -489,7 +508,7 @@ class Food(object):
 
             all_nutr, omegas = self.subs_omegas(nutavg_vector)
             omegas = filter(lambda x: x[1] is not None, ((key, omegas.get(key, None)) for key in self.omegas.keys()))
-            self.nutr_avg = self.exclude_features(all_nutr) + [(v[0], k, v[1], v[2]) for k, v in omegas]
+            self.nutr_avg = self.exclude_features(all_nutr)# + [(v[0], k, v[1], v[2]) for k, v in omegas]
 
     @classmethod
     def subs_omegas(self, features):

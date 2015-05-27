@@ -13,8 +13,8 @@
 {% endfor %}
 {% else %}
 <p>Los alimentos están ordenados por sus beneficios alimenticios. Desea cambiar el orden a <a role="button" class="btn btn-primary" href="{% url 'list_food_category' category_id 'alfanumeric' %}">Alfanumérico</a></p>
-{% for i, food in foods %}
-<div>{{ i }}.- <a href="{% url 'view_food' food.attr.0 %}">{{ food.attr.1 }}</a></div>
+{% for food in foods %}
+<div><a href="{% url 'view_food' food.1 %}">{{ food.2 }}</a>{{ food.3 }} {{ food.4 }}</div>
 {% endfor %}
 {% endif %}
 </div>
