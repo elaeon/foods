@@ -22,13 +22,14 @@ def nutrient_selection(request):
     from nutrientes.utils import nutr_features_group, categories_foods, Food
 
     features = nutr_features_group(order_by="nutrdesc")
-    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, e[2]) for e in features])
+    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, e[2]+"#"+str(e[3])) for e in features])
     nutr = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
     categories = categories_foods()
     
     nutr_group = defaultdict(list)
-    for nutr_no, name, _, group_name in nutr:
-        nutr_group[group_name].append((nutr_no, name))
+    for nutr_no, name, _, group_and_desc in nutr:
+        group_name, desc = group_and_desc.split("#")
+        nutr_group[group_name].append((nutr_no, name, desc))
 
     nutr_group_order = sorted(nutr_group.items())
     return render(request, "nutrient_selection.html", {

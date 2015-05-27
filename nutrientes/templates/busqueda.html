@@ -37,6 +37,7 @@
 
 <script type="text/javascript" src="{% static 'jquery.1.9.1.min.js' %}"></script>
 <script type="text/javascript" src="{% static 'jquery.autocomplete.1.2.7.js' %}"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 <script type="text/javascript">
 function preg_quote( str ) {
     // http://kevin.vanzonneveld.net
@@ -81,7 +82,7 @@ $('#text-input').autocomplete({
         window.location.replace("/food/"+suggestion.data.id+"/")
     },
 });
-</script>
 {% block js %}{% endblock %}
+</script>
 </body>
 </html>

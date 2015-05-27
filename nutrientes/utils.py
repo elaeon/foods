@@ -24,7 +24,7 @@ def nutr_features(order_by="sr_order"):
 
 def nutr_features_group(order_by="sr_order"):
     _, cursor = conection()
-    query  = """SELECT nutr_no, nutrdesc, nutr_def.group FROM nutr_def ORDER BY {order_by}""".format(order_by=order_by)
+    query  = """SELECT nutr_no, nutrdesc, nutr_def.group, nutr_def.desc FROM nutr_def ORDER BY {order_by}""".format(order_by=order_by)
     cursor.execute(query)
     return cursor.fetchall()
 
@@ -38,14 +38,17 @@ def nutr_features_ids(ids):
             omegas_index.append((ids.index(omega), omega))
         except ValueError:
             pass
-    query = """SELECT nutr_def.nutr_no, nutrdesc 
-                FROM nutr_def JOIN (VALUES {ids}) as x (ordering, nutr_no) 
-                ON nutr_def.nutr_no = x.nutr_no ORDER BY x.ordering""".format(ids=ids_order)
-    cursor.execute(query)
-    data = cursor.fetchall()
-    for index, omega in omegas_index:
-        data.insert(index, (omega, omega))
-    return data
+    if len(ids_order) > 0:
+        query = """SELECT nutr_def.nutr_no, nutrdesc 
+                    FROM nutr_def JOIN (VALUES {ids}) as x (ordering, nutr_no) 
+                    ON nutr_def.nutr_no = x.nutr_no ORDER BY x.ordering""".format(ids=ids_order)
+        cursor.execute(query)
+        data = cursor.fetchall()
+        for index, omega in omegas_index:
+            data.insert(index, (omega, omega))
+        return data
+    else:
+        return []
 
 def categories_foods():
     _, cursor = conection()
@@ -195,15 +198,18 @@ def best_of_query(nutr_no_list, category_food):
     querys = []
 
     for nutr_no, (avg, caution) in nutr_avg.items():
-        nutr_no, caution, query = query_build(nutr_no, avg, caution, category_food)
+        query = query_build(nutr_no, category_food)
         cursor.execute(query)
         querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
     def get_ids_intersection(cat):
-        set_base = set(cat.values()[0]["data"].keys())
-        for v in cat.values()[1:]:
-            set_base = set_base.intersection(set(v["data"].keys()))
-        return set_base
+        if len(cat.values()) > 0:
+            set_base = set(cat.values()[0]["data"].keys())
+            for v in cat.values()[1:]:
+                set_base = set_base.intersection(set(v["data"].keys()))
+            return set_base
+        else:
+            return set([])
 
     rank = Rank(querys)
     rank.base_food = get_ids_intersection(rank.category_nutr)
@@ -331,9 +337,9 @@ def query_build(nutr_no, category_food, name=None):
     else:
         query = """
             SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val, units
-            FROM nut_data, food_des, nutr_def 
-            WHERE nut_data.ndb_no=food_des.ndb_no 
-            AND nutr_def.nutr_no=nut_data.nutr_no 
+            FROM nut_data, food_des, nutr_def
+            WHERE nut_data.ndb_no=food_des.ndb_no
+            AND nutr_def.nutr_no=nut_data.nutr_no
             AND nut_data.nutr_no='{nutr_no}'"""
 
     if name is not None:
