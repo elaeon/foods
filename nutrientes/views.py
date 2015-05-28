@@ -89,7 +89,7 @@ def food_compare(request):
     if len(food_compare.keys()) >= 2:
         from nutrientes.utils import Food
         for ndb_no in food_compare.keys():
-            foods.append(Food(ndb_no, avg=False))
+            foods.append(Food(ndb_no))
 
     return render(request, "compare_food.html", {"foods": foods})
 

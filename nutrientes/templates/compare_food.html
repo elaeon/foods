@@ -7,8 +7,15 @@
 <div class="row">
 {% for food in foods %}
 <div class="col-md-3" style="padding: 20px;">
-<p>{{ food.name }}</p>
+<p><a href="{% url 'view_food' food.ndb_no %}">{{ food.name }}</a></p>
 <p>Radio {{ food.radio }}</p>
+{% with food.caution_good_nutr_avg as nutr %}
+<div class="color-swatches">
+    <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Total" data-content="Total de nutrientes">{{ nutr.total }}</a>
+    <a tabindex="0" class="btn btn-xs btn-success" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Total" data-content="Total de nutrientes no dañinos por encima del promedio.">{{ nutr.good }}</a>
+    <a tabindex="0" class="btn btn-xs btn-danger" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Total" data-content="Total de nutrientes dañinos por encima del promedio.">{{ nutr.bad }}</a>
+</div>
+{% endwith %}
 </div>
 {% endfor %}
 </div>
@@ -36,9 +43,11 @@ myChart.assignColor("normal", "#0066ff", null, .5);
 myChart.assignColor("avg", "#aa0000", null, .3);
 myChart.setBounds(60, 30, 750, 305);
 var x = myChart.addCategoryAxis("x", "nutr");
+x.showGridlines = true;
 //var x = myChart.addCategoryAxis("x", ["nutr", "tipo"]);
 //x.showGridlines = true;
 var y = myChart.addMeasureAxis("y", "value");
+y.showGridlines = false;
 //var s = myChart.addSeries("tipo", dimple.plot.scatter);
 var l = myChart.addSeries("tipo", dimple.plot.line);
 //var s = myChart.addSeries("tipo", dimple.plot.bar);
