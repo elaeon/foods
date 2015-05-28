@@ -20,7 +20,8 @@
             <li><a href="{% url 'about' %}">Acerca de</a></li>
             <li><a href="#contact">Contacto</a></li>
         </ul>
-        <form id="search-form" class="navbar-form navbar-right form-inline">
+        <form id="search-form" class="navbar-form navbar-right form-inline" onSumbit="return false;" action="." method="POST">
+        {% csrf_token %}
             <div class="form-group">
                 <label class="form-control sr-only" for="exampleInputAmount">Busqueda</label>
                 <div class="input-group">
@@ -39,6 +40,10 @@
 <script type="text/javascript" src="{% static 'jquery.autocomplete.1.2.7.js' %}"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 <script type="text/javascript">
+function test() {
+    alert('ok');
+    return false;
+}
 function preg_quote( str ) {
     // http://kevin.vanzonneveld.net
     // +   original by: booeyOH
@@ -82,7 +87,7 @@ $('#text-input').autocomplete({
         window.location.replace("/food/"+suggestion.data.id+"/")
     },
 });
-{% block js %}{% endblock %}
 </script>
+{% block js %}{% endblock %}
 </body>
 </html>

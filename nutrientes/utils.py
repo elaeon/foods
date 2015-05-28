@@ -3,6 +3,14 @@ import re
 import pickle
 
 from itertools import izip
+from django.core.exceptions import ImproperlyConfigured
+
+try:
+    from django.conf import settings
+    PREPROCESSED_DATA_DIR = settings.PREPROCESSED_DATA_DIR
+except ImproperlyConfigured:
+    import os
+    PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
 
 USERNAME = 'agmartinez'
 
@@ -75,21 +83,6 @@ def avg_omega():
 
 def normalize(raw_data, index, base):
     return [list(value[0:index]) + [value[index] / base] + list(value[index+1:len(value)]) for value in raw_data]
-
-def calc_radio_omega_all():
-    conn, cursor = conection()
-    ndb_nos = Food.alimentos(limit="limit 9000")
-    for ndb_no in ndb_nos:
-        food = Food(ndb_no, avg=False)
-        query = """INSERT INTO omega VALUES ('{ndb_no}', {omega3}, {omega6}, {omega7}, {omega9}, {radio});""".format(
-            ndb_no=ndb_no, 
-            omega3=food.omegas.get("omega 3", [0,0])[1],
-            omega6=food.omegas.get("omega 6", [0,0])[1],
-            omega7=food.omegas.get("omega 7", [0,0])[1],
-            omega9=food.omegas.get("omega 9", [0,0])[1],
-            radio=food.radio_omega_raw)
-        cursor.execute(query)
-    conn.commit()
 
 def avg_nutrients_group_nutr(nutr_no, order_by="avg"):
     _, cursor = conection()
@@ -193,7 +186,7 @@ def alimentos_category_name(category):
 
 def best_of_query(nutr_no_list, category_food):
     _, cursor = conection()
-    nutr = Food.get_matrix("nutavg.p")
+    nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
     querys = []
 
@@ -355,7 +348,7 @@ def query_build(nutr_no, category_food, name=None):
 
 def best_of_general_2(category=None, name=None):
     _, cursor = conection()
-    nutr = Food.get_matrix("nutavg.p")
+    nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
     # hasheamos las llaves para mantener el orden
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
 
@@ -384,17 +377,11 @@ def best_of_general_2(category=None, name=None):
             total[ndb_no]["name"] = name
         else:
             total[ndb_no] = {"b": i, "name": name}
+
     results = [(v.get("g", 10000) + v.get("b", 0) * 5, ndb_no, v["name"], v.get("g", "-"), v.get("b", "-")) 
                 for ndb_no, v in total.items()]
     results.sort()
     return results
-
-def best_all():
-    ranking_list = Food.get_matrix("ranking.p")
-    if len(ranking_list) == 0:
-        ranking_list = [(v, ndb_no) for v, ndb_no, _, _, _ in best_of_general_2()]
-        Food.save_matrix("ranking.p", ranking_list)
-    return ranking_list
 
 caution_nutr = {
     "601": "Cholesterol",
@@ -459,10 +446,15 @@ class Food(object):
             return 0
 
     def ranking(self):
-        ranking_list = Food.get_matrix("ranking.p")
-        d = {ndb_no: i for i, (_, ndb_no) in enumerate(ranking_list, 1)}
-        d1 = {ndb_no: i for i, (v, ndb_no, _, _, _) in enumerate(best_of_general_2(self.group["id"]), 1)}
-        return {"total": d[self.ndb_no], "category": d1[self.ndb_no]}
+        _, cursor = conection()
+        query = """SELECT category_position, global_position 
+                    FROM ranking 
+                    WHERE ndb_no = '{ndb_no}'""".format(ndb_no=self.ndb_no)
+        cursor.execute(query)
+        result = cursor.fetchall()
+        if len(result) > 0:
+            return {"global": result[0][1], "category": result[0][0]}
+        return None
 
     def radio(self):
         if self.radio_omega_raw == 0 and self.omegas.get("omega3", [0,0])[1] == 0:
@@ -504,13 +496,13 @@ class Food(object):
         self.radio_omega_raw = self.radio_raw(omegas.get("omega 6", [0,0,0])[1], omegas.get("omega 3", [0,0,0])[1])
         self.omegas = omegas
         if avg:
-            nutavg_vector = self.get_matrix("nutavg.p")
+            nutavg_vector = self.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
             if len(nutavg_vector) == 0:
                 #append the units with blank ''
                 omegas = avg_omega()
                 nutavg_vector = [e[1:] + [""] for e in sorted(avg_nutrients().values())] +\
                                 zip(omegas._fields[:-1], sorted(OMEGAS.keys()), omegas[:-1], ['g'] * len(omegas[:-1]))
-                self.save_matrix("nutavg.p", nutavg_vector)
+                self.save_matrix(PREPROCESSED_DATA_DIR + "nutavg.p", nutavg_vector)
 
             all_nutr, omegas = self.subs_omegas(nutavg_vector)
             omegas = filter(lambda x: x[1] is not None, ((key, omegas.get(key, None)) for key in self.omegas.keys()))
@@ -620,7 +612,7 @@ class Food(object):
         pickle.dump(matrix, open(name, 'wb'))
 
     def similarity(self):
-        matrix = self.get_matrix('matrix.p')
+        matrix = self.get_matrix(PREPROCESSED_DATA_DIR + 'matrix.p')
         fields = self.create_vector_fields_nutr()
         vector_base = self.vector_features(fields, self.nutrients)
         foods = self.min_distance((self.ndb_no, vector_base.values()), matrix)
@@ -641,19 +633,6 @@ class Food(object):
 
         cursor.execute(query)
         return (x[0] for x in cursor.fetchall())
-
-    @classmethod
-    def train(self, force=False):
-        matrix = self.get_matrix('matrix.p')
-        fields = self.create_vector_fields_nutr()
-        if len(matrix) == 0 or force is True:
-            print "Not pickle"
-            ndb_nos = self.alimentos(limit="limit 9000")#"Fruits and Fruit Juices"
-            for ndb_no in ndb_nos:
-                records = self.get_raw_nutrients(ndb_no)
-                vector = self.vector_features(fields, records)
-                matrix.append((ndb_no, vector.values()))
-            self.save_matrix('matrix.p', matrix)
 
     def mark_caution_good_nutrients(self):
         #nutr_no, nutr, v, u, caution, good

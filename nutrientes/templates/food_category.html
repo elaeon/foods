@@ -8,9 +8,11 @@
 
 {% if order == "alfanumeric" %}
 <p>Los alimentos están ordenados alfanuméricamente. Desea cambiar el orden a <a role="button" class="btn btn-primary" href="{% url 'list_food_category' category_id 'best' %}">Mejores</a>
+<ol>
 {% for food_id, food, val in foods %}
-<div><a href="{% url 'view_food' food_id %}">{{ food }}</a>{{ val }}</div>
+<li><a href="{% url 'view_food' food_id %}">{{ food }}</a>{{ val }}</li>
 {% endfor %}
+<ol>
 {% else %}
 <p>Los alimentos están ordenados por sus beneficios alimenticios. Desea cambiar el orden a <a role="button" class="btn btn-primary" href="{% url 'list_food_category' category_id 'alfanumeric' %}">Alfanumérico</a></p>
 {% for food in foods %}
