@@ -4,11 +4,15 @@
 {% block contenido_base %}
 <div class="container">
 <div class="starter-template">
-<h2>{{ food.name }}</h2>
-<h4><a href="{% url 'list_food_category' food.group.id 'best' %}">{{ food.group.name }}</a></h4>
+{% with food.ranking as ranking %}        
+<h2>{{ food.name }} 
+<a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Ranking" data-content="Posición del total">#{{ ranking.global }}</a></h2>
+<h4>
+<a href="{% url 'list_food_category' food.group.id 'best' %}">{{ food.group.name }}</a> 
+<a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Ranking" data-content="Posición en la categoria {{ food.group.name }}">#{{ ranking.category }}</a></h4>
+{% endwith %}
 <div class="row">
     <div class="col-md-6 col-md-push-5">
-        <p>Ranking: {{ food.ranking.global }} {{ food.ranking.category }}</p>
         <p><a href="{% url 'view_romega' %}">Radio de Omegas:</a>
             {% if food.radio_omega_raw > 4 %}
                 <span style="color: red;">
@@ -44,6 +48,13 @@
 </div>
 
 <br>
+{% with food.caution_good_nutr_avg as nutr %}
+<div class="color-swatches">
+    <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Total" data-content="Total de nutrientes">{{ nutr.total }}</a>
+    <a tabindex="0" class="btn btn-xs btn-success" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Total" data-content="Total de nutrientes no dañinos por encima del promedio.">{{ nutr.good }}</a>
+    <a tabindex="0" class="btn btn-xs btn-danger" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Total" data-content="Total de nutrientes dañinos por encima del promedio.">{{ nutr.bad }}</a>
+</div>
+{% endwith %}
 <div id="chartContainer"></div>
 </div>
 </div>
@@ -54,6 +65,9 @@
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
 
 <script type="text/javascript">
+$(document).ready(function(){
+    $('[data-toggle="popover"]').popover();   
+});
 var num_foods_added = {{ food_compare|length }};
 
 function check_submit() {

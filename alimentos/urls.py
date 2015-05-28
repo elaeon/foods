@@ -29,4 +29,5 @@ urlpatterns = [
     url(r'^best_of_nutrients/$', views.best_of_nutrients, name="best_of_nutrients"),
     url(r'^about/$', views.about, name="about"),
     url(r'^nutrient_selection/$', views.nutrient_selection, name="nutrient_selection"),
+    url(r'^ranking_list/$', views.ranking_list, name="ranking_list"),
 ]

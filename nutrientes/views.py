@@ -141,7 +141,6 @@ def best_of_nutrients(request):
     from nutrientes.utils import best_of_query
 
     if request.method == "POST":
-        #print request.POST
         nutr_nos = request.POST.getlist("nutr_no")
         category_food = request.POST.get("category_food", '0')
         category_food = None if category_food == '0' else category_food
@@ -162,3 +161,9 @@ def best_of_nutrients(request):
 
 def about(request):
     return render(request, "about.html", {})
+
+def ranking_list(request):
+    from utils import ranking_nutr
+    foods = ranking_nutr()
+    return render(request, "ranking_list.html", {
+        "foods": foods})

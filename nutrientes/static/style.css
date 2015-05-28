@@ -17,18 +17,13 @@
     width: 160px;
 }
 
-.autocomplete-suggestions {
-    background-color: #fff;
-    border-left: 1px solid #000;
-    border-right: 1px solid #000;
-    border-bottom: 1px solid #000;
-}
-.autocomplete-suggestions p {
-    margin-left: 5px;
-}
-.autocomplete-selected {
-    background-color: #ccc;
-}
+.autocomplete-suggestions { border: 1px solid #999; background: #FFF; overflow: auto; }
+.autocomplete-suggestion { padding: 2px 5px; white-space: nowrap; overflow: hidden; }
+.autocomplete-selected { background: #F0F0F0; }
+.autocomplete-suggestions strong { font-weight: normal; color: #3399FF; }
+.autocomplete-group { padding: 2px 5px; }
+.autocomplete-group strong { display: block; border-bottom: 1px solid #000; }
+
 .starter-template {
   padding: 60px 15px;
 }

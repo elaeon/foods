@@ -94,15 +94,15 @@ def avg_nutrients_group_nutr(nutr_no, order_by="avg"):
     cursor.execute(query)
     return cursor.fetchall()
 
-def avg_nutrients_group():
-    _, cursor = conection()
-    query = """SELECT nut_data.nutr_no, fd_group.fdgrp_desc_es, AVG(nutr_val)
-            FROM nut_data, food_des, fd_group, nutr_def
-            WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
-            AND nut_data.ndb_no=food_des.ndb_no
-            AND nutr_def.nutr_no=nut_data.nutr_no GROUP BY fd_group.fdgrp_desc_es, nut_data.nutr_no;"""
-    cursor.execute(query)
-    return cursor.fetchall()
+#def avg_nutrients_group():
+#    _, cursor = conection()
+#    query = """SELECT nut_data.nutr_no, fd_group.fdgrp_desc_es, AVG(nutr_val)
+#            FROM nut_data, food_des, fd_group, nutr_def
+#            WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+#            AND nut_data.ndb_no=food_des.ndb_no
+#            AND nutr_def.nutr_no=nut_data.nutr_no GROUP BY fd_group.fdgrp_desc_es, nut_data.nutr_no;"""
+#    cursor.execute(query)
+#    return cursor.fetchall()
     #nutr = {e[0]:[i, e[0], e[1]] for i, e in enumerate(nutr_features())}
     #for nutr_no, fdgrp_desc, avg in cursor.fetchall():
     #    nutr[nutr_no].append(float(avg))
@@ -169,7 +169,8 @@ def alimentos_category(category=None, limit="limit 10"):
     query  = """SELECT food_des.ndb_no, food_des.long_desc_es
                 FROM food_des, fd_group
                 WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
-                AND fd_group.fdgrp_cd='{category}' ORDER BY food_des.long_desc_es {limit}""".format(category=category, limit=limit)
+                AND fd_group.fdgrp_cd='{category}'
+                ORDER BY food_des.long_desc_es {limit}""".format(category=category, limit=limit)
 
     cursor.execute(query)
     return cursor.fetchall()
@@ -207,6 +208,27 @@ def best_of_query(nutr_no_list, category_food):
     rank = Rank(querys)
     rank.base_food = get_ids_intersection(rank.category_nutr)
     return rank
+
+def ranking_nutr(category_food=None):
+    _, cursor = conection()
+    
+    if category_food is None:
+        query = """SELECT food_des.ndb_no, long_desc_es, fd_group.fdgrp_cd, fdgrp_desc_es
+                FROM food_des, ranking, fd_group
+                WHERE food_des.ndb_no=ranking.ndb_no
+                AND fd_group.fdgrp_cd=food_des.fdgrp_cd
+                ORDER BY global_position"""
+    else:
+        query = """SELECT food_des.ndb_no, food_des.long_desc_es
+                FROM food_des, ranking, fd_group
+                WHERE food_des.ndb_no=ranking.ndb_no
+                AND fd_group.fdgrp_cd=food_des.fdgrp_cd
+                AND fd_group.fdgrp_cd='{category}'
+                ORDER BY category_position""".format(category=category_food)
+
+    cursor.execute(query)
+    return cursor.fetchall()
+ 
 
 class Rank(object):
     def __init__(self, base_food_querys):
@@ -642,4 +664,11 @@ class Food(object):
 
     def mark_nutrients(self):
         return mark_caution_nutr(self.nutrients)
+
+    def caution_good_nutr_avg(self):
+        good = len(filter(lambda x: x[5], self.mark_caution_good_nutrients()))
+        bad = len(filter(lambda x: x[4], self.mark_caution_good_nutrients()))
+        return {"total": len(self.nutrients),
+            "good": good,
+            "bad": bad}
 

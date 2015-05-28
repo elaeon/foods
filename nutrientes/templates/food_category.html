@@ -15,9 +15,11 @@
 <ol>
 {% else %}
 <p>Los alimentos están ordenados por sus beneficios alimenticios. Desea cambiar el orden a <a role="button" class="btn btn-primary" href="{% url 'list_food_category' category_id 'alfanumeric' %}">Alfanumérico</a></p>
+<ol>
 {% for food in foods %}
-<div><a href="{% url 'view_food' food.1 %}">{{ food.2 }}</a>{{ food.3 }} {{ food.4 }}</div>
+<li><a href="{% url 'view_food' food.1 %}">{{ food.2 }}</a></li>
 {% endfor %}
+</ol>
 {% endif %}
 </div>
 </div>

@@ -1,0 +1,25 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div class="container">
+<div class="starter-template">
+<h2>Ranking de comparación entre alimentos</h2>
+
+<table class="table table-striped table-hover table-condensed">
+<thead style="font-size: 90%">
+<th></th>
+<th>Categoria</th>
+</thead>
+{% for food in foods %}
+<tr>
+<td><a href="{% url 'view_food' food.0 %}">{{ food.1 }}</a></td>
+<td style="font-size: 90%"><a href="{% url 'list_food_category' food.2 'best' %}">{{ food.3 }}</a></td>
+</tr>
+{% endfor %}
+</table>
+
+</div>
+</div>
+{% endblock %}
+
