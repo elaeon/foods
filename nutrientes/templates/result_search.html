@@ -1,0 +1,16 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div class="container">
+<div class="starter-template">
+
+<ol>
+{% for food_id, food, val in foods %}
+<li><a href="{% url 'view_food' food_id %}">{{ food|safe }}</a></li>
+{% endfor %}
+<ol>
+</div>
+</div>
+{% endblock %}
+

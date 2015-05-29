@@ -167,3 +167,21 @@ def ranking_list(request):
     foods = ranking_nutr()
     return render(request, "ranking_list.html", {
         "foods": foods})
+
+def result_long_search(request):
+    if request.method == "POST":
+        conn, cursor = conection()
+        term = request.POST.get("text-input", "").strip()
+        query = """
+                (SELECT DISTINCT searchall_index.ndb_no, ts_headline('spanish', searchall_index.long_desc_es, query) as name, ts_rank_cd(document, query) as r FROM 
+                (SELECT word
+                    FROM unique_lexeme
+                    WHERE  word <-> '{term}' < 1
+                    ORDER BY word <-> '{term}' LIMIT 2) as words, searchall_index, to_tsquery('spanish', words.word) as query
+                WHERE document @@ query ORDER BY r, name)
+            """.format(term=term)
+        cursor.execute(query)
+        foods = cursor.fetchall()
+        conn.close()
+    return render(request, "result_search.html", {
+        "foods": foods})

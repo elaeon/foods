@@ -20,7 +20,8 @@
             <li><a href="{% url 'about' %}">Acerca de</a></li>
             <li><a href="#contact">Contacto</a></li>
         </ul>
-        <form id="search-form" class="navbar-form navbar-right form-inline" onsubmit="return verify_search_term();" name="search-form">
+        <form id="search-form" class="navbar-form navbar-right form-inline" onsubmit="return verify_search_term();" name="search-form" action="{% url 'result_long_search' %}" method="post">
+            {% csrf_token %}
             <div class="form-group">
                 <label class="form-control sr-only" for="exampleInputAmount">Busqueda</label>
                 <div class="input-group">

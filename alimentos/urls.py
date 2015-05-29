@@ -30,4 +30,5 @@ urlpatterns = [
     url(r'^about/$', views.about, name="about"),
     url(r'^nutrient_selection/$', views.nutrient_selection, name="nutrient_selection"),
     url(r'^ranking_list/$', views.ranking_list, name="ranking_list"),
+    url(r'^result_long_search/$', views.result_long_search, name="result_long_search"),
 ]
