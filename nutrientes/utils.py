@@ -94,20 +94,6 @@ def avg_nutrients_group_nutr(nutr_no, order_by="avg"):
     cursor.execute(query)
     return cursor.fetchall()
 
-#def avg_nutrients_group():
-#    _, cursor = conection()
-#    query = """SELECT nut_data.nutr_no, fd_group.fdgrp_desc_es, AVG(nutr_val)
-#            FROM nut_data, food_des, fd_group, nutr_def
-#            WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
-#            AND nut_data.ndb_no=food_des.ndb_no
-#            AND nutr_def.nutr_no=nut_data.nutr_no GROUP BY fd_group.fdgrp_desc_es, nut_data.nutr_no;"""
-#    cursor.execute(query)
-#    return cursor.fetchall()
-    #nutr = {e[0]:[i, e[0], e[1]] for i, e in enumerate(nutr_features())}
-    #for nutr_no, fdgrp_desc, avg in cursor.fetchall():
-    #    nutr[nutr_no].append(float(avg))
-    #return nutr
-
 def get_omegas():
     _, cursor = conection()
     query = """SELECT food_des.long_desc_es, food_des.ndb_no, omega3, omega6, radio 
@@ -213,13 +199,13 @@ def ranking_nutr(category_food=None):
     _, cursor = conection()
     
     if category_food is None:
-        query = """SELECT food_des.ndb_no, long_desc_es, fd_group.fdgrp_cd, fdgrp_desc_es
+        query = """SELECT food_des.ndb_no, long_desc_es, fd_group.fdgrp_cd, fdgrp_desc_es, food_des.long_desc
                 FROM food_des, ranking, fd_group
                 WHERE food_des.ndb_no=ranking.ndb_no
                 AND fd_group.fdgrp_cd=food_des.fdgrp_cd
                 ORDER BY global_position"""
     else:
-        query = """SELECT food_des.ndb_no, food_des.long_desc_es
+        query = """SELECT food_des.ndb_no, food_des.long_desc_es, food_des.long_desc
                 FROM food_des, ranking, fd_group
                 WHERE food_des.ndb_no=ranking.ndb_no
                 AND fd_group.fdgrp_cd=food_des.fdgrp_cd
@@ -345,13 +331,13 @@ def query_build(nutr_no, category_food, name=None):
     attrs = {"nutr_no": nutr_no}
     if nutr_no.startswith("omega"):
         query = """
-            SELECT food_des.ndb_no, food_des.long_desc_es, {omega}, 'g'
+            SELECT food_des.ndb_no, food_des.long_desc_es||'#'||food_des.long_desc, {omega}, 'g'
             FROM food_des, omega 
             WHERE omega.ndb_no=food_des.ndb_no"""
         attrs["omega"] = nutr_no
     else:
         query = """
-            SELECT food_des.ndb_no, food_des.long_desc_es, nutr_val, units
+            SELECT food_des.ndb_no, food_des.long_desc_es||'#'||food_des.long_desc, nutr_val, units
             FROM nut_data, food_des, nutr_def
             WHERE nut_data.ndb_no=food_des.ndb_no
             AND nutr_def.nutr_no=nut_data.nutr_no
@@ -448,6 +434,7 @@ class Food(object):
     def __init__(self, ndb_no=None, avg=True):
         self.nutrients = None
         self.name = None
+        self.name_en = None
         self.group = None
         self.radio_omega_raw = 0
         self.nutr_avg = None
@@ -498,7 +485,7 @@ class Food(object):
     @classmethod
     def get_food(self, ndb_no):
         _, cursor = conection()
-        query  = """SELECT food_des.long_desc_es, fd_group.fdgrp_desc_es, fd_group.fdgrp_cd
+        query  = """SELECT food_des.long_desc_es, fd_group.fdgrp_desc_es, fd_group.fdgrp_cd, food_des.long_desc
                     FROM food_des, fd_group
                     WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd 
                     AND food_des.ndb_no = '{ndb_no}'""".format(ndb_no=ndb_no)
@@ -512,6 +499,7 @@ class Food(object):
         e_data = exclude_data(records, exclude=set(["268"])) #Energy#ENERC_KJ
         food = self.get_food(self.ndb_no)
         self.name = food[0][0]
+        self.name_en = food[0][3]
         self.group = {"name": food[0][1], "id": food[0][2]}
         features, omegas = self.subs_omegas(e_data)
         self.nutrients = features + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]

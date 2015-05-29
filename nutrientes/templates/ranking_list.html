@@ -27,7 +27,10 @@
 {% endif %}
 {% endif %}
 <td>{{ forloop.counter }}</td>
-<td><a href="{% url 'view_food' food.0 %}">{{ food.1 }}</a></td>
+<td>
+<a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ food.4 }}" data-content="{{ food.4 }}">En</a>
+<a href="{% url 'view_food' food.0 %}">{{ food.1 }}</a> 
+</td>
 <td style="font-size: 90%"><a href="{% url 'list_food_category' food.2 'best' %}">{{ food.3 }}</a></td>
 </tr>
 {% endfor %}
@@ -36,4 +39,5 @@
 </div>
 </div>
 {% endblock %}
+
 

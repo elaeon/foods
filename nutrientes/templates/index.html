@@ -4,11 +4,13 @@
 {% block contenido_base %}
 <div class="jumbotron" style="background: url(http://upload.wikimedia.org/wikipedia/commons/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg) {{ width_img_rand }}% {{ height_img_rand }}% no-repeat; background-size: auto;">
     <div class="container">
-    <h1 style="color: #fff !important;">¡Una guia más para tu alimentación!</h1>
-    <p style="color: #fff !important">Este sitio te ayudará a comparar, analizar e informarte sobre los alimentos y sus nutrientes.</p>
+    <h1 style="color: #fff !important; background-color:rgba(0,0,0,.4);">¡Una guia más para tu alimentación!</h1>
+    <p style="color: #fff !important; background-color:rgba(0,0,0,.4);">Este sitio te ayudará a comparar, analizar e informarte sobre los alimentos y sus nutrientes.</p>
     <p>
-    <a role="button" href="{% url 'about' %}" class="btn btn-primary btn-lg">Acerca de</a>
-    <a role="button" href="{% url 'nutrient_selection' %}" class="btn btn-primary btn-lg">Ver más »</a></p>
+    <a role="button" href="{% url 'about' %}" class="btn btn-primary btn-md">Acerca de</a>
+    <a role="button" href="{% url 'nutrient_selection' %}" class="btn btn-primary btn-md">Ver más »</a>
+    <a role="button" href="{% url 'ranking_list' %}" class="btn btn-primary btn-md">Ranking »</a>
+    </p>
     </div>
 </div>
 <p class="text-muted" style="margin-left: 10px;">En esta tabla se muestran las categorias de los alimentos, junto con los nutrientes más comunes causantes de enfermedades.</p>
@@ -69,7 +71,7 @@
 <td class="danger">
 {% endif %}
 {% endif %}
-{{ radio }}:1</span></td>
+{{ radio }}:1</td>
 </tr>
 {% endfor %}
 </tbody>

@@ -47,7 +47,7 @@ def ajax_search(request):
         query = []
         for term in search_word.split(" "):
             query.append("""
-                (SELECT searchall_index.ndb_no, searchall_index.long_desc_es, ts_rank_cd(document, query) as r FROM 
+                (SELECT DISTINCT searchall_index.ndb_no, searchall_index.long_desc_es, ts_rank_cd(document, query) as r FROM 
                 (SELECT word
                     FROM unique_lexeme
                     WHERE  word <-> '{term}' < 1
@@ -57,8 +57,8 @@ def ajax_search(request):
         if len(query) > 1:
             query = " INTERSECT ".join(query) + "ORDER BY r DESC LIMIT 15"
         else:
-            query = "".join(query) + "ORDER BY long_desc_es ASC LIMIT 15"
-        #print query
+            query = "".join(query) + "ORDER BY r DESC LIMIT 15"
+
         cursor.execute(query)
         records = cursor.fetchall()
         suggestions = []    
