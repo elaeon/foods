@@ -2,8 +2,12 @@ from django.shortcuts import render
 from django.http import HttpResponse
 
 from nutrientes.utils import conection
+from nutrientes.fuzzy_query import fuzzy_query
+
 import json
 import random
+
+DB_VERSION = "9.1"
 
 # Create your views here.
 def index(request):
@@ -41,19 +45,8 @@ def ajax_search(request):
     if request.is_ajax():
         conn, cursor = conection()
         search_word = request.GET.get("query", "").strip()
-        #search_word = " & ".join(search_word.split(" "))
-        #query = """SELECT ndb_no, long_desc_es FROM food_des WHERE long_desc_es IS NOT NULL AND long_desc_es ilike '%{term}%' LIMIT 10;""".format(term=search_word)
 
-        query = []
-        for term in search_word.split(" "):
-            query.append("""
-                (SELECT DISTINCT searchall_index.ndb_no, searchall_index.long_desc_es, ts_rank_cd(document, query) as r FROM 
-                (SELECT word
-                    FROM unique_lexeme
-                    WHERE  word <-> '{term}' < 1
-                    ORDER BY word <-> '{term}' LIMIT 2) as words, searchall_index, to_tsquery('spanish', words.word) as query
-                WHERE document @@ query)
-            """.format(term=term))
+        query = [fuzzy_query(DB_VERSION, term, ordering=False) for term in search_word.split(" ")]
         if len(query) > 1:
             query = " INTERSECT ".join(query) + "ORDER BY r DESC LIMIT 15"
         else:
@@ -172,14 +165,7 @@ def result_long_search(request):
     if request.method == "POST":
         conn, cursor = conection()
         term = request.POST.get("text-input", "").strip()
-        query = """
-                (SELECT DISTINCT searchall_index.ndb_no, ts_headline('spanish', searchall_index.long_desc_es, query) as name, ts_rank_cd(document, query) as r FROM 
-                (SELECT word
-                    FROM unique_lexeme
-                    WHERE  word <-> '{term}' < 1
-                    ORDER BY word <-> '{term}' LIMIT 2) as words, searchall_index, to_tsquery('spanish', words.word) as query
-                WHERE document @@ query ORDER BY r, name)
-            """.format(term=term)
+        query = fuzzy_query(DB_VERSION, term, headline=True)
         cursor.execute(query)
         foods = cursor.fetchall()
         conn.close()
