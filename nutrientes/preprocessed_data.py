@@ -19,18 +19,18 @@ def generate_matrix_food():
     Food.save_matrix(settings.PREPROCESSED_DATA_DIR+'matrix.p', matrix)
 
 
-def ranking_global():
+def ranking_global(force=False):
     global_ = Food.get_matrix(PREPROCESSED_DATA_DIR+"ranking.p")
-    if len(global_) == 0:
+    if len(global_) == 0 or force:
         ranking_list = best_of_general_2()
         global_ = {ndb_no: (i, v) for i, (v, ndb_no, _, _, _) in enumerate(ranking_list, 1)}
         Food.save_matrix(PREPROCESSED_DATA_DIR+"ranking.p", global_)
     return global_
 
 
-def ranking_category(group):
+def ranking_category(group, force=False):
     category = Food.get_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group["id"],))
-    if len(category) == 0:
+    if len(category) == 0 or force:
         ranking_cat_list = best_of_general_2(group["id"])
         category = {ndb_no: (i, v) for i, (v, ndb_no, _, _, _) in enumerate(ranking_cat_list, 1)}
         Food.save_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group["id"],), category)
@@ -55,23 +55,40 @@ def calc_radio_omega_all():
 
 def insert_update_db_ranking():
     conn, cursor = conection()
-    ndb_nos = Food.alimentos(limit="limit 9000")
-    for ndb_no in ndb_nos:
-        query = """SELECT Count(ndb_no) FROM ranking WHERE ndb_no='{ndb_no}'""".format(ndb_no=ndb_no)
+    data = ranking_global(force=True)
+    for index, values in enumerate(data, 1):
+        total, ndb_no, _, rank_good, rank_bad = values 
+        print "CHECK GLOBAL", ndb_no
+        query = """UPDATE ranking 
+                    SET global_position={global_position} 
+                    rank_global_good={rank_good}
+                    rank_global_bad={rank_bad}
+                    WHERE ndb_no={ndb_no}""".format(
+            ndb_no=ndb_no,
+            global_position=index,
+            rank_good=rank_good,
+            rank_bad=rank_bad)
+
+    data = ranking_category(force=True)
+    for index, values in enumerate(ndb_nos, 1):
+        total, ndb_no, _, rank_good, rank_bad = values 
+        print "CHECK CATEGORY", ndb_no
+        query = """UPDATE ranking 
+                    SET category_position={category_position} 
+                    rank_category_good={rank_good}
+                    rank_category_bad={rank_bad}
+                    WHERE ndb_no={ndb_no}""".format(
+            ndb_no=ndb_no,
+            global_position=index,
+            rank_good=rank_good,
+            rank_bad=rank_bad)
+        #query = """INSERT INTO ranking VALUES ('{ndb_no}', {global_value}, {category_value}, {category_position}, {global_position});""".format(
+        #    ndb_no=ndb_no, 
+        #    global_value=rvg, 
+        #    category_value=rvc,
+        #    category_position=ric,
+        #    global_position=rig)
         cursor.execute(query)
-        result = cursor.fetchall()
-        if result[0][0] == 0:
-            print "CHECK", ndb_no
-            food = Food(ndb_no, avg=False)
-            rig, rvg = ranking_global()[ndb_no]
-            ric, rvc = ranking_category(food.group)[ndb_no]
-            query = """INSERT INTO ranking VALUES ('{ndb_no}', {global_value}, {category_value}, {category_position}, {global_position});""".format(
-                ndb_no=ndb_no, 
-                global_value=rvg, 
-                category_value=rvc,
-                category_position=ric,
-                global_position=rig)
-            cursor.execute(query)
-        conn.commit()
+    conn.commit()
 
 

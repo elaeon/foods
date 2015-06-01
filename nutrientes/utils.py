@@ -230,7 +230,7 @@ class Rank(object):
             category_nutr[nutr_no] = {"caution": caution, "data": {}, "avg": avg, "units": None}
             units = None
             for ndb_no, long_desc_es, nutr_val, units in result_query:
-                category_nutr[nutr_no]["data"][ndb_no] = (nutr_val, long_desc_es)
+                category_nutr[nutr_no]["data"][ndb_no] = nutr_val
                 self.foods[ndb_no] = long_desc_es
             category_nutr[nutr_no]["units"] = units
         return category_nutr
@@ -244,9 +244,9 @@ class Rank(object):
             data.setdefault(nutr_no, [])
             reverse = not bool(self.category_nutr[nutr_no]["caution"])
             for ndb_no in self.base_food:
-                nutr_val, long_desc_es = self.category_nutr[nutr_no]["data"].get(ndb_no, ([0, self.foods.get(ndb_no, None)]))
+                nutr_val = self.category_nutr[nutr_no]["data"].get(ndb_no, 0)
                 nutr_val = float(nutr_val)
-                data[nutr_no].append((ndb_no, long_desc_es, nutr_val))
+                data[nutr_no].append((ndb_no, self.foods.get(ndb_no, None), nutr_val))
             data[nutr_no].sort(reverse=reverse, key=lambda x: x[2])
         return data
 
@@ -386,7 +386,7 @@ def best_of_general_2(category=None, name=None):
         else:
             total[ndb_no] = {"b": i, "name": name}
 
-    results = [(v.get("g", 10000) + v.get("b", 0) * 5, ndb_no, v["name"], v.get("g", "-"), v.get("b", "-")) 
+    results = [(v.get("g", 10000) + v.get("b", 0)*1.5, ndb_no, v["name"], v.get("g", "-"), v.get("b", "-")) 
                 for ndb_no, v in total.items()]
     results.sort()
     return results
