@@ -58,7 +58,6 @@ def calc_radio_omega_all():
 def ranking_by_type(data, types):
     conn, cursor = conection()
     for ndb_no, values in data.items():
-        print "CHECK GLOBAL", ndb_no
         for type_position, position in zip(types, values):
             query = """ SELECT COUNT(*) 
                         FROM ranking 
@@ -85,12 +84,12 @@ def ranking_by_type(data, types):
 
 def insert_update_db_ranking():
     from nutrientes.utils import categories_foods
-    data = ranking_global(force=True)
-    ranking_by_type(data, ["global", "global_good", "global_bad"])
+    #data = ranking_global(force=True)
+    #ranking_by_type(data, ["global", "global_good", "global_bad"])
 
-    #for group, _ in categories_foods():
-    #    data = ranking_category(group, force=True)
-    #    ranking_by_type(data, ["category", "category_good", "category_bad"])
+    for group, _ in categories_foods():
+        data = ranking_category(group, force=True)
+        ranking_by_type(data, ["category", "category_good", "category_bad"])
 
 
 def recalc_preprocessed_data():

@@ -317,6 +317,19 @@ def query_build(nutr_no, category_food, name=None):
     query = query.format(**attrs)
     return query
 
+def radio_omega(category=None):
+    _, cursor = conection()
+    if category is None:
+        query = """SELECT ndb_no, radio FROM omega"""
+    else:
+        query = """SELECT food_des.ndb_no, radio 
+                    FROM omega, food_des, fd_group
+                WHERE food_des.ndb_no=omega.ndb_no
+                AND fd_group.fdgrp_cd=food_des.fdgrp_cd
+                AND fd_group.fdgrp_cd='{category}'""".format(category=category)
+    cursor.execute(query)
+    return cursor.fetchall()
+
 def best_of_general_2(category=None, name=None):
     _, cursor = conection()
     nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
@@ -333,15 +346,15 @@ def best_of_general_2(category=None, name=None):
         else:
             querys_good.append((nutr_no, caution, avg, cursor.fetchall()))
 
-    rank = Rank(querys_good)
-    order_good = rank.order()
-    rank = Rank(querys_bad)
-    order_bad = rank.order()
+    rank_g = Rank(querys_good)
+    order_good = rank_g.order()
+    rank_b = Rank(querys_bad)
+    order_bad = rank_b.order()
     good = ((i, food["attr"][0], food["attr"][1]) for i, food in order_good)
     bad =  ((i, food["attr"][0], food["attr"][1]) for i, food in order_bad)
 
     total = {ndb_no: {"g": i, "name": name} for i, ndb_no, name in good}
-        
+    
     for i, ndb_no, name in bad:
         if ndb_no in total:
             total[ndb_no]["b"] = i
@@ -349,24 +362,40 @@ def best_of_general_2(category=None, name=None):
         else:
             total[ndb_no] = {"b": i, "name": name}
 
-    results = [(v.get("g", 10000) + v.get("b", 0), ndb_no, v["name"], v.get("g", 10000), v.get("b", 10000)) 
+    for ndb_no, radio in radio_omega(category=category):
+        if not ndb_no in total:
+            total[ndb_no] = {}
+
+        if 0 < radio < 4:
+            total[ndb_no]["r"] = -normal(float(radio-1), 0, 0.3993)*100
+        elif radio == 0:
+            total[ndb_no]["r"] = 6533/100.
+        else:
+            total[ndb_no]["r"] = float(radio*10)
+
+    results = [(v.get("g", 10000) + v.get("b", 0) + v.get("r", 0), ndb_no, v.get("name", ""), v.get("g", 10000), v.get("b", 10000)) 
                 for ndb_no, v in total.items()]
     results.sort()
     return results
 
+def normal(x, u, s):
+    import math
+    return math.exp(-((x-u)**2)/(2*(s**2)))/(s*((2*math.pi)**.5))
+
 weight_nutrs = {
-    "255": 1.1, #water
+    "255": 1.1, #Water
     "601": 2.5, #Cholesterol
-    "269": 2.5, #Sugars, total,
-    "262": 1.5, #Caffeine,
-    "307": 2.5, #Sodium, Na,
-    "605": 2.6, #Fatty acids, total trans,
-    "606": 2.5, #Fatty acids, total saturated,
-    "607": 2.5, #4:0,
-    "609": 2.5, #8:0,
+    "269": 2.5, #Sugars, total
+    "262": 1.5, #Caffeine
+    "307": 2.5, #Sodium, Na
+    "605": 2.6, #Fatty acids, total trans
+    "606": 2.5, #Fatty acids, total saturated
+    "607": 2.5, #4:0
+    "609": 2.5, #8:0
     "608": 2.5, #6:0
-    "204": 1.2, #"Total lipid (fat)",
-    "omega3": 0.2
+    "204": 1.2, #Total lipid (fat)
+    "omega3": 0.2,
+    "205": 1.5, #Carbohydrate, by difference
 }
 
 caution_nutr = {
@@ -450,7 +479,7 @@ class Food(object):
         cursor.execute(query)
         category = cursor.fetchall()
         if len(global_) > 0:
-            return {"global": global_[0][0], "category": "X"}
+            return {"global": global_[0][0], "category": category[0][0]}
         return None
 
     def radio(self):
