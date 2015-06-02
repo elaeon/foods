@@ -8,32 +8,34 @@ except ImproperlyConfigured:
     import os
     PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
 
-def generate_matrix_food():
+def matrix_food(force=False):
     matrix = Food.get_matrix(PREPROCESSED_DATA_DIR+'matrix.p')
-    fields = Food.create_vector_fields_nutr()
-    ndb_nos = Food.alimentos(limit="limit 9000")#ALL FOOD
-    for ndb_no in ndb_nos:
-        records = Food.get_raw_nutrients(ndb_no)
-        vector = Food.vector_features(fields, records)
-        matrix.append((ndb_no, vector.values()))
-    Food.save_matrix(settings.PREPROCESSED_DATA_DIR+'matrix.p', matrix)
+    if len(matrix) == 0 or force:
+        fields = Food.create_vector_fields_nutr()
+        ndb_nos = Food.alimentos(limit="limit 9000")#ALL FOOD
+        for ndb_no in ndb_nos:
+            records = Food.get_raw_nutrients(ndb_no)
+            vector = Food.vector_features(fields, records)
+            matrix.append((ndb_no, vector.values()))
+        Food.save_matrix(PREPROCESSED_DATA_DIR+'matrix.p', matrix)
+    return matrix
 
 
 def ranking_global(force=False):
     global_ = Food.get_matrix(PREPROCESSED_DATA_DIR+"ranking.p")
     if len(global_) == 0 or force:
         ranking_list = best_of_general_2()
-        global_ = {ndb_no: (i, v) for i, (v, ndb_no, _, _, _) in enumerate(ranking_list, 1)}
+        global_ = {ndb_no: (i, g, b) for i, (_, ndb_no, _, g, b) in enumerate(ranking_list, 1)}
         Food.save_matrix(PREPROCESSED_DATA_DIR+"ranking.p", global_)
     return global_
 
 
 def ranking_category(group, force=False):
-    category = Food.get_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group["id"],))
+    category = Food.get_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group,))
     if len(category) == 0 or force:
-        ranking_cat_list = best_of_general_2(group["id"])
-        category = {ndb_no: (i, v) for i, (v, ndb_no, _, _, _) in enumerate(ranking_cat_list, 1)}
-        Food.save_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group["id"],), category)
+        ranking_cat_list = best_of_general_2(group)
+        category = {ndb_no: (i, g, b) for i, (_, ndb_no, _, g, b) in enumerate(ranking_cat_list, 1)}
+        Food.save_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group), category)
     return category
 
 
@@ -53,42 +55,47 @@ def calc_radio_omega_all():
     conn.commit()
 
 
-def insert_update_db_ranking():
+def ranking_by_type(data, types):
     conn, cursor = conection()
-    data = ranking_global(force=True)
-    for index, values in enumerate(data, 1):
-        total, ndb_no, _, rank_good, rank_bad = values 
+    for ndb_no, values in data.items():
         print "CHECK GLOBAL", ndb_no
-        query = """UPDATE ranking 
-                    SET global_position={global_position} 
-                    rank_global_good={rank_good}
-                    rank_global_bad={rank_bad}
-                    WHERE ndb_no={ndb_no}""".format(
-            ndb_no=ndb_no,
-            global_position=index,
-            rank_good=rank_good,
-            rank_bad=rank_bad)
+        for type_position, position in zip(types, values):
+            query = """ SELECT COUNT(*) 
+                        FROM ranking 
+                        WHERE ndb_no='{ndb_no}'
+                        AND type_position='{type_position}'""".format(
+                    ndb_no=ndb_no, 
+                    type_position=type_position)
+            cursor.execute(query)
+            if cursor.fetchall()[0][0] == 1:
+                query = """UPDATE ranking 
+                            SET position={position}
+                            WHERE ndb_no='{ndb_no}'
+                            AND type_position='{type_position}'""".format(
+                    ndb_no=ndb_no,
+                    position=position,
+                    type_position=type_position)
+            else:
+                query = """INSERT INTO ranking VALUES ('{ndb_no}', {position}, '{type_position}')""".format(
+                ndb_no=ndb_no, 
+                position=position, 
+                type_position=type_position)
+            cursor.execute(query)
+            conn.commit()
 
-    data = ranking_category(force=True)
-    for index, values in enumerate(ndb_nos, 1):
-        total, ndb_no, _, rank_good, rank_bad = values 
-        print "CHECK CATEGORY", ndb_no
-        query = """UPDATE ranking 
-                    SET category_position={category_position} 
-                    rank_category_good={rank_good}
-                    rank_category_bad={rank_bad}
-                    WHERE ndb_no={ndb_no}""".format(
-            ndb_no=ndb_no,
-            global_position=index,
-            rank_good=rank_good,
-            rank_bad=rank_bad)
-        #query = """INSERT INTO ranking VALUES ('{ndb_no}', {global_value}, {category_value}, {category_position}, {global_position});""".format(
-        #    ndb_no=ndb_no, 
-        #    global_value=rvg, 
-        #    category_value=rvc,
-        #    category_position=ric,
-        #    global_position=rig)
-        cursor.execute(query)
-    conn.commit()
+def insert_update_db_ranking():
+    from nutrientes.utils import categories_foods
+    data = ranking_global(force=True)
+    ranking_by_type(data, ["global", "global_good", "global_bad"])
 
+    #for group, _ in categories_foods():
+    #    data = ranking_category(group, force=True)
+    #    ranking_by_type(data, ["category", "category_good", "category_bad"])
+
+
+def recalc_preprocessed_data():
+    #print "Generate Matrix"
+    #matrix_food(force=True)
+    print "Generate Ranks"
+    insert_update_db_ranking()
 

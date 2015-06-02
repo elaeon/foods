@@ -137,8 +137,8 @@ var data = [];
 {% for _, nutrient, value, unit, caution, good in food.mark_caution_good_nutrients %}
 data.push({nombre: '{{ nutrient }}', valor: {{ value }}, unidad: '{{ unit }}', tipo: "{{ food.name_limit }}", caution: transform_bad("{{ caution }}"), good: transform_good('{{ good }}')})
 {% endfor %}
-{% for _, nutrient, value, _ in food.nutr_avg %}
-data.push({nombre: '{{ nutrient }}', valor: {{ value }}, unidad: '', tipo: 'promedio', caution: "-", good: "-"})
+{% for _, v in food.nutr_avg.items %}
+data.push({nombre: '{{ v.0 }}', valor: {{ v.1 }}, unidad: '', tipo: 'promedio', caution: "-", good: "-"})
 {% endfor %}
 
 var svg = dimple.newSvg("#chartContainer", 900, 600);
