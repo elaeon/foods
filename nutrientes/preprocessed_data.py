@@ -31,10 +31,11 @@ def ranking_global(force=False):
 
 
 def ranking_category(group, force=False):
+    from nutrientes.utils import Rank
     category = Food.get_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group,))
     if len(category) == 0 or force:
         ranking_cat_list = best_of_general_2(group)
-        category = {ndb_no: (i, g, b) for i, (_, ndb_no, _, g, b) in enumerate(ranking_cat_list, 1)}
+        category = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_cat_list, f_index=lambda x: x[0])}
         Food.save_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group), category)
     return category
 
@@ -55,41 +56,42 @@ def calc_radio_omega_all():
     conn.commit()
 
 
-def ranking_by_type(data, types):
+def ranking_by_type(data, type_position):
     conn, cursor = conection()
-    for ndb_no, values in data.items():
-        for type_position, position in zip(types, values):
-            query = """ SELECT COUNT(*) 
-                        FROM ranking 
+    for ndb_no, position in data.items():
+        print type_position, position
+        #for type_position, position in zip(types, values):
+        query = """ SELECT COUNT(*) 
+                    FROM ranking 
+                    WHERE ndb_no='{ndb_no}'
+                    AND type_position='{type_position}'""".format(
+                ndb_no=ndb_no, 
+                type_position=type_position)
+        cursor.execute(query)
+        if cursor.fetchall()[0][0] == 1:
+            query = """UPDATE ranking 
+                        SET position={position}
                         WHERE ndb_no='{ndb_no}'
                         AND type_position='{type_position}'""".format(
-                    ndb_no=ndb_no, 
-                    type_position=type_position)
-            cursor.execute(query)
-            if cursor.fetchall()[0][0] == 1:
-                query = """UPDATE ranking 
-                            SET position={position}
-                            WHERE ndb_no='{ndb_no}'
-                            AND type_position='{type_position}'""".format(
-                    ndb_no=ndb_no,
-                    position=position,
-                    type_position=type_position)
-            else:
-                query = """INSERT INTO ranking VALUES ('{ndb_no}', {position}, '{type_position}')""".format(
-                ndb_no=ndb_no, 
-                position=position, 
+                ndb_no=ndb_no,
+                position=position,
                 type_position=type_position)
-            cursor.execute(query)
-            conn.commit()
+        else:
+            query = """INSERT INTO ranking VALUES ('{ndb_no}', {position}, '{type_position}')""".format(
+            ndb_no=ndb_no, 
+            position=position, 
+            type_position=type_position)
+        cursor.execute(query)
+        conn.commit()
 
 def insert_update_db_ranking():
     from nutrientes.utils import categories_foods
-    #data = ranking_global(force=True)
-    #ranking_by_type(data, ["global", "global_good", "global_bad"])
+    data = ranking_global(force=True)
+    ranking_by_type(data, "global")
 
-    for group, _ in categories_foods():
-        data = ranking_category(group, force=True)
-        ranking_by_type(data, ["category", "category_good", "category_bad"])
+    #for group, _ in categories_foods():
+    #    data = ranking_category(group, force=True)
+    #    ranking_by_type(data, "category")
 
 
 def recalc_preprocessed_data():

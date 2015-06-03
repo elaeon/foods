@@ -232,7 +232,7 @@ class Rank(object):
             category_nutr[nutr_no] = {"caution": caution, "data": {}, "avg": avg, "units": None}
             units = None
             for ndb_no, long_desc_es, nutr_val, units in result_query:
-                category_nutr[nutr_no]["data"][ndb_no] = nutr_val
+                category_nutr[nutr_no]["data"][ndb_no] = float(nutr_val)
                 self.foods[ndb_no] = long_desc_es
             category_nutr[nutr_no]["units"] = units
         return category_nutr
@@ -246,8 +246,7 @@ class Rank(object):
             data.setdefault(nutr_no, [])
             reverse = not bool(self.category_nutr[nutr_no]["caution"])
             for ndb_no in self.base_food:
-                nutr_val = self.category_nutr[nutr_no]["data"].get(ndb_no, 0)
-                nutr_val = float(nutr_val)
+                nutr_val = self.category_nutr[nutr_no]["data"].get(ndb_no, 0.0)
                 data[nutr_no].append((ndb_no, self.foods.get(ndb_no, None), nutr_val))
             data[nutr_no].sort(reverse=reverse, key=lambda x: x[2])
         return data
@@ -277,17 +276,18 @@ class Rank(object):
                 positions[v[0]]["val"].append((v[2], diff_avg, self.category_nutr[nutr_no]["units"]))
         return sorted(positions.values(), key=lambda x: x["i"])
 
-    def rank2natural(self, data):
+    @classmethod
+    def rank2natural(self, data, f_index):
         base = None
         index = 0
         for d in data:
-            if base != d["i"]:
-                base = d["i"]
+            if base != f_index(d):
+                base = f_index(d)
                 index += 1
             yield index, d
     
     def order(self):
-        return self.rank2natural(self.sorted_data(self.ids2data_sorted()))
+        return self.rank2natural(self.sorted_data(self.ids2data_sorted()), f_index=lambda x: x["i"])
     
 
 def query_build(nutr_no, category_food, name=None):
@@ -336,45 +336,27 @@ def best_of_general_2(category=None, name=None):
     # hasheamos las llaves para mantener el orden
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
 
-    querys_good = []
-    querys_bad = []
+    querys = []
     for nutr_no, (avg, caution) in nutr_avg.items():
         query = query_build(nutr_no, category)
         cursor.execute(query)
-        if caution:
-            querys_bad.append((nutr_no, caution, avg, cursor.fetchall()))
-        else:
-            querys_good.append((nutr_no, caution, avg, cursor.fetchall()))
+        querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
-    rank_g = Rank(querys_good)
-    order_good = rank_g.order()
-    rank_b = Rank(querys_bad)
-    order_bad = rank_b.order()
-    good = ((i, food["attr"][0], food["attr"][1]) for i, food in order_good)
-    bad =  ((i, food["attr"][0], food["attr"][1]) for i, food in order_bad)
-
-    total = {ndb_no: {"g": i, "name": name} for i, ndb_no, name in good}
-    
-    for i, ndb_no, name in bad:
-        if ndb_no in total:
-            total[ndb_no]["b"] = i
-            total[ndb_no]["name"] = name
-        else:
-            total[ndb_no] = {"b": i, "name": name}
+    rank = Rank(querys)
+    total = {food["attr"][0]: {"global": i, "name": food["attr"][1]} for i, food in rank.order()}
 
     for ndb_no, radio in radio_omega(category=category):
         if not ndb_no in total:
             total[ndb_no] = {}
 
-        if 0 < radio < 4:
-            total[ndb_no]["r"] = -normal(float(radio-1), 0, 0.3993)*100
+        if 0 < radio <= 4:
+            total[ndb_no]["radio"] = -normal(float(radio-1), 0, 0.3993)
         elif radio == 0:
-            total[ndb_no]["r"] = 6533/100.
+            total[ndb_no]["radio"] = 6533/150.
         else:
-            total[ndb_no]["r"] = float(radio*10)
-
-    results = [(v.get("g", 10000) + v.get("b", 0) + v.get("r", 0), ndb_no, v.get("name", ""), v.get("g", 10000), v.get("b", 10000)) 
-                for ndb_no, v in total.items()]
+            total[ndb_no]["radio"] = float(radio)
+    
+    results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", "")) for ndb_no, v in total.items()]
     results.sort()
     return results
 
@@ -383,19 +365,30 @@ def normal(x, u, s):
     return math.exp(-((x-u)**2)/(2*(s**2)))/(s*((2*math.pi)**.5))
 
 weight_nutrs = {
-    "255": 1.1, #Water
-    "601": 2.5, #Cholesterol
-    "269": 2.5, #Sugars, total
-    "262": 1.5, #Caffeine
-    "307": 2.5, #Sodium, Na
-    "605": 2.6, #Fatty acids, total trans
-    "606": 2.5, #Fatty acids, total saturated
-    "607": 2.5, #4:0
-    "609": 2.5, #8:0
-    "608": 2.5, #6:0
-    "204": 1.2, #Total lipid (fat)
-    "omega3": 0.2,
+    "255": 10.0, #Water
+    "601": 10.0, #Cholesterol
+    "269": 8.0, #Sugars, total
+    "262": 10.5, #Caffeine
+    "307": 7.5, #Sodium, Na
+    "605": 9.6, #Fatty acids, total trans
+    "606": 9.5, #Fatty acids, total saturated
+    "607": 8.5, #4:0
+    "609": 8.5, #8:0
+    "608": 8.5, #6:0
+    "204": 1.1, #Total lipid (fat)
+    "omega3": 0.05,
     "205": 1.5, #Carbohydrate, by difference
+    "211": 8.0, #Glucose (dextrose)
+    "212": 3.0, #Fructose
+    "210": 3.0, #Sucrose
+    "203": .5,  #Protein
+    "209": 3.0, #Starch
+    "431": .5,  #Folic acid
+    "213": 3.0, #Lactose
+    "287": 3.0, #Galactose
+    "214": 3.0, #Maltose
+    "207": 3.0,  #Ash
+    "291": .5   #Fiber, total dietary
 }
 
 caution_nutr = {
