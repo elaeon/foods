@@ -33,7 +33,7 @@ def ranking_global(force=False):
 
 def ranking_category(group, force=False):
     from nutrientes.utils import Rank
-    category = Food.get_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group,))
+    category = Food.get_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group))
     if len(category) == 0 or force:
         ranking_cat_list = best_of_general_2(group)
         category = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_cat_list, f_index=lambda x: x[0])}
@@ -60,8 +60,6 @@ def calc_radio_omega_all():
 def ranking_by_type(data, type_position):
     conn, cursor = conection()
     for ndb_no, position in data.items():
-        #print type_position, position
-        #for type_position, position in zip(types, values):
         query = """ SELECT COUNT(*) 
                     FROM ranking 
                     WHERE ndb_no='{ndb_no}'
@@ -101,16 +99,16 @@ def insert_update_db_ranking():
     data = ranking_global(force=True)
     ranking_by_type(data, "global")
 
-    for group, _ in categories_foods():
-        data = ranking_category(group, force=True)
-        ranking_by_type(data, "category")
+    #for group, _ in categories_foods():
+    #    data = ranking_category(group, force=True)
+    #    ranking_by_type(data, "category")
 
 
 def recalc_preprocessed_data():
-    print "Generate AVG"
-    calc_avg(force=True)
-    print "Generate Matrix"
-    matrix_food(force=True)
+    #print "Generate AVG"
+    #calc_avg(force=True)
+    #print "Generate Matrix"
+    #matrix_food(force=True)
     print "Generate Ranks"
     insert_update_db_ranking()
 

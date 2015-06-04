@@ -77,14 +77,21 @@ def food(request, ndb_no):
 
 
 def food_compare(request):
+    from nutrientes.utils import create_common_table
     food_compare = request.session.get("food_compare", {})
     foods = []
+    dicts = []
+    names = []
     if len(food_compare.keys()) >= 2:
         from nutrientes.utils import Food
         for ndb_no in food_compare.keys():
             foods.append(Food(ndb_no))
-
-    return render(request, "compare_food.html", {"foods": foods})
+        for food in foods:
+            dicts.append({v[0]: v for v in food.nutrients})
+            names.append(food.name)
+        common_table = create_common_table(dicts)
+    return render(request, "compare_food.html", 
+        {"foods": foods, "common_table": common_table, "names": names})
 
 
 def romega(request):
@@ -114,13 +121,13 @@ def set_comparation(request, ndb_no, operation):
 
 def list_food_category(request, category_id, order):
     from nutrientes.utils import alimentos_category, alimentos_category_name
-    from nutrientes.utils import best_of_general_2
+    from nutrientes.utils import ranking_nutr
 
     categoria = alimentos_category_name(category_id)[0][0]
     if order == u"alfanumeric":
         foods = alimentos_category(category=category_id, limit="limit 9000")        
     else:
-        foods = best_of_general_2(category_id)
+        foods = ranking_nutr(category_food=category_id)
 
     return render(request, "food_category.html", {
         "foods": foods, 

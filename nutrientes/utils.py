@@ -206,7 +206,7 @@ def ranking_nutr(category_food=None):
                 AND type_position = 'global'
                 ORDER BY position"""
     else:
-        query = """SELECT food_des.ndb_no, food_des.long_desc_es, food_des.long_desc
+        query = """SELECT position, food_des.ndb_no, food_des.long_desc_es, food_des.long_desc
                 FROM food_des, ranking, fd_group
                 WHERE food_des.ndb_no=ranking.ndb_no
                 AND fd_group.fdgrp_cd=food_des.fdgrp_cd
@@ -666,4 +666,25 @@ class Food(object):
         return {"total": len(self.nutrients),
             "good": good,
             "bad": bad}
+
+def create_common_table(dicts):
+    common_keys = set(dicts[0].keys())
+    not_common_keys = set(dicts[0].keys())
+    global_keys = {}
+    for dict_ in dicts[1:]:
+        not_common_keys = not_common_keys.union(dict_.keys())
+        common_keys = common_keys.intersection(dict_.keys())
+    
+    for dict_ in dicts:
+        for k, v in dict_.items():
+            if k not in global_keys:
+                global_keys[k] = v[1]
+    not_common_keys = not_common_keys.difference(common_keys)
+
+    table = []
+    for dict_ in dicts:
+        data_c = [dict_[key] for key in common_keys]
+        data_nc = [dict_.get(key, ('', global_keys[key], 0, '')) for key in not_common_keys]
+        table.append(data_c+data_nc)
+    return table
 

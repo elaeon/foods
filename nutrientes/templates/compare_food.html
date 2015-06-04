@@ -21,6 +21,10 @@
 </div>
 
 <div id="chartContainer"></div>
+
+<div id="text-chart">
+	<div id="chart1"></div>
+</div>
 </div>
 </div>
 {% endblock %}
@@ -28,6 +32,39 @@
 {% block js %}
 <script type="text/javascript" src="{% static 'd3.js' %}"></script>
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
+<script src="https://raw.githubusercontent.com/elaeon/radar-chart-d3/master/src/radar-chart.js"></script>
+<script type="text/javascript">
+names = []
+{% for name in names %}
+names.push('{{ name }}');
+{% endfor %}
+
+var options = {
+    w:600,
+    h:600,
+    factor:1,
+    factorLegend:1,
+    levels:1,
+    //maxValue: 
+    maxValue: {},
+    legend: names,
+    legendText: 'Food',
+    zoomOut: 1,
+    ExtraWidthX: 200,
+    ExtraWidthY: 200,
+    defaultValue: 2005
+}
+data_r = [];
+
+{% for food in common_table %}
+    data_r0 = [];
+    {% for _, nutrient, value, unit in food %}
+    data_r0.push({"value": {{ value }}, "axis": "{{ nutrient }}"});
+    {% endfor %}
+    data_r.push(data_r0);
+{% endfor %}
+RadarChart.draw("#chart1", data_r, options);
+</script>
 
 <script type="text/javascript">
 var data = [];
@@ -56,7 +93,8 @@ var l = myChart.addSeries("tipo", dimple.plot.line);
 
 //l.interpolation = "step";
 //l.interpolation = "cardinal";
-myChart.addLegend(60, 10, 700, 20, "right");
+//myChart.addLegend(60, 10, 700, 20, "right");
+myChart.addLegend(900, 100, 60, 300, "right");
 //myChart.setStoryboard("nutr");
 y.useLog = true;
 y.logBase = 10;
