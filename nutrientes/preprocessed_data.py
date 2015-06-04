@@ -22,10 +22,11 @@ def matrix_food(force=False):
 
 
 def ranking_global(force=False):
+    from nutrientes.utils import Rank
     global_ = Food.get_matrix(PREPROCESSED_DATA_DIR+"ranking.p")
     if len(global_) == 0 or force:
         ranking_list = best_of_general_2()
-        global_ = {ndb_no: (i, g, b) for i, (_, ndb_no, _, g, b) in enumerate(ranking_list, 1)}
+        global_ = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_list, f_index=lambda x: x[0])}
         Food.save_matrix(PREPROCESSED_DATA_DIR+"ranking.p", global_)
     return global_
 
@@ -59,7 +60,7 @@ def calc_radio_omega_all():
 def ranking_by_type(data, type_position):
     conn, cursor = conection()
     for ndb_no, position in data.items():
-        print type_position, position
+        #print type_position, position
         #for type_position, position in zip(types, values):
         query = """ SELECT COUNT(*) 
                     FROM ranking 
@@ -84,19 +85,32 @@ def ranking_by_type(data, type_position):
         cursor.execute(query)
         conn.commit()
 
+def calc_avg(force=False):
+    from nutrientes.utils import avg_omega, avg_nutrients, OMEGAS
+    nutavg_vector = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
+    if len(nutavg_vector) == 0 or force:
+        #appended the units with blank ''
+        omegas = avg_omega()
+        allnutavg_vector = [e[1:] + [""] for e in sorted(avg_nutrients().values())] +\
+                        zip(omegas._fields[:-1], sorted(OMEGAS.keys()), omegas[:-1], ['g'] * len(omegas[:-1]))
+        nutavg_vector, _ = Food.subs_omegas(allnutavg_vector)
+        Food.save_matrix(PREPROCESSED_DATA_DIR + "nutavg.p", nutavg_vector)
+
 def insert_update_db_ranking():
     from nutrientes.utils import categories_foods
     data = ranking_global(force=True)
     ranking_by_type(data, "global")
 
-    #for group, _ in categories_foods():
-    #    data = ranking_category(group, force=True)
-    #    ranking_by_type(data, "category")
+    for group, _ in categories_foods():
+        data = ranking_category(group, force=True)
+        ranking_by_type(data, "category")
 
 
 def recalc_preprocessed_data():
-    #print "Generate Matrix"
-    #matrix_food(force=True)
+    print "Generate AVG"
+    calc_avg(force=True)
+    print "Generate Matrix"
+    matrix_food(force=True)
     print "Generate Ranks"
     insert_update_db_ranking()
 
