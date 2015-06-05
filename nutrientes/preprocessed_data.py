@@ -99,9 +99,9 @@ def insert_update_db_ranking():
     data = ranking_global(force=True)
     ranking_by_type(data, "global")
 
-    #for group, _ in categories_foods():
-    #    data = ranking_category(group, force=True)
-    #    ranking_by_type(data, "category")
+    for group, _ in categories_foods():
+        data = ranking_category(group, force=True)
+        ranking_by_type(data, "category")
 
 
 def recalc_preprocessed_data():

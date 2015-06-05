@@ -378,17 +378,19 @@ weight_nutrs = {
     "204": 1.1, #Total lipid (fat)
     "omega3": 0.05,
     "205": 1.5, #Carbohydrate, by difference
-    "211": 8.0, #Glucose (dextrose)
-    "212": 3.0, #Fructose
+    "211": 5.0, #Glucose (dextrose)
+    "212": 7.0, #Fructose
     "210": 3.0, #Sucrose
     "203": .5,  #Protein
     "209": 3.0, #Starch
     "431": .5,  #Folic acid
-    "213": 3.0, #Lactose
-    "287": 3.0, #Galactose
+    "213": 4.0, #Lactose
+    "287": 4.0, #Galactose
     "214": 3.0, #Maltose
     "207": 3.0,  #Ash
-    "291": .5   #Fiber, total dietary
+    "291": .5,   #Fiber, total dietary
+    "313": 8.5,  #Fluoride, F
+    "omega6": 1.8
 }
 
 caution_nutr = {
@@ -406,7 +408,8 @@ caution_nutr = {
     "209": "Starch",
     "607": "4:0",
     "609": "8:0",
-    "608": "6:0"
+    "608": "6:0",
+    "313": "Fluoride, F"
 }
 
 exclude_nutr = {
