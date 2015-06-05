@@ -409,7 +409,9 @@ caution_nutr = {
     "607": "4:0",
     "609": "8:0",
     "608": "6:0",
-    "313": "Fluoride, F"
+    "313": "Fluoride, F",
+    "212": "Fructose",
+    "211": "Glucose (dextrose)",
 }
 
 exclude_nutr = {

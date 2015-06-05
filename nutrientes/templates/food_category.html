@@ -17,6 +17,7 @@
 <p>Los alimentos están ordenados por sus beneficios alimenticios. Desea cambiar el orden a <a role="button" class="btn btn-primary" href="{% url 'list_food_category' category_id 'alfanumeric' %}">Alfanumérico</a></p>
 {% for i, ndb_no, name, name_en in foods %}
 <div style="margin-top: 1px;">
+{{ i }}. 
 <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ name_en }}" data-content="{{ name_en }}">En</a>
 <a href="{% url 'view_food' ndb_no %}">{{ name }}</a>
 </div>

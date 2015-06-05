@@ -11,9 +11,9 @@
 <p>Radio {{ food.radio }}</p>
 {% with food.caution_good_nutr_avg as nutr %}
 <div class="color-swatches">
-    <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Total" data-content="Total de nutrientes">{{ nutr.total }}</a>
-    <a tabindex="0" class="btn btn-xs btn-success" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Total" data-content="Total de nutrientes no dañinos por encima del promedio.">{{ nutr.good }}</a>
-    <a tabindex="0" class="btn btn-xs btn-danger" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Total" data-content="Total de nutrientes dañinos por encima del promedio.">{{ nutr.bad }}</a>
+    <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Total nutrientes" data-content="Total de nutrientes">{{ nutr.total }}</a>
+    <a tabindex="0" class="btn btn-xs btn-success" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Nutrinetes no dañinos por encima del promedio" data-content="Total de nutrientes no dañinos por encima del promedio.">{{ nutr.good }}</a>
+    <a tabindex="0" class="btn btn-xs btn-danger" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Nutrientes dañinos por encima del promedio" data-content="Total de nutrientes dañinos por encima del promedio.">{{ nutr.bad }}</a>
 </div>
 {% endwith %}
 </div>

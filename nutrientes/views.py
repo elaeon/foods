@@ -11,14 +11,27 @@ DB_VERSION = "9.1"
 
 # Create your views here.
 def index(request):
-    from nutrientes.utils import category_food_list
+    from nutrientes.utils import category_food_list, avg_nutrients_group_nutr, nutr_features
     
     width_img_rand = random.uniform(0, 60)
     height_img_rand = random.uniform(70, 100)
+    avg_nutr = []
+    for nutr_no, name in nutr_features()[:20]:
+        norm = []
+        max_ = []
+        for category, v in avg_nutrients_group_nutr(nutr_no, order_by="avg"):
+            max_.append((v, category))
+        max_v = max(max_)
+        n_max = []
+        for v, category in max_:
+            n_max.append((float(v)/float(max_v[0])*30, category))
+        #norm.append((category, n_max))
+        avg_nutr.append((name, n_max))
     return render(request, "index.html", {
         "category_food": category_food_list(), 
         "width_img_rand": width_img_rand,
-        "height_img_rand": height_img_rand})
+        "height_img_rand": height_img_rand,
+        "avg_nutr": avg_nutr})
 
 
 def nutrient_selection(request):

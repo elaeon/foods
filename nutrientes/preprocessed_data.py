@@ -105,10 +105,10 @@ def insert_update_db_ranking():
 
 
 def recalc_preprocessed_data():
-    #print "Generate AVG"
-    #calc_avg(force=True)
-    #print "Generate Matrix"
-    #matrix_food(force=True)
+    print "Generate AVG"
+    calc_avg(force=True)
+    print "Generate Matrix"
+    matrix_food(force=True)
     print "Generate Ranks"
     insert_update_db_ranking()
 
