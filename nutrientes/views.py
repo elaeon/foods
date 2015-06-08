@@ -23,15 +23,27 @@ def index(request):
 
 
 def graph_all_nutr(request):
-    from nutrientes.utils import avg_nutrients_group_nutr, nutr_features, Food
+    from nutrientes.utils import avg_nutrients_group_nutr, nutr_features, Food, avg_nutrients_group_omega
     avg_nutr = []
-    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, None) for e in nutr_features()])
-    #omegas_l = [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
+    fields, _ = Food.subs_omegas([(e[0], e[1], 0, None) for e in nutr_features()])
     for nutr_no, name, _, _ in fields:
         avg_l = [(v, category) for category, v in avg_nutrients_group_nutr(nutr_no)]
         max_value = max(avg_l)
         norm_avg_l = [(round((float(v)/float(max_value[0]))*30), category) for v, category in avg_l]
         avg_nutr.append(("%s-%s" % (name, nutr_no), norm_avg_l))
+
+    group = {"omega 3": [], "omega 6": [], "omega 7": [], "omega 9": [], "omega6:omega3": []}
+    for category, omega3, omega6, omega7, omega9, radio in avg_nutrients_group_omega():
+        group["omega 3"].append((omega3, category))
+        group["omega 6"].append((omega6, category)) 
+        group["omega 7"].append((omega7, category))
+        group["omega 9"].append((omega9, category)) 
+        group["omega6:omega3"].append((radio, category))
+ 
+    for nutr_no, avg_l in group.items():
+        max_value = max(avg_l, key=lambda x: x[0])
+        norm_avg_l = [(round((float(v)/float(max_value[0]))*30), category) for v, category in avg_l if max_value[0] > 0]
+        avg_nutr.append((nutr_no, norm_avg_l))
 
     return render(request, "graph_all_nutr.html", {"avg_nutr": avg_nutr})
 

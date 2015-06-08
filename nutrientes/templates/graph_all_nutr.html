@@ -19,7 +19,7 @@
     {% endfor %}
     var svg = dimple.newSvg("#graph", 2100, 600);
     var myChart = new dimple.chart(svg, data);
-    myChart.setBounds(200, 0, 1800, 500)
+    myChart.setBounds(200, 20, 1800, 500)
     var x = myChart.addCategoryAxis("x", "nutr");
     var y = myChart.addCategoryAxis("y", "cat");
     var z = myChart.addMeasureAxis("z", "value");

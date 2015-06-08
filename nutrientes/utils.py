@@ -94,6 +94,16 @@ def avg_nutrients_group_nutr(nutr_no, order_by="avg"):
     cursor.execute(query)
     return cursor.fetchall()
 
+def avg_nutrients_group_omega():
+    _, cursor = conection()
+    query = """SELECT fd_group.fdgrp_desc_es, AVG(omega3), AVG(omega6), AVG(omega7), AVG(omega9), AVG(radio)
+            FROM omega, food_des, fd_group
+            WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+            AND omega.ndb_no=food_des.ndb_no
+            GROUP BY fd_group.fdgrp_desc_es"""
+    cursor.execute(query)
+    return cursor.fetchall()
+
 def get_omegas():
     _, cursor = conection()
     query = """SELECT food_des.long_desc_es, food_des.ndb_no, omega3, omega6, radio 
