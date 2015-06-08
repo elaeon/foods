@@ -11,27 +11,29 @@ DB_VERSION = "9.1"
 
 # Create your views here.
 def index(request):
-    from nutrientes.utils import category_food_list, avg_nutrients_group_nutr, nutr_features
+    from nutrientes.utils import category_food_list
     
-    width_img_rand = random.uniform(0, 60)
-    height_img_rand = random.uniform(70, 100)
-    avg_nutr = []
-    for nutr_no, name in nutr_features()[:20]:
-        norm = []
-        max_ = []
-        for category, v in avg_nutrients_group_nutr(nutr_no, order_by="avg"):
-            max_.append((v, category))
-        max_v = max(max_)
-        n_max = []
-        for v, category in max_:
-            n_max.append((float(v)/float(max_v[0])*30, category))
-        #norm.append((category, n_max))
-        avg_nutr.append((name, n_max))
+    width_img_rand = random.uniform(0, 100) #0 to 100%
+    height_img_rand = random.uniform(0, 100) #0 to 100%
+    
     return render(request, "index.html", {
         "category_food": category_food_list(), 
         "width_img_rand": width_img_rand,
-        "height_img_rand": height_img_rand,
-        "avg_nutr": avg_nutr})
+        "height_img_rand": height_img_rand})
+
+
+def graph_all_nutr(request):
+    from nutrientes.utils import avg_nutrients_group_nutr, nutr_features, Food
+    avg_nutr = []
+    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, None) for e in nutr_features()])
+    #omegas_l = [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
+    for nutr_no, name, _, _ in fields:
+        avg_l = [(v, category) for category, v in avg_nutrients_group_nutr(nutr_no)]
+        max_value = max(avg_l)
+        norm_avg_l = [(round((float(v)/float(max_value[0]))*30), category) for v, category in avg_l]
+        avg_nutr.append(("%s-%s" % (name, nutr_no), norm_avg_l))
+
+    return render(request, "graph_all_nutr.html", {"avg_nutr": avg_nutr})
 
 
 def nutrient_selection(request):

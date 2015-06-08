@@ -31,4 +31,5 @@ urlpatterns = [
     url(r'^nutrient_selection/$', views.nutrient_selection, name="nutrient_selection"),
     url(r'^ranking_list/$', views.ranking_list, name="ranking_list"),
     url(r'^result_long_search/$', views.result_long_search, name="result_long_search"),
+    url(r'^graph_all_nutr/$', views.graph_all_nutr, name="graph_all_nutr"),
 ]

@@ -16,9 +16,10 @@
 <p class="text-muted" style="margin-left: 10px;">En esta tabla se muestran las categorias de los alimentos, junto con los nutrientes más comunes causantes de enfermedades.</p>
 
 <div class="color-swatches">
-  <div class="color-swatch bg-info" style="padding: 5px; text-align: center;">Excelente</div>
-  <div class="color-swatch bg-success" style="padding: 5px; text-align: center;">Bueno</div>
-  <div class="color-swatch bg-danger" style="padding: 5px; text-align: center;">Cuidado</div>
+    <div class="color-swatch bg-info" style="padding: 5px; text-align: center;">Excelente</div>
+    <div class="color-swatch bg-success" style="padding: 5px; text-align: center;">Bueno</div>
+    <div class="color-swatch bg-danger" style="padding: 5px; text-align: center;">Cuidado</div>
+    <a role="button" class="btn btn-sm btn-default" href="{% url 'graph_all_nutr' %}">Quiero ver más...</a>
 </div>
 
 <div class="table-responsive">
@@ -76,27 +77,5 @@
 {% endfor %}
 </tbody>
 </table>
-<div id="graph" style="margin-left: 30px;"></div>
 </div>
-<script type="text/javascript" src="{% static 'd3.js' %}"></script>
-<script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
-<script type="text/javascript">
-    data = [];
-    {% for name, values in avg_nutr %}
-    {% for v, category in values %}
-        data.push({cat: '{{ category }}', value: {{ v }}, unit: 'mg', nutr: '{{ name }}'});
-    {% endfor %}
-    {% endfor %}
-    var svg = dimple.newSvg("#graph", 720, 600);
-    var myChart = new dimple.chart(svg, data);
-    myChart.setBounds(125, 25, 600, 450)
-    myChart.addCategoryAxis("x", "nutr");
-    myChart.addCategoryAxis("y", "cat");
-    var z = myChart.addMeasureAxis("z", "value");
-    var s = myChart.addSeries("nutr", dimple.plot.bubble);
-    //s.aggregate = dimple.aggregateMethod.max;
-    z.overrideMax = 200;
-    //myChart.addLegend(240, 10, 330, 20, "right");
-    myChart.draw();
-</script>
 {% endblock %}

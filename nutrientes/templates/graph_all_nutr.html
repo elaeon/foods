@@ -1,0 +1,31 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div>
+<div class="starter-template">
+<div>Nota: El valor máximo para cada nutriente es de 30 y el mínimo es 0.</div>
+<div id="graph"></div>
+</div>
+</div>
+<script type="text/javascript" src="{% static 'd3.js' %}"></script>
+<script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
+<script type="text/javascript">
+    data = [];
+    {% for name, values in avg_nutr %}
+    {% for value, category in values %}
+        data.push({cat: '{{ category }}', value: {{ value }}, unit: null, nutr: '{{ name }}'});
+    {% endfor %}
+    {% endfor %}
+    var svg = dimple.newSvg("#graph", 2100, 600);
+    var myChart = new dimple.chart(svg, data);
+    myChart.setBounds(200, 0, 1800, 500)
+    var x = myChart.addCategoryAxis("x", "nutr");
+    var y = myChart.addCategoryAxis("y", "cat");
+    var z = myChart.addMeasureAxis("z", "value");
+    var s = myChart.addSeries("nutr", dimple.plot.bubble);
+    y.addOrderRule("cat");
+    z.overrideMax = 100;
+    myChart.draw();
+</script>
+{% endblock %}
