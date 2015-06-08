@@ -235,6 +235,7 @@ class Rank(object):
         self.base_food = None
         self.base_food_querys = base_food_querys
         self.category_nutr = self.get_categories_nutr()
+        self.ranks = None
 
     def get_categories_nutr(self):
         category_nutr = {}
@@ -260,23 +261,12 @@ class Rank(object):
                 data[nutr_no].append((ndb_no, self.foods.get(ndb_no, None), nutr_val))
             data[nutr_no].sort(reverse=reverse, key=lambda x: x[2])
         return data
-
-    def enumerateX(self, data):
-        indice = 0
-        # added extra tuple, because the last element in the list need to be evaluate
-        data_tmp = data + [(None, None, 0)]
-        for x, y in zip(data_tmp, data_tmp[1:]):
-            if abs(x[2] - y[2]) > 0:
-                yield indice, x
-                indice += 1
-            else:
-                yield indice, x
     
     def sorted_data(self, category_nutr):
         positions = {}
         for nutr_no in category_nutr.keys():
             weight = weight_nutrs.get(nutr_no, 1)
-            for i, v in self.enumerateX(category_nutr[nutr_no]):
+            for i, v in self.rank2natural(category_nutr[nutr_no], f_index=lambda x: x[2]):
                 positions.setdefault(v[0], {"attr": v[:2], "i": 0, "val": []})
                 positions[v[0]]["i"] += i * weight
                 # we evaluate if is 'caution' v[5]
@@ -285,6 +275,17 @@ class Rank(object):
                 diff_avg = v[2] - avg if not caution else avg - v[2]
                 positions[v[0]]["val"].append((v[2], diff_avg, self.category_nutr[nutr_no]["units"]))
         return sorted(positions.values(), key=lambda x: x["i"])
+
+    def get_values_food(self, ndb_no):
+        if self.ranks is None:
+            positions = {}
+            category_nutr = self.ids2data_sorted()
+            for nutr_no in category_nutr.keys():
+                for i, v in self.rank2natural(category_nutr[nutr_no], f_index=lambda x: x[2]):
+                    positions.setdefault(v[0], {})
+                    positions[v[0]][nutr_no] = i
+            self.ranks = positions
+        return self.ranks[ndb_no]
 
     @classmethod
     def rank2natural(self, data, f_index):
@@ -489,6 +490,21 @@ class Food(object):
         if len(global_) > 0:
             return {"global": global_[0][0], "category": category[0][0]}
         return None
+
+    def ranking_nutr(self):
+        _, cursor = conection()
+        nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
+        # hasheamos las llaves para mantener el orden
+        nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
+
+        querys = []
+        for nutr_no, (avg, caution) in nutr_avg.items():
+            query = query_build(nutr_no, category)
+            cursor.execute(query)
+            querys.append((nutr_no, caution, avg, cursor.fetchall()))
+
+        rank = Rank(querys)
+        total = {food["attr"][0]: {"global": i, "name": food["attr"][1]} for i, food in rank.order()}
 
     def radio(self):
         if self.radio_omega_raw == 0 and self.omegas.get("omega3", [0,0])[1] == 0:
@@ -702,4 +718,19 @@ def create_common_table(dicts):
         data_nc = [dict_.get(key, ('', global_keys[key], 0, '')) for key in not_common_keys]
         table.append(data_c+data_nc)
     return table
+
+def resumen_food_rank(ndb_no_list, category=None):
+    _, cursor = conection()
+    nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
+    # hasheamos las llaves para mantener el orden
+    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
+
+    querys = []
+    for nutr_no, (avg, caution) in nutr_avg.items():
+        query = query_build(nutr_no, category)
+        cursor.execute(query)
+        querys.append((nutr_no, caution, avg, cursor.fetchall()))
+
+    rank = Rank(querys)
+    return [rank.get_values_food(ndb_no).items() for ndb_no in ndb_no_list], len(rank.ranks)
 

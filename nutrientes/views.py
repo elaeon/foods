@@ -97,10 +97,17 @@ def ajax_search(request):
 
 
 def food(request, ndb_no):
-    from nutrientes.utils import Food
+    from nutrientes.utils import Food, resumen_food_rank
     food = Food(ndb_no)
     food_compare = request.session.get("food_compare", {})
-    return render(request, "food.html", {"food": food, "food_compare": food_compare})
+    tabla_nutr_rank, total = resumen_food_rank([food.ndb_no], "0900")
+    tabla_nutr_rank = [(nutr, v, "{0:03d}".format(v)) for nutr, v in tabla_nutr_rank[0]]
+    return render(request, "food.html", {
+        "food": food, 
+        "food_compare": food_compare,
+        "tabla_nutr_rank": tabla_nutr_rank,
+        "min_val": total/3,
+        "min_val2": (total/3)*2})
 
 
 def food_compare(request):
