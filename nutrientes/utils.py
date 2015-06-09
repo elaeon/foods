@@ -127,6 +127,18 @@ def category_food():
     cursor.execute(query)
     return cursor.fetchall()
 
+def category_food_count(category):
+    _, cursor = conection()
+    query = """
+        SELECT COUNT(food_des.fdgrp_cd)
+        FROM food_des, fd_group
+        WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd 
+        AND food_des.fdgrp_cd='{category}';
+    """.format(category=category)
+    cursor.execute(query)
+    return cursor.fetchall()
+
+
 def category_avg_omegas():
     _, cursor = conection()
     query = """
@@ -226,6 +238,28 @@ def ranking_nutr(category_food=None):
 
     cursor.execute(query)
     return cursor.fetchall()
+
+
+def ranking_nutr_detail(ndb_no, type_position):
+    _, cursor = conection()
+    
+    if type_position is "global":
+        query = """SELECT nutr_def.nutr_no, nutr_def.nutrdesc, position
+                FROM nutr_def, ranking_food_detail
+                WHERE ranking_food_detail.ndb_no='{ndb_no}'
+                AND nutr_def.nutr_no=ranking_food_detail.nutr_no
+                AND type_position = 'global'
+                ORDER BY nutr_def.nutrdesc""".format(ndb_no=ndb_no)
+    else:
+        query = """SELECT nutr_def.nutr_no, nutr_def.nutrdesc, position
+                FROM nutr_def, ranking_food_detail
+                WHERE ranking_food_detail.ndb_no='{ndb_no}'
+                AND nutr_def.nutr_no=ranking_food_detail.nutr_no
+                AND type_position = 'category'
+                ORDER BY nutr_def.nutrdesc""".format(ndb_no=ndb_no)
+
+    cursor.execute(query)
+    return cursor.fetchall()
  
 
 class Rank(object):
@@ -236,6 +270,7 @@ class Rank(object):
         self.base_food_querys = base_food_querys
         self.category_nutr = self.get_categories_nutr()
         self.ranks = None
+        self.results = None
 
     def get_categories_nutr(self):
         category_nutr = {}
@@ -273,18 +308,21 @@ class Rank(object):
                 avg = self.category_nutr[nutr_no]["avg"]
                 caution = self.category_nutr[nutr_no]["caution"]
                 diff_avg = v[2] - avg if not caution else avg - v[2]
-                positions[v[0]]["val"].append((v[2], diff_avg, self.category_nutr[nutr_no]["units"]))
+                positions[v[0]]["val"].append(
+                    (v[2], diff_avg, self.category_nutr[nutr_no]["units"]))
+                self.set_rank(v[0], nutr_no, i)
         return sorted(positions.values(), key=lambda x: x["i"])
+
+    def set_rank(self, ndb_no, nutr_no, position):
+        if self.ranks is None:
+            self.ranks = {}
+        self.ranks.setdefault(ndb_no, {})
+        self.ranks[ndb_no][nutr_no] = position
 
     def get_values_food(self, ndb_no):
         if self.ranks is None:
-            positions = {}
             category_nutr = self.ids2data_sorted()
-            for nutr_no in category_nutr.keys():
-                for i, v in self.rank2natural(category_nutr[nutr_no], f_index=lambda x: x[2]):
-                    positions.setdefault(v[0], {})
-                    positions[v[0]][nutr_no] = i
-            self.ranks = positions
+            self.sorted_data(self, category_nutr)            
         return self.ranks[ndb_no]
 
     @classmethod
@@ -367,9 +405,11 @@ def best_of_general_2(category=None, name=None):
         else:
             total[ndb_no]["radio"] = float(radio)
     
-    results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", "")) for ndb_no, v in total.items()]
+    results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", "")) 
+        for ndb_no, v in total.items()]
     results.sort()
-    return results
+    rank.results = results
+    return rank
 
 def normal(x, u, s):
     import math
@@ -698,6 +738,14 @@ class Food(object):
             "good": good,
             "bad": bad}
 
+    def ranking_nutr_detail_base(self, type_category):
+        tabla_nutr_rank = ranking_nutr_detail(self.ndb_no, type_category)
+        nutr_base = set([nutr_no for nutr_no, _, _, _ in self.nutrients])
+        tabla_nutr_rank = [(desc, position, "{0:04d}".format(position)) 
+                for nutr, desc , position in tabla_nutr_rank if nutr in nutr_base]
+        return tabla_nutr_rank
+
+
 def create_common_table(dicts):
     common_keys = set(dicts[0].keys())
     not_common_keys = set(dicts[0].keys())
@@ -719,18 +767,4 @@ def create_common_table(dicts):
         table.append(data_c+data_nc)
     return table
 
-def resumen_food_rank(ndb_no_list, category=None):
-    _, cursor = conection()
-    nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
-    # hasheamos las llaves para mantener el orden
-    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
-
-    querys = []
-    for nutr_no, (avg, caution) in nutr_avg.items():
-        query = query_build(nutr_no, category)
-        cursor.execute(query)
-        querys.append((nutr_no, caution, avg, cursor.fetchall()))
-
-    rank = Rank(querys)
-    return [rank.get_values_food(ndb_no).items() for ndb_no in ndb_no_list], len(rank.ranks)
 

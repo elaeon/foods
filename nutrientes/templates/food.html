@@ -63,17 +63,17 @@
 {% endwith %}
 <div id="chartContainer"></div>
 
+<div class="color-swatches">
+    <div class="color-swatch bg-info" style="padding: 5px; text-align: center;">Excelente</div>
+    <div class="color-swatch bg-success" style="padding: 5px; text-align: center;">Bueno</div>
+    <div class="color-swatch bg-warning" style="padding: 5px; text-align: center;">Regular</div>
+    <div class="color-swatch bg-danger" style="padding: 5px; text-align: center;">Cuidado</div>
+</div>
+<div>Posición en el ranking de Nutrientes global</div>
+<br>
 <div class="col-xs-30">
-{% for nutr, val, val_fmt in tabla_nutr_rank %}
-{% if val < min_val %}
-<a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Nutriente" data-content="{{ nutr }}">{{ val_fmt }}</a>
-{% else %}
-{% if val <= min_val2 %}
-<a tabindex="0" class="btn btn-xs btn-success" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Nutriente" data-content="{{ nutr }}">{{ val_fmt }}</a>
-{% else %}
-<a tabindex="0" class="btn btn-xs btn-danger" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Nutriente" data-content="{{ nutr }}">{{ val_fmt }}</a>
-{% endif %}
-{% endif %}
+{% for nutr, val_fmt, type in tabla_nutr_rank %}
+<a tabindex="0" class="btn btn-xs btn-{{ type }}" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Nutriente" data-content="{{ nutr }}">{{ val_fmt }}</a>
 {% endfor %}
 </div>
 

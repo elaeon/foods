@@ -21,23 +21,27 @@ def matrix_food(force=False):
     return matrix
 
 
-def ranking_global(force=False):
+def ranking_global():
     from nutrientes.utils import Rank
-    global_ = Food.get_matrix(PREPROCESSED_DATA_DIR+"ranking.p")
-    if len(global_) == 0 or force:
-        ranking_list = best_of_general_2()
-        global_ = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_list, f_index=lambda x: x[0])}
-        Food.save_matrix(PREPROCESSED_DATA_DIR+"ranking.p", global_)
+    #global_ = Food.get_matrix(PREPROCESSED_DATA_DIR+"ranking.p")
+    #if len(global_) == 0 or force:
+    rank = best_of_general_2()
+    ranking_list = rank.results
+    calc_ranking_detail(rank, "global")
+    global_ = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_list, f_index=lambda x: x[0])}
+    #Food.save_matrix(PREPROCESSED_DATA_DIR+"ranking.p", global_)
     return global_
 
 
-def ranking_category(group, force=False):
+def ranking_category(group):
     from nutrientes.utils import Rank
-    category = Food.get_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group))
-    if len(category) == 0 or force:
-        ranking_cat_list = best_of_general_2(group)
-        category = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_cat_list, f_index=lambda x: x[0])}
-        Food.save_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group), category)
+    #category = Food.get_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group))
+    #if len(category) == 0 or force:
+    rank = best_of_general_2(group)
+    ranking_cat_list = rank.results
+    calc_ranking_detail(rank, "category")
+    category = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_cat_list, f_index=lambda x: x[0])}
+    #Food.save_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group), category)
     return category
 
 
@@ -96,19 +100,56 @@ def calc_avg(force=False):
 
 def insert_update_db_ranking():
     from nutrientes.utils import categories_foods
-    data = ranking_global(force=True)
+    data = ranking_global()
     ranking_by_type(data, "global")
 
-    for group, _ in categories_foods():
-        data = ranking_category(group, force=True)
-        ranking_by_type(data, "category")
+    #for group, _ in categories_foods():
+    #    data = ranking_category(group)
+    #    ranking_by_type(data, "category")
 
+
+def ranking_detail_by_type(ndb_no, data, type_position):
+    conn, cursor = conection()
+    for nutr_no, position in data.items():
+        query = """ SELECT COUNT(*) 
+                    FROM ranking_food_detail
+                    WHERE ndb_no='{ndb_no}'
+                    AND type_position='{type_position}'
+                    AND nutr_no='{nutr_no}'""".format(
+                ndb_no=ndb_no, 
+                type_position=type_position,
+                nutr_no=nutr_no)
+        cursor.execute(query)
+        if cursor.fetchall()[0][0] == 1:
+            query = """UPDATE ranking_food_detail 
+                        SET position={position}
+                        WHERE ndb_no='{ndb_no}'
+                        AND type_position='{type_position}'
+                        AND nutr_no='{nutr_no}'""".format(
+                ndb_no=ndb_no,
+                position=position,
+                nutr_no=nutr_no,
+                type_position=type_position)
+        else:
+            query = """INSERT INTO ranking_food_detail 
+                        VALUES ('{ndb_no}', '{nutr_no}', {position}, '{type_position}')""".format(
+            ndb_no=ndb_no, 
+            position=position, 
+            type_position=type_position,
+            nutr_no=nutr_no)
+        cursor.execute(query)
+        conn.commit()
+
+def calc_ranking_detail(rank, type_category):
+    for ndb_no in rank.ranks:
+        data = rank.get_values_food(ndb_no)
+        ranking_detail_by_type(ndb_no, data, type_category)
 
 def recalc_preprocessed_data():
-    print "Generate AVG"
-    calc_avg(force=True)
-    print "Generate Matrix"
-    matrix_food(force=True)
+    #print "Generate AVG"
+    #calc_avg(force=True)
+    #print "Generate Matrix"
+    #matrix_food(force=True)
     print "Generate Ranks"
     insert_update_db_ranking()
 

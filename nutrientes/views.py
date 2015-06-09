@@ -97,17 +97,25 @@ def ajax_search(request):
 
 
 def food(request, ndb_no):
-    from nutrientes.utils import Food, resumen_food_rank
+    from nutrientes.utils import Food, ranking_nutr_detail, category_food_count
     food = Food(ndb_no)
     food_compare = request.session.get("food_compare", {})
-    tabla_nutr_rank, total = resumen_food_rank([food.ndb_no], "0900")
-    tabla_nutr_rank = [(nutr, v, "{0:03d}".format(v)) for nutr, v in tabla_nutr_rank[0]]
+    tabla_nutr_rank = food.ranking_nutr_detail_base("global")
+    tabla_nutr_rank_f = []
+    global_values = [("info", 500), ("success", 2000), ("warning", 5000)]
+    for nutr, val, val_fmt in tabla_nutr_rank:
+        for k, v in gloval_values:
+            if val < v:
+                type_ = k
+                break
+        else:
+            type_ = "danger"
+        tabla_nutr_rank_f.append((nutr, val_fmt, type_))
+    #category_total = category_food_count(food.group["id"])[0]
     return render(request, "food.html", {
         "food": food, 
         "food_compare": food_compare,
-        "tabla_nutr_rank": tabla_nutr_rank,
-        "min_val": total/3,
-        "min_val2": (total/3)*2})
+        "tabla_nutr_rank": tabla_nutr_rank_f})
 
 
 def food_compare(request):
@@ -193,14 +201,17 @@ def best_of_nutrients(request):
         "categoria": categoria, 
         "nutrs": nutrs})
 
+
 def about(request):
     return render(request, "about.html", {})
+
 
 def ranking_list(request):
     from utils import ranking_nutr
     foods = ranking_nutr()
     return render(request, "ranking_list.html", {
         "foods": foods})
+
 
 def result_long_search(request):
     if request.method == "POST":
