@@ -768,3 +768,12 @@ def create_common_table(dicts):
     return table
 
 
+def most_semejant_nutr(ndb_no, category_to_search):
+    #caution_nutr[nutr_no]
+    food_base = Food(ndb_no, avg=False)
+    nutr = {v[0]: v[2] for v in food_base.nutrients}
+    copy = {k: 0 for k in nutr}
+    for o_ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"):
+        o_food = Food(o_ndb_no, avg=False)
+        print {v[0]: v[2] for v in o_food.nutrients}
+        break

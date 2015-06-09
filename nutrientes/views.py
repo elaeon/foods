@@ -104,7 +104,7 @@ def food(request, ndb_no):
     tabla_nutr_rank_f = []
     global_values = [("info", 500), ("success", 2000), ("warning", 5000)]
     for nutr, val, val_fmt in tabla_nutr_rank:
-        for k, v in gloval_values:
+        for k, v in global_values:
             if val < v:
                 type_ = k
                 break
