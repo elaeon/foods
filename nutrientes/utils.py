@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import psycopg2
 import re
 import pickle
@@ -778,7 +779,32 @@ def create_matrix(ndb_nos, exclude_nutr=None):
                 for ndb_no in ndb_nos]
     return matrix
 
-def most_semejant_food(ndb_no, category_to_search, exclude_nutr=None):
+
+def principal_nutrients(category=None):
+    _, cursor = conection()
+    if category is None:
+        query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
+                FROM nut_data, nutr_def 
+                WHERE nut_data.nutr_no=nutr_def.nutr_no 
+                GROUP BY nutrdesc,units ORDER BY avg desc"""
+    else:
+        query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
+                FROM nut_data, nutr_def, food_des, fd_group 
+                WHERE nut_data.nutr_no=nutr_def.nutr_no 
+                AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
+                AND food_des.ndb_no=nut_data.ndb_no 
+                AND food_des.fdgrp_cd='{category}' 
+                GROUP BY nutrdesc,units ORDER BY avg desc""".format(category=category)
+    cursor.execute(query)
+    units_scale = {"g": 1, "mg": 1000, "µg": 1000000}
+    totals = []
+    for nutrdesc, avg, units in cursor.fetchall():
+        val = units_scale.get(units, 0)
+        if val != 0:
+            totals.append((nutrdesc, float(avg / val)))
+    return sorted(totals, key=lambda x: x[1], reverse=True)
+
+def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
     #from numba import jit
     from itertools import combinations
     #caution_nutr[nutr_no]
@@ -800,7 +826,7 @@ def most_semejant_food(ndb_no, category_to_search, exclude_nutr=None):
         "608": "6:0",
     }
 
-    top = 20
+    top = 25
     vector_base = food_base.vector_features(
         food_base.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr), 
         food_base.nutrients)
@@ -825,7 +851,7 @@ def most_semejant_food(ndb_no, category_to_search, exclude_nutr=None):
         print "MIN", min(diffs)
         #print count
 
-    food_size = 2
+    food_size = 8
     while food_size <= top:
         print food_size
         foods = search(food_size)
