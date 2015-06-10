@@ -8,15 +8,12 @@ except ImproperlyConfigured:
     import os
     PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
 
+
 def matrix_food(force=False):
+    from nutrientes.utils import create_matrix
     matrix = Food.get_matrix(PREPROCESSED_DATA_DIR+'matrix.p')
     if len(matrix) == 0 or force:
-        fields = Food.create_vector_fields_nutr()
-        ndb_nos = Food.alimentos(limit="limit 9000")#ALL FOOD
-        for ndb_no in ndb_nos:
-            records = Food.get_raw_nutrients(ndb_no)
-            vector = Food.vector_features(fields, records)
-            matrix.append((ndb_no, vector.values()))
+        matrix = create_matrix(Food.alimentos(limit="limit 9000"))#ALL FOOD
         Food.save_matrix(PREPROCESSED_DATA_DIR+'matrix.p', matrix)
     return matrix
 

@@ -16,7 +16,7 @@ USERNAME = 'agmartinez'
 
 
 def conection():
-    conn_string = "host='' dbname='alimentos' user='{username}'".format(username=USERNAME)
+    conn_string = "host='/var/run/postgresql/' dbname='alimentos' user='{username}'".format(username=USERNAME)
     conn = psycopg2.connect(conn_string)
     cursor = conn.cursor()
     return conn, cursor
@@ -671,21 +671,23 @@ class Food(object):
         sumyy = sum((y*y for y in v2))
         return sumxy / (sumxx * sumyy)**.5
 
-    def min_distance(self, vector_base, vectors):
+    def min_distance(self, vector_base, vectors, top=15):
         import heapq
         distance = lambda x, y: sum((x_i - y_i)**2 for x_i, y_i in izip(x, y))**.5
         #distance = self. cosine_similarity
-        distances = [(vector[0], distance(vector_base[1], vector[1])) for vector in vectors if vector_base[0] != vector[0]]
-        return heapq.nsmallest(15, distances, key=lambda x: x[1])
+        distances = ((vector[0], distance(vector_base[1], vector[1])) for vector in vectors if vector_base[0] != vector[0])
+        return heapq.nsmallest(top, distances, key=lambda x: x[1])
         #return heapq.nlargest(15, distances, key=lambda x: x[1])
 
     @classmethod
-    def create_vector_fields_nutr(self):
+    def create_vector_fields_nutr(self, exclude_nutr_l=None):
+        if exclude_nutr_l is None:
+            exclude_nutr_l = exclude_nutr.keys()
         features = nutr_features()
         fields, omegas = self.subs_omegas([(e[0], e[1], 0, None) for e in features])
         fields = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
         base = set([v[0] for v in fields])
-        return [e for e in base.difference(set(exclude_nutr.keys()))]
+        return [e for e in base.difference(set(exclude_nutr_l))]
 
     @classmethod
     def get_matrix(self, name):
@@ -699,11 +701,14 @@ class Food(object):
     def save_matrix(self, name, matrix):
         pickle.dump(matrix, open(name, 'wb'))
 
-    def similarity(self):
-        matrix = self.get_matrix(PREPROCESSED_DATA_DIR + 'matrix.p')
+    def similarity(self, matrix=None, raw=False, top=15):
+        if matrix is None:
+            matrix = self.get_matrix(PREPROCESSED_DATA_DIR + 'matrix.p')
         fields = self.create_vector_fields_nutr()
         vector_base = self.vector_features(fields, self.nutrients)
-        foods = self.min_distance((self.ndb_no, vector_base.values()), matrix)
+        foods = self.min_distance((self.ndb_no, vector_base.values()), matrix, top=top)
+        if raw:
+            return [(ndb_no, v) for ndb_no, v in foods]
         return [(ndb_no, self.get_food(ndb_no), v) for ndb_no, v in foods]
 
     @classmethod
@@ -767,13 +772,65 @@ def create_common_table(dicts):
         table.append(data_c+data_nc)
     return table
 
+def create_matrix(ndb_nos, exclude_nutr=None):
+    fields = Food.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr)
+    matrix = [(ndb_no, Food.vector_features(fields, Food.get_raw_nutrients(ndb_no)).values()) 
+                for ndb_no in ndb_nos]
+    return matrix
 
-def most_semejant_nutr(ndb_no, category_to_search):
+def most_semejant_food(ndb_no, category_to_search, exclude_nutr=None):
+    #from numba import jit
+    from itertools import combinations
     #caution_nutr[nutr_no]
     food_base = Food(ndb_no, avg=False)
-    nutr = {v[0]: v[2] for v in food_base.nutrients}
-    copy = {k: 0 for k in nutr}
-    for o_ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"):
-        o_food = Food(o_ndb_no, avg=False)
-        print {v[0]: v[2] for v in o_food.nutrients}
-        break
+
+    exclude_nutr = {
+        "601": "Cholesterol",
+        "269": "Sugars, total",
+        "605": "Fatty acids, total trans",
+        "606": "Fatty acids, total saturated",
+        "645": "Fatty acids, total monounsaturated",
+        "646": "Fatty acids, total polyunsaturated",
+        "695": "Fatty acids, total trans-polyenoic",
+        "693": "Fatty acids, total trans-monoenoic",
+        "204": "Total lipid (fat)",
+        "307": "Sodium, Na",
+        "607": "4:0",
+        "609": "8:0",
+        "608": "6:0",
+    }
+
+    top = 20
+    vector_base = food_base.vector_features(
+        food_base.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr), 
+        food_base.nutrients)
+    ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
+    matrix = create_matrix(ndb_nos, exclude_nutr=exclude_nutr)
+    equivalents = food_base.similarity(matrix=matrix, raw=True, top=top)
+    matrix_dict = {ndb_no: vector for ndb_no, vector in matrix}
+    vector_base_values = vector_base.values()
+    #@jit
+    def search(base_size):
+        #count = 0
+        diffs = []
+        for foods in combinations(equivalents, base_size):
+            rows = (matrix_dict[ndb_no] for ndb_no, _ in foods)
+            total = (sum(sublist) for sublist in izip(*rows))
+            diff = (t-b for t, b in izip(total, vector_base_values))
+            x_diff = filter(lambda x: x, (r >= 0 for r in diff))
+            #count += 1
+            diffs.append((len(vector_base_values) - len(x_diff)))
+            if len(vector_base_values) - len(x_diff) <= 10:
+                return foods
+        print "MIN", min(diffs)
+        #print count
+
+    food_size = 2
+    while food_size <= top:
+        print food_size
+        foods = search(food_size)
+        if foods is not None:
+            print foods
+            break
+        food_size += 1        
+
