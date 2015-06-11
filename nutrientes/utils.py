@@ -826,37 +826,97 @@ def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
         "608": "6:0",
     }
 
-    top = 25
     vector_base = food_base.vector_features(
         food_base.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr), 
         food_base.nutrients)
     ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
     matrix = create_matrix(ndb_nos, exclude_nutr=exclude_nutr)
-    equivalents = food_base.similarity(matrix=matrix, raw=True, top=top)
     matrix_dict = {ndb_no: vector for ndb_no, vector in matrix}
-    vector_base_values = vector_base.values()
-    #@jit
-    def search(base_size):
-        #count = 0
+    vector_base_values = vector_base.items()
+
+
+    def search(base_size, low_grow, data):
         diffs = []
-        for foods in combinations(equivalents, base_size):
+        down_vectors = []
+        every = 5
+        count = 0
+        for foods in data:
             rows = (matrix_dict[ndb_no] for ndb_no, _ in foods)
             total = (sum(sublist) for sublist in izip(*rows))
-            diff = (t-b for t, b in izip(total, vector_base_values))
-            x_diff = filter(lambda x: x, (r >= 0 for r in diff))
-            #count += 1
-            diffs.append((len(vector_base_values) - len(x_diff)))
-            if len(vector_base_values) - len(x_diff) <= 10:
+            diff = [(t-b[1], b[0]) for t, b in izip(total, vector_base_values)]
+            up_diff = filter(lambda x: x, (r >= 0 for r, _ in diff))
+            diffs.append((len(vector_base_values) - len(up_diff)))
+            if len(vector_base_values) - len(up_diff) <= 5:
                 return foods
-        print "MIN", min(diffs)
-        #print count
 
-    food_size = 8
-    while food_size <= top:
-        print food_size
-        foods = search(food_size)
-        if foods is not None:
-            print foods
-            break
-        food_size += 1        
+            down_vectors.append(((r, nutr_no) for r, nutr_no in diff if r < 0))
+            if count == every:
+                null_grow = grown(down_vectors)
+                down_vectors = []
+                count = 0
+                low_grow.append(null_grow)
+            count += 1        
+        print base_size, "MIN", min(diffs)
+
+    def grown(vectors):
+        null_grow = set([])
+        for sublist in izip(*vectors):
+            if sublist[0][0] != 0:
+                grow_ = (((sublist[-1][0] / sublist[0][0])**len(sublist)) - 1) * 100
+                if grow_ <= 1:
+                    null_grow.add(sublist[0][1])
+
+        return null_grow
+
+    def combinations():
+        top = 50
+        equivalents = food_base.similarity(matrix=matrix, raw=True, top=top)
+        counting = {}
+        for food_size in [2, top-2]:
+            low = []
+            data = combinations(equivalents, food_size)
+            foods = search(food_size, low, data)
+            for s in low:
+                for nutr_no in s:
+                    counting[nutr_no] =  counting.get(nutr_no, 0) + 1
+            if foods is not None:
+                print foods
+                break
+        print sorted(counting.items(), key=lambda x: x[1], reverse=True)
+
+    def random_select(matrix, size):
+        import random
+        indexes = set([])
+        counting = 0
+        for i in xrange(1000):
+            blocks = []
+            while counting < size:
+                i = random.randint(0, len(matrix) - 1)
+                if not i in indexes:
+                    indexes.add(i)
+                    blocks.append((matrix[i][0], None))
+                    counting += 1
+            counting = 0
+            indexes = set([])
+            yield blocks
+
+    def random():
+        top = 20
+        counting = {}
+        for food_size in xrange(2, top):
+            data = random_select(matrix, food_size)
+            low = []
+            foods = search(food_size, low, data)
+            for s in low:
+                for nutr_no in s:
+                    counting[nutr_no] =  counting.get(nutr_no, 0) + 1
+            if foods is not None:
+                print foods
+                break
+        print sorted(counting.items(), key=lambda x: x[1], reverse=True)
+
+    #print "Combinations"
+    #combinations()
+    print "RAND"
+    random()
 
