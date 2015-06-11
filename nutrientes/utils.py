@@ -340,11 +340,11 @@ class Rank(object):
         return self.rank2natural(self.sorted_data(self.ids2data_sorted()), f_index=lambda x: x["i"])
     
 
-def query_build(nutr_no, category_food, name=None):
+def query_build(nutr_no, category_food, name=None, order_by=None):
     attrs = {"nutr_no": nutr_no}
     if nutr_no.startswith("omega"):
         query = """
-            SELECT food_des.ndb_no, food_des.long_desc_es||'#'||food_des.long_desc, {omega}, 'g'
+            SELECT food_des.ndb_no, food_des.long_desc_es||'#'||food_des.long_desc, {omega} as nutr_val, 'g'
             FROM food_des, omega 
             WHERE omega.ndb_no=food_des.ndb_no"""
         attrs["omega"] = nutr_no
@@ -364,6 +364,8 @@ def query_build(nutr_no, category_food, name=None):
         query += """ AND food_des.fdgrp_cd='{category_food}'"""
         attrs["category_food"] = category_food
 
+    if order_by is not None:
+        query += """ ORDER BY nutr_val {order_by}""".format(order_by=order_by)
     query = query.format(**attrs)
     return query
 
@@ -901,7 +903,7 @@ def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
             yield blocks
 
     def random():
-        top = 20
+        top = 5
         counting = {}
         for food_size in xrange(2, top):
             data = random_select(matrix, food_size)
@@ -911,12 +913,25 @@ def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
                 for nutr_no in s:
                     counting[nutr_no] =  counting.get(nutr_no, 0) + 1
             if foods is not None:
-                print foods
+                return foods, True
                 break
-        print sorted(counting.items(), key=lambda x: x[1], reverse=True)
+        return sorted(counting.items(), key=lambda x: x[1], reverse=True), False
 
     #print "Combinations"
     #combinations()
     print "RAND"
-    random()
-
+    results, ok = random()
+    if ok:
+        print "ok"
+        print results
+    else:
+        _, cursor = conection()
+        total = []
+        for nutr_no, _ in results[:40]:
+            data = set([])
+            query = query_build(nutr_no, category_to_search, order_by="DESC")
+            cursor.execute(query)
+            for r in cursor.fetchall()[:5]:
+                data.add(r[0])
+            total.append(data)
+        print total
