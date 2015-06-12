@@ -806,58 +806,57 @@ def principal_nutrients(category=None):
             totals.append((nutrdesc, float(avg / val)))
     return sorted(totals, key=lambda x: x[1], reverse=True)
 
-def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
-    _, cursor = conection()
-    #from numba import jit
-    food_base = Food(ndb_no, avg=False)
+class MostSimilarFood(object):
+    def __init__(self, ndb_no, category_to_search, exclude_nutr=None):
+        self.food_base = Food(ndb_no, avg=False)
+        self.category_to_search = category_to_search
+        if exclude_nutr is None:
+            exclude_nutr = {
+                "601": "Cholesterol",
+                "269": "Sugars, total",
+                "605": "Fatty acids, total trans",
+                "606": "Fatty acids, total saturated",
+                "645": "Fatty acids, total monounsaturated",
+                "646": "Fatty acids, total polyunsaturated",
+                "695": "Fatty acids, total trans-polyenoic",
+                "693": "Fatty acids, total trans-monoenoic",
+                "204": "Total lipid (fat)",
+                "307": "Sodium, Na",
+                "607": "4:0",
+                "609": "8:0",
+                "608": "6:0",
+            }
 
-    exclude_nutr = {
-        "601": "Cholesterol",
-        "269": "Sugars, total",
-        "605": "Fatty acids, total trans",
-        "606": "Fatty acids, total saturated",
-        "645": "Fatty acids, total monounsaturated",
-        "646": "Fatty acids, total polyunsaturated",
-        "695": "Fatty acids, total trans-polyenoic",
-        "693": "Fatty acids, total trans-monoenoic",
-        "204": "Total lipid (fat)",
-        "307": "Sodium, Na",
-        "607": "4:0",
-        "609": "8:0",
-        "608": "6:0",
-    }
+        vector_base = self.food_base.vector_features(
+            self.food_base.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr), 
+            self.food_base.nutrients)
+        ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
+        self.matrix = create_matrix(ndb_nos, exclude_nutr=exclude_nutr)
+        self.matrix_dict = {ndb_no: vector for ndb_no, vector in self.matrix}
+        self.vector_base_values = vector_base.items()
 
-    vector_base = food_base.vector_features(
-        food_base.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr), 
-        food_base.nutrients)
-    ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
-    matrix = create_matrix(ndb_nos, exclude_nutr=exclude_nutr)
-    matrix_dict = {ndb_no: vector for ndb_no, vector in matrix}
-    vector_base_values = vector_base.items()
-
-
-    def search(base_size, low_grow, data, extra_data=[], min_diff=10):
+    def _search(self, base_size, low_grow, data, extra_data=[], min_diff=10):
         down_vectors = []
         every = 5
         count = 0
         for foods in data:
             foods_extra = foods+extra_data
-            rows = (matrix_dict[ndb_no] for ndb_no, _ in foods_extra)
+            rows = (self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra)
             total = (sum(sublist) for sublist in izip(*rows))
-            diff = [(t-b[1], b[0]) for t, b in izip(total, vector_base_values)]
+            diff = [(t-b[1], b[0]) for t, b in izip(total, self.vector_base_values)]
             up_diff = filter(lambda x: x, (r >= 0 for r, _ in diff))
-            if len(vector_base_values) - len(up_diff) <= min_diff:
+            if len(self.vector_base_values) - len(up_diff) <= min_diff:
                 return foods_extra
 
             down_vectors.append(((r, nutr_no) for r, nutr_no in diff if r < 0))
             if count == every:
-                null_grow = grown(down_vectors)
+                null_grow = self.grown(down_vectors)
                 down_vectors = []
                 count = 0
                 low_grow.append(null_grow)
             count += 1
 
-    def grown(vectors):
+    def grown(self, vectors):
         null_grow = set([])
         for sublist in izip(*vectors):
             if sublist[0][0] != 0:
@@ -867,25 +866,25 @@ def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
 
         return null_grow
 
-    def random_select(matrix, size):
+    def random_select(self, size):
         import random
         indexes = set([])
         for i in xrange(1000):
             blocks = []
             while len(blocks) < size:
-                i = random.randint(0, len(matrix) - 1)
+                i = random.randint(0, len(self.matrix) - 1)
                 if not i in indexes:
                     indexes.add(i)
-                    blocks.append((matrix[i][0], None))
+                    blocks.append((self.matrix[i][0], None))
             indexes = set([])
             yield blocks
 
-    def random(extra_food=[], min_amount_food=2, amount_food=5, min_diff=10):
+    def random(self, extra_food=[], min_amount_food=2, amount_food=5, min_diff=10):
         counting = {}
         for food_size in xrange(min_amount_food, amount_food):
-            data = random_select(matrix, food_size)
+            data = self.random_select(food_size)
             low = []
-            foods = search(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
+            foods = self._search(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
             for s in low:
                 for nutr_no in s:
                     counting[nutr_no] =  counting.get(nutr_no, 0) + 1
@@ -893,41 +892,42 @@ def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
                 return foods, True
         return sorted(counting.items(), key=lambda x: x[1], reverse=True), False
 
-    results, ok = random()
-    step_best = 1
-    count = {}
-    nutrs_no = set([])
-    amount_food = 5
-    min_amount_food = 2
-    min_diff = 10
-    results_best = []
-    while True:
-        for nutr_no, _ in results:
-            if not nutr_no in nutrs_no:
-                query = query_build(nutr_no, category_to_search, order_by="DESC")
-                cursor.execute(query)
-                for r in cursor.fetchall()[:5]:
-                    count[r[0]] = count.get(r[0], 0) + 1
-                nutrs_no.add(nutr_no)
+    def search(self):
+        _, cursor = conection()
+        results, ok = self.random()
+        step_best = 1
+        count = {}
+        nutrs_no = set([])
+        amount_food = 5
+        min_amount_food = 2
+        min_diff = 10
+        results_best = []
+        while True:
+            for nutr_no, _ in results:
+                if not nutr_no in nutrs_no:
+                    query = query_build(nutr_no, self.category_to_search, order_by="DESC")
+                    cursor.execute(query)
+                    for r in cursor.fetchall()[:5]:
+                        count[r[0]] = count.get(r[0], 0) + 1
+                    nutrs_no.add(nutr_no)
 
-        best_extra_food = sorted(count.items(), key=lambda x: x[1], reverse=True)
-        results, ok = random(
-            extra_food=best_extra_food[:step_best], 
-            min_amount_food=min_amount_food, 
-            amount_food=amount_food,
-            min_diff=min_diff)
+            best_extra_food = sorted(count.items(), key=lambda x: x[1], reverse=True)
+            results, ok = self.random(
+                extra_food=best_extra_food[:step_best], 
+                min_amount_food=min_amount_food, 
+                amount_food=amount_food,
+                min_diff=min_diff)
 
-        if ok:
-            results_best.append((results, min_diff))
-            min_diff -= 1
-        elif not ok and amount_food > 6:
-            break
-        elif step_best > 10:
-            amount_food += 1
-            step_best = 1
-            min_amount_food = amount_food - 1
-        else:
-            step_best += 1
+            if ok:
+                results_best.append((results, min_diff))
+                min_diff -= 1
+            elif not ok and amount_food > 6:
+                break
+            elif step_best > 10:
+                amount_food += 1
+                step_best = 1
+                min_amount_food = amount_food - 1
+            else:
+                step_best += 1
 
-    print "***** ok"
-    print results_best
+        return results_best
