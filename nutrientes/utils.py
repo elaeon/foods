@@ -830,10 +830,10 @@ class MostSimilarFood(object):
         vector_base = self.food_base.vector_features(
             self.food_base.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr), 
             self.food_base.nutrients)
+        self.vector_base_items = vector_base.items()
         ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
         self.matrix = create_matrix(ndb_nos, exclude_nutr=exclude_nutr)
         self.matrix_dict = {ndb_no: vector for ndb_no, vector in self.matrix}
-        self.vector_base_values = vector_base.items()
 
     def _search(self, base_size, low_grow, data, extra_data=[], min_diff=10):
         down_vectors = []
@@ -842,10 +842,11 @@ class MostSimilarFood(object):
         for foods in data:
             foods_extra = foods+extra_data
             rows = (self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra)
+            #fix: check for only nutrients in food_base
             total = (sum(sublist) for sublist in izip(*rows))
-            diff = [(t-b[1], b[0]) for t, b in izip(total, self.vector_base_values)]
+            diff = [(t-b[1], b[0]) for t, b in izip(total, self.vector_base_items)]
             up_diff = filter(lambda x: x, (r >= 0 for r, _ in diff))
-            if len(self.vector_base_values) - len(up_diff) <= min_diff:
+            if len(self.vector_base_items) - len(up_diff) <= min_diff:
                 return foods_extra
 
             down_vectors.append(((r, nutr_no) for r, nutr_no in diff if r < 0))
@@ -855,6 +856,13 @@ class MostSimilarFood(object):
                 count = 0
                 low_grow.append(null_grow)
             count += 1
+
+    def filter_other_nutr(self, vector):
+        #print vector
+        #print self.vector_base_items
+        for e_base, e_other in izip(self.vector_base_items, vector):
+            if e_base[1] > 0:
+                yield e_other
 
     def grown(self, vectors):
         null_grow = set([])
@@ -872,6 +880,7 @@ class MostSimilarFood(object):
         for i in xrange(1000):
             blocks = []
             while len(blocks) < size:
+                #fix: only search for food that contains base_food nutrients
                 i = random.randint(0, len(self.matrix) - 1)
                 if not i in indexes:
                     indexes.add(i)

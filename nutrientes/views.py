@@ -223,3 +223,19 @@ def result_long_search(request):
         conn.close()
     return render(request, "result_search.html", {
         "foods": foods})
+
+
+def equivalents(request, ndb_no):
+    from nutrientes.utils import Food, MostSimilarFood
+    similar_food = MostSimilarFood(ndb_no, "1100")
+    food_base = similar_food.food_base
+    o_foods = []
+    results = [([('11413', None), ('11667', None), ('11801', None)], 10), ([('11382', None), ('11667', None), ('11853', None)], 9), ([('11345', None), ('11656', None), ('11667', 24), ('11615', 22)], 8), ([('11987', None), ('11979', None), ('11667', 24), ('11615', 22)], 7), ([('11386', None), ('11939', None), ('11667', 24), ('11615', 22)], 6), ([('11148', None), ('11615', None), ('11658', None), ('11667', 24), ('11615', 22)], 5), ([('11658', None), ('11043', None), ('11667', 24), ('11615', 22), ('11931', 13), ('11625', 12), ('11634', 11), ('31019', 8)], 4)]
+    #results = similar_food.search()
+    if results is not None:   
+        last_result, distance = results.pop()
+        for result, _ in last_result:
+            o_foods.append(Food(result))
+    return render(request, "equivalents.html", {
+        "food_base": food_base,
+        "o_foods": o_foods})
