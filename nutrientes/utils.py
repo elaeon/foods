@@ -837,7 +837,6 @@ def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
 
 
     def search(base_size, low_grow, data, extra_data=[], min_diff=10):
-        diffs = []
         down_vectors = []
         every = 5
         count = 0
@@ -847,9 +846,7 @@ def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
             total = (sum(sublist) for sublist in izip(*rows))
             diff = [(t-b[1], b[0]) for t, b in izip(total, vector_base_values)]
             up_diff = filter(lambda x: x, (r >= 0 for r, _ in diff))
-            diffs.append((len(vector_base_values) - len(up_diff)))
             if len(vector_base_values) - len(up_diff) <= min_diff:
-                print "....", len(vector_base_values) - len(up_diff)
                 return foods_extra
 
             down_vectors.append(((r, nutr_no) for r, nutr_no in diff if r < 0))
@@ -858,8 +855,7 @@ def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
                 down_vectors = []
                 count = 0
                 low_grow.append(null_grow)
-            count += 1        
-        print base_size, "MIN", min(diffs)
+            count += 1
 
     def grown(vectors):
         null_grow = set([])
@@ -904,7 +900,7 @@ def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
     amount_food = 5
     min_amount_food = 2
     min_diff = 10
-    result_best = None
+    results_best = []
     while True:
         for nutr_no, _ in results:
             if not nutr_no in nutrs_no:
@@ -913,13 +909,8 @@ def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
                 for r in cursor.fetchall()[:5]:
                     count[r[0]] = count.get(r[0], 0) + 1
                 nutrs_no.add(nutr_no)
+
         best_extra_food = sorted(count.items(), key=lambda x: x[1], reverse=True)
-        if step_best > 10:
-            amount_food += 1
-            step_best = 1
-            min_amount_food = amount_food - 1
-        else:
-            step_best += 1
         results, ok = random(
             extra_food=best_extra_food[:step_best], 
             min_amount_food=min_amount_food, 
@@ -927,19 +918,16 @@ def most_similar_food(ndb_no, category_to_search, exclude_nutr=None):
             min_diff=min_diff)
 
         if ok:
-            print "----BEST"
-            print best_extra_food[:step_best]
-            result_best = results
+            results_best.append((results, min_diff))
             min_diff -= 1
-
-        if not ok and amount_food > 6:
+        elif not ok and amount_food > 6:
             break
-
-        print "Amount Food", amount_food - 1
-        print "STEP", step_best
-        print min_diff
-        #print "----BEST"
-        #print best_extra_food
+        elif step_best > 10:
+            amount_food += 1
+            step_best = 1
+            min_amount_food = amount_food - 1
+        else:
+            step_best += 1
 
     print "***** ok"
-    print result_best
+    print results_best
