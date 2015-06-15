@@ -229,12 +229,18 @@ def equivalents(request, ndb_no):
     from nutrientes.utils import Food, MostSimilarFood, GFood
     similar_food = MostSimilarFood(ndb_no, "1100")
     food_base = similar_food.food_base
-    o_foods = []
+    foods = []
     results = similar_food.search()
     if results is not None:   
         last_result, distance = results.pop()
-        for ndb_no, _ in last_result:
-            o_foods.append(GFood(food_base.nutrients, ndb_no=ndb_no))
+        parts = len(last_result)
+        ndb_nos = [ndb_no for ndb_no, _ in last_result]
+        o_foods = [similar_food.matrix_dict[ndb_no] for ndb_no in ndb_nos]
+        total_nutrients = [sum(row) for row in zip(*o_foods)]
+        nutr = [k for k, _ in similar_food.vector_base_items]
+        f_nutrients = zip(nutr, total_nutrients)
+        foods = [GFood(food_base.nutrients, parts, ndb_no=ndb_no) for ndb_no in ndb_nos]
     return render(request, "equivalents.html", {
         "food_base": food_base,
-        "o_foods": o_foods})
+        "o_foods": foods,
+        "f_nutrients": f_nutrients})

@@ -755,16 +755,16 @@ class Food(object):
 
 
 class GFood(Food):
-    def __init__(self, base_o_nutrients, ndb_no=None, avg=None):
+    def __init__(self, nutrients_base, parts, ndb_no=None, avg=None):
         super(GFood, self).__init__(ndb_no=ndb_no, avg=avg)
-        self.fnutrients = self.filter_other_nutr(self.nutrients, base_o_nutrients)
+        self.fnutrients = self.filter_other_nutr(self.nutrients, nutrients_base, parts)
 
-    def filter_other_nutr(self, nutrients_base, base_o_nutrients):
-        nb = {k: (name, v, u) for k, name, v, u in nutrients_base}
-        bon = {k: (name, v, u) for k, name, v, u in base_o_nutrients}
-        for k, v in bon.items():
+    def filter_other_nutr(self, this_nutrients, nutrients_base, parts):
+        nb = set([k for k, name, v, u in nutrients_base])
+        for k, name, v, u in this_nutrients:
             if k in nb:
-                yield (k, v[0], v[1], v[2])
+                yield (k, name, v/parts, u)
+
 
 
 def create_common_table(dicts):

@@ -9,6 +9,7 @@
 
 <div id="chartContainer"></div>
 <div id="chartContainer2"></div>
+<div id="chartContainer3"></div>
 </div>
 </div>
 
@@ -27,8 +28,6 @@ var data = [];
 
 var svg = dimple.newSvg("#chartContainer", 900, 600);
 var myChart = new dimple.chart(svg, data);
-myChart.assignColor("normal", "#0066ff", null, .5);
-myChart.assignColor("avg", "#aa0000", null, .3);
 myChart.setBounds(60, 30, 750, 305);
 var x = myChart.addCategoryAxis("x", "nutr");
 x.showGridlines = true;
@@ -42,20 +41,22 @@ y.logBase = 10;
 myChart.draw();
 x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';
-</script>
 
-<script type="text/javascript">
-var data = [];
+var data2 = [];
+var total = [];
 {% for food in o_foods %}
     {% for _, nutrient, value, unit in food.fnutrients %}
-        data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: '{{ food.name }}'})
+        data2.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: '{{ food.name }}'})
     {% endfor %}
 {% endfor %}
 
+{% for nutrient, value in f_nutrients %}
+    total.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '', tipo: "x"})
+{% endfor %}
+
+
 var svg = dimple.newSvg("#chartContainer2", 900, 600);
-var myChart = new dimple.chart(svg, data);
-myChart.assignColor("normal", "#0066ff", null, .5);
-myChart.assignColor("avg", "#aa0000", null, .3);
+var myChart = new dimple.chart(svg, total);
 myChart.setBounds(60, 30, 750, 305);
 var x = myChart.addCategoryAxis("x", "nutr");
 x.showGridlines = true;
@@ -63,10 +64,24 @@ var y = myChart.addMeasureAxis("y", "value");
 y.showGridlines = false;
 var l = myChart.addSeries("tipo", dimple.plot.bar);
 x.addOrderRule("nutr");
-myChart.addLegend(900, 10, 60, 100, "right");
+myChart.addLegend(900, 100, 60, 300, "right");
 y.useLog = true;
 y.logBase = 10;
 myChart.draw();
+x.titleShape.text("Nutriente");
+y.tickFormat = ',.2f';
+
+var svg = dimple.newSvg("#chartContainer3", 900, 600);
+var myChart3 = new dimple.chart(svg, data2);
+myChart3.setBounds(60, 30, 750, 305);
+var x = myChart3.addCategoryAxis("x", "nutr");
+x.showGridlines = true;
+var y = myChart3.addPctAxis("y", "value");
+y.showGridlines = false;
+var l = myChart3.addSeries("tipo", dimple.plot.bar);
+x.addOrderRule("nutr");
+myChart3.addLegend(900, 10, 700, 300, "right");
+myChart3.draw();
 x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';
 </script>
