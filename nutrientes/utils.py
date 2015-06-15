@@ -754,6 +754,19 @@ class Food(object):
         return tabla_nutr_rank
 
 
+class GFood(Food):
+    def __init__(self, base_o_nutrients, ndb_no=None, avg=None):
+        super(GFood, self).__init__(ndb_no=ndb_no, avg=avg)
+        self.fnutrients = self.filter_other_nutr(self.nutrients, base_o_nutrients)
+
+    def filter_other_nutr(self, nutrients_base, base_o_nutrients):
+        nb = {k: (name, v, u) for k, name, v, u in nutrients_base}
+        bon = {k: (name, v, u) for k, name, v, u in base_o_nutrients}
+        for k, v in bon.items():
+            if k in nb:
+                yield (k, v[0], v[1], v[2])
+
+
 def create_common_table(dicts):
     common_keys = set(dicts[0].keys())
     not_common_keys = set(dicts[0].keys())
@@ -775,8 +788,11 @@ def create_common_table(dicts):
         table.append(data_c+data_nc)
     return table
 
-def create_matrix(ndb_nos, exclude_nutr=None):
-    fields = Food.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr)
+def create_matrix(ndb_nos, exclude_nutr=None, only=None):
+    if only is not None:
+        fields = only
+    else:
+        fields = Food.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr)
     matrix = [(ndb_no, Food.vector_features(fields, Food.get_raw_nutrients(ndb_no)).values()) 
                 for ndb_no in ndb_nos]
     return matrix
@@ -830,9 +846,9 @@ class MostSimilarFood(object):
         vector_base = self.food_base.vector_features(
             self.food_base.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr), 
             self.food_base.nutrients)
-        self.vector_base_items = vector_base.items()
+        self.vector_base_items = [(k, v) for k, v in vector_base.items() if v > 0]
         ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
-        self.matrix = create_matrix(ndb_nos, exclude_nutr=exclude_nutr)
+        self.matrix = create_matrix(ndb_nos, only=[k for k, _ in self.vector_base_items])
         self.matrix_dict = {ndb_no: vector for ndb_no, vector in self.matrix}
 
     def _search(self, base_size, low_grow, data, extra_data=[], min_diff=10):
@@ -842,7 +858,6 @@ class MostSimilarFood(object):
         for foods in data:
             foods_extra = foods+extra_data
             rows = (self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra)
-            #fix: check for only nutrients in food_base
             total = (sum(sublist) for sublist in izip(*rows))
             diff = [(t-b[1], b[0]) for t, b in izip(total, self.vector_base_items)]
             up_diff = filter(lambda x: x, (r >= 0 for r, _ in diff))
@@ -856,13 +871,6 @@ class MostSimilarFood(object):
                 count = 0
                 low_grow.append(null_grow)
             count += 1
-
-    def filter_other_nutr(self, vector):
-        #print vector
-        #print self.vector_base_items
-        for e_base, e_other in izip(self.vector_base_items, vector):
-            if e_base[1] > 0:
-                yield e_other
 
     def grown(self, vectors):
         null_grow = set([])
@@ -880,7 +888,6 @@ class MostSimilarFood(object):
         for i in xrange(1000):
             blocks = []
             while len(blocks) < size:
-                #fix: only search for food that contains base_food nutrients
                 i = random.randint(0, len(self.matrix) - 1)
                 if not i in indexes:
                     indexes.add(i)

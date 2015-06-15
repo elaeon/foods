@@ -47,7 +47,7 @@ y.tickFormat = ',.2f';
 <script type="text/javascript">
 var data = [];
 {% for food in o_foods %}
-    {% for _, nutrient, value, unit in food.nutrients %}
+    {% for _, nutrient, value, unit in food.fnutrients %}
         data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: '{{ food.name }}'})
     {% endfor %}
 {% endfor %}
@@ -63,7 +63,7 @@ var y = myChart.addMeasureAxis("y", "value");
 y.showGridlines = false;
 var l = myChart.addSeries("tipo", dimple.plot.bar);
 x.addOrderRule("nutr");
-myChart.addLegend(900, 100, 60, 300, "right");
+myChart.addLegend(900, 10, 60, 100, "right");
 y.useLog = true;
 y.logBase = 10;
 myChart.draw();
