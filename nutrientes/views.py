@@ -226,21 +226,30 @@ def result_long_search(request):
 
 
 def equivalents(request, ndb_no):
-    from nutrientes.utils import Food, MostSimilarFood, GFood
+    from nutrientes.utils import Food, MostSimilarFood, GFood, nutr_features_ids
     similar_food = MostSimilarFood(ndb_no, "1100")
     food_base = similar_food.food_base
-    foods = []
     results = similar_food.search()
-    if results is not None:   
+    if results is not None:
+        #print results
         last_result, distance = results.pop()
         parts = len(last_result)
         ndb_nos = [ndb_no for ndb_no, _ in last_result]
         o_foods = [similar_food.matrix_dict[ndb_no] for ndb_no in ndb_nos]
-        total_nutrients = [sum(row) for row in zip(*o_foods)]
-        nutr = [k for k, _ in similar_food.vector_base_items]
-        f_nutrients = zip(nutr, total_nutrients)
+        #print ndb_nos
+        nutrs_ids = nutr_features_ids([k for k, _ in similar_food.matrix[0][1]])
+        nutrs_ids = {k: v for k, v in nutrs_ids}
+        total_nutrients = [(nutrs_ids[row[0][0]], sum(e[1] for e in row)) for row in zip(*o_foods)]
+        nutrs_ids_base = nutr_features_ids([k for k, _ in similar_food.vector_base_items])
+        nutrs_ids_base = {k: v for k, v in nutrs_ids_base}
+        food_base_nutrients = [(nutrs_ids_base[k], v) for k, v in similar_food.vector_base_items]
         foods = [GFood(food_base.nutrients, parts, ndb_no=ndb_no) for ndb_no in ndb_nos]
+    else:
+        foods = []
+        f_nutrients = []
     return render(request, "equivalents.html", {
         "food_base": food_base,
+        "food_base_nutrients": food_base_nutrients,
         "o_foods": foods,
-        "f_nutrients": f_nutrients})
+        "f_nutrients": total_nutrients,
+        "distance": distance})

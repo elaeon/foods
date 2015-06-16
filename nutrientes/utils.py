@@ -40,11 +40,11 @@ def nutr_features_group(order_by="sr_order"):
 def nutr_features_ids(ids):
     _, cursor = conection()
     ids_order = ",".join(("(%s,'%s')" % (i, id) for i, id in enumerate(ids)))
-    omegas = set([omega.replace(" ", "") for omega in OMEGAS.keys()])
+    omegas = {omega.replace(" ", ""): omega for omega in OMEGAS.keys()}
     omegas_index = []
-    for omega in omegas:
+    for omega_k, omega_v in omegas.items():
         try:
-            omegas_index.append((ids.index(omega), omega))
+            omegas_index.append((ids.index(omega_k), omega_k, omega_v))
         except ValueError:
             pass
     if len(ids_order) > 0:
@@ -53,8 +53,8 @@ def nutr_features_ids(ids):
                     ON nutr_def.nutr_no = x.nutr_no ORDER BY x.ordering""".format(ids=ids_order)
         cursor.execute(query)
         data = cursor.fetchall()
-        for index, omega in omegas_index:
-            data.insert(index, (omega, omega))
+        for index, omega_k, omega_v in omegas_index:
+            data.insert(index, (omega_k, omega_v))
         return data
     else:
         return []
@@ -793,7 +793,7 @@ def create_matrix(ndb_nos, exclude_nutr=None, only=None):
         fields = only
     else:
         fields = Food.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr)
-    matrix = [(ndb_no, Food.vector_features(fields, Food.get_raw_nutrients(ndb_no)).values()) 
+    matrix = [(ndb_no, Food.vector_features(fields, Food.get_raw_nutrients(ndb_no)).items())
                 for ndb_no in ndb_nos]
     return matrix
 
@@ -858,7 +858,7 @@ class MostSimilarFood(object):
         for foods in data:
             foods_extra = foods+extra_data
             rows = (self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra)
-            total = (sum(sublist) for sublist in izip(*rows))
+            total = (sum(e[1] for e in sublist) for sublist in izip(*rows))
             diff = [(t-b[1], b[0]) for t, b in izip(total, self.vector_base_items)]
             up_diff = filter(lambda x: x, (r >= 0 for r, _ in diff))
             if len(self.vector_base_items) - len(up_diff) <= min_diff:
@@ -885,12 +885,15 @@ class MostSimilarFood(object):
     def random_select(self, size):
         import random
         indexes = set([])
-        for i in xrange(1000):
+        #keys = self.matrix.keys()
+        for i in xrange(100):
             blocks = []
             while len(blocks) < size:
+                #i = random.randint(0, len(keys) - 1)
                 i = random.randint(0, len(self.matrix) - 1)
                 if not i in indexes:
                     indexes.add(i)
+                    #blocks.append((keys[i], None))
                     blocks.append((self.matrix[i][0], None))
             indexes = set([])
             yield blocks
@@ -911,6 +914,8 @@ class MostSimilarFood(object):
     def search(self):
         _, cursor = conection()
         results, ok = self.random()
+        if ok:
+            return results
         step_best = 1
         count = {}
         nutrs_no = set([])
@@ -919,23 +924,28 @@ class MostSimilarFood(object):
         min_diff = 10
         results_best = []
         while True:
+            new = False
             for nutr_no, _ in results:
                 if not nutr_no in nutrs_no:
+                    new = True
                     query = query_build(nutr_no, self.category_to_search, order_by="DESC")
                     cursor.execute(query)
-                    for r in cursor.fetchall()[:5]:
+                    for r in cursor.fetchall()[:10]:
                         count[r[0]] = count.get(r[0], 0) + 1
                     nutrs_no.add(nutr_no)
-
-            best_extra_food = sorted(count.items(), key=lambda x: x[1], reverse=True)
+            if new:
+                best_extra_food = sorted(count.items(), key=lambda x: x[1], reverse=True)
+            
             results, ok = self.random(
                 extra_food=best_extra_food[:step_best], 
                 min_amount_food=min_amount_food, 
                 amount_food=amount_food,
                 min_diff=min_diff)
 
+            #print min_diff, amount_food
             if ok:
                 results_best.append((results, min_diff))
+                results = []
                 min_diff -= 1
             elif not ok and amount_food > 6:
                 break
@@ -947,3 +957,40 @@ class MostSimilarFood(object):
                 step_best += 1
 
         return results_best
+
+def test2():
+    ndb_no = "10056"
+    similar_food = MostSimilarFood(ndb_no, "1100")
+    o_foods = [similar_food.matrix_dict["11667"], similar_food.matrix_dict["11634"], similar_food.matrix_dict["11097"]]
+    for f in zip(*o_foods):
+        print f, sum(e[1] for e in f)
+    #print similar_food.vector_base_items, len(similar_food.vector_base_items)
+    #total_nutrients = [sum(row) for row in zip(*o_foods)]
+    nutrs_ids = nutr_features_ids([k for k, _ in similar_food.matrix[0][1]])
+    print nutrs_ids
+    #nutr = [nutrdesc for _, nutrdesc in nutrs_ids]
+    #food_base_nutrients = zip(nutr, [v for _, v in similar_food.vector_base_items])
+    #print food_base_nutrients
+    #for i in [zip(nutr, food) for food in o_foods]:
+    #    print i   
+
+def test():
+    ndb_no = "10056"
+    #ndb_no = "11667"
+    similar_food = MostSimilarFood(ndb_no, "1100")
+    food_base = similar_food.food_base
+    results = similar_food.search()
+    if results is not None:
+        print results
+        last_result, distance = results.pop()
+        parts = len(last_result)
+        ndb_nos = [ndb_no for ndb_no, _ in last_result]
+        o_foods = [similar_food.matrix_dict[ndb_no] for ndb_no in ndb_nos]
+        total_nutrients = [sum(e[1] for e in row) for row in zip(*o_foods)]
+        nutrs_ids = nutr_features_ids([k for k, _ in similar_food.matrix[0][1]])
+        #nutrs_ids = nutr_features_ids([k for k, _ in similar_food.vector_base_items])
+        nutr = [nutrdesc for _, nutrdesc in nutrs_ids]
+        #for i in [zip(nutr, (f[1] for f in food)) for food in o_foods]:
+        #    print i
+        f_nutrients = zip(nutr, total_nutrients)
+        print f_nutrients

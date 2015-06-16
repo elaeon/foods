@@ -6,9 +6,8 @@
 <div class="starter-template">
 
 <h2>{{ food_base.name }}</h2>
-
+<h3>Distancia: {{ distance }}</h3>
 <div id="chartContainer"></div>
-<div id="chartContainer2"></div>
 <div id="chartContainer3"></div>
 </div>
 </div>
@@ -22,20 +21,26 @@
 
 <script type="text/javascript">
 var data = [];
-{% for _, nutrient, value, unit in food_base.nutrients %}
-    data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: '{{ food.name }}'})
+{% for nutrient, value in food_base_nutrients %}
+    data.push({nutriente: '{{ nutrient }}', valor: {{ value }}, nombre: '{{ food_base.name }}', type: 'base'});
+{% endfor %}
+{% for nutrient, value in f_nutrients %}
+    data.push({nutriente: '{{ nutrient }}', valor: {{ value }}, nombre: "Otros"});
 {% endfor %}
 
 var svg = dimple.newSvg("#chartContainer", 900, 600);
 var myChart = new dimple.chart(svg, data);
+myChart.assignColor('base', "#aa0000", null, .7);
 myChart.setBounds(60, 30, 750, 305);
-var x = myChart.addCategoryAxis("x", "nutr");
+var x = myChart.addCategoryAxis("x", "nutriente");
 x.showGridlines = true;
-var y = myChart.addMeasureAxis("y", "value");
+var y = myChart.addMeasureAxis("y", "valor");
 y.showGridlines = false;
-var l = myChart.addSeries("tipo", dimple.plot.bar);
-x.addOrderRule("nutr");
-myChart.addLegend(900, 100, 60, 300, "right");
+var l = myChart.addSeries("nombre", dimple.plot.line);
+//var s = myChart.addSeries(["nombre", "otro"], dimple.plot.scatter);
+l.interpolation = "step";
+x.addOrderRule("nutriente");
+myChart.addLegend(50, 0, 60, 100, "left");
 y.useLog = true;
 y.logBase = 10;
 myChart.draw();
@@ -43,33 +48,12 @@ x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';
 
 var data2 = [];
-var total = [];
 {% for food in o_foods %}
     {% for _, nutrient, value, unit in food.fnutrients %}
         data2.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: '{{ food.name }}'})
     {% endfor %}
 {% endfor %}
 
-{% for nutrient, value in f_nutrients %}
-    total.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '', tipo: "x"})
-{% endfor %}
-
-
-var svg = dimple.newSvg("#chartContainer2", 900, 600);
-var myChart = new dimple.chart(svg, total);
-myChart.setBounds(60, 30, 750, 305);
-var x = myChart.addCategoryAxis("x", "nutr");
-x.showGridlines = true;
-var y = myChart.addMeasureAxis("y", "value");
-y.showGridlines = false;
-var l = myChart.addSeries("tipo", dimple.plot.bar);
-x.addOrderRule("nutr");
-myChart.addLegend(900, 100, 60, 300, "right");
-y.useLog = true;
-y.logBase = 10;
-myChart.draw();
-x.titleShape.text("Nutriente");
-y.tickFormat = ',.2f';
 
 var svg = dimple.newSvg("#chartContainer3", 900, 600);
 var myChart3 = new dimple.chart(svg, data2);
@@ -80,7 +64,7 @@ var y = myChart3.addPctAxis("y", "value");
 y.showGridlines = false;
 var l = myChart3.addSeries("tipo", dimple.plot.bar);
 x.addOrderRule("nutr");
-myChart3.addLegend(900, 10, 700, 300, "right");
+myChart3.addLegend(50, 0, 60, 100, "left");
 myChart3.draw();
 x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';
