@@ -24,7 +24,7 @@ var data = [];
 {% for nutrient, value in food_base_nutrients %}
     data.push({nutriente: '{{ nutrient }}', valor: {{ value }}, nombre: '{{ food_base.name }}', type: 'base'});
 {% endfor %}
-{% for nutrient, value in f_nutrients %}
+{% for nutrient, value in total_nutrients %}
     data.push({nutriente: '{{ nutrient }}', valor: {{ value }}, nombre: "Otros"});
 {% endfor %}
 
@@ -48,23 +48,21 @@ x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';
 
 var data2 = [];
-{% for food in o_foods %}
-    {% for _, nutrient, value, unit in food.fnutrients %}
-        data2.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: '{{ food.name }}'})
-    {% endfor %}
+{% for food_name, nutrient, value in foods %}
+    data2.push({nutriente: '{{ nutrient }}', valor: {{ value }}, nombre: '{{ food_name }}'})
 {% endfor %}
 
 
 var svg = dimple.newSvg("#chartContainer3", 900, 600);
 var myChart3 = new dimple.chart(svg, data2);
 myChart3.setBounds(60, 30, 750, 305);
-var x = myChart3.addCategoryAxis("x", "nutr");
+var x = myChart3.addCategoryAxis("x", "nutriente");
 x.showGridlines = true;
-var y = myChart3.addPctAxis("y", "value");
+var y = myChart3.addPctAxis("y", "valor");
 y.showGridlines = false;
-var l = myChart3.addSeries("tipo", dimple.plot.bar);
-x.addOrderRule("nutr");
-myChart3.addLegend(50, 0, 60, 100, "left");
+var l = myChart3.addSeries("nombre", dimple.plot.bar);
+x.addOrderRule("nutriente");
+myChart3.addLegend(50, 0, 100, 200, "left");
 myChart3.draw();
 x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';

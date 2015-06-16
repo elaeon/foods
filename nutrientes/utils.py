@@ -559,10 +559,10 @@ class Food(object):
     def get_raw_nutrients(self, ndb_no):
         _, cursor = conection()
         query  = """SELECT nutr_def.nutr_no, nutrdesc, nutr_val, units
-                    FROM nut_data, nutr_def
-                    WHERE nutr_def.nutr_no=nut_data.nutr_no
-                    AND nutr_val > 0
-                    AND nut_data.ndb_no='{ndb_no}' ORDER BY sr_order""".format(ndb_no=ndb_no)
+                FROM nut_data, nutr_def
+                WHERE nutr_def.nutr_no=nut_data.nutr_no
+                AND nutr_val > 0
+                AND nut_data.ndb_no='{ndb_no}' ORDER BY sr_order""".format(ndb_no=ndb_no)
         cursor.execute(query)
         return cursor.fetchall()
 
@@ -754,19 +754,6 @@ class Food(object):
         return tabla_nutr_rank
 
 
-class GFood(Food):
-    def __init__(self, nutrients_base, parts, ndb_no=None, avg=None):
-        super(GFood, self).__init__(ndb_no=ndb_no, avg=avg)
-        self.fnutrients = self.filter_other_nutr(self.nutrients, nutrients_base, parts)
-
-    def filter_other_nutr(self, this_nutrients, nutrients_base, parts):
-        nb = set([k for k, name, v, u in nutrients_base])
-        for k, name, v, u in this_nutrients:
-            if k in nb:
-                yield (k, name, v/parts, u)
-
-
-
 def create_common_table(dicts):
     common_keys = set(dicts[0].keys())
     not_common_keys = set(dicts[0].keys())
@@ -793,7 +780,7 @@ def create_matrix(ndb_nos, exclude_nutr=None, only=None):
         fields = only
     else:
         fields = Food.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr)
-    matrix = [(ndb_no, Food.vector_features(fields, Food.get_raw_nutrients(ndb_no)).items())
+    matrix = [(ndb_no, Food.vector_features(fields, Food(ndb_no).nutrients).items())
                 for ndb_no in ndb_nos]
     return matrix
 
@@ -929,6 +916,7 @@ class MostSimilarFood(object):
                 if not nutr_no in nutrs_no:
                     new = True
                     query = query_build(nutr_no, self.category_to_search, order_by="DESC")
+                    #print query
                     cursor.execute(query)
                     for r in cursor.fetchall()[:10]:
                         count[r[0]] = count.get(r[0], 0) + 1
@@ -958,22 +946,6 @@ class MostSimilarFood(object):
 
         return results_best
 
-def test2():
-    ndb_no = "10056"
-    similar_food = MostSimilarFood(ndb_no, "1100")
-    o_foods = [similar_food.matrix_dict["11667"], similar_food.matrix_dict["11634"], similar_food.matrix_dict["11097"]]
-    for f in zip(*o_foods):
-        print f, sum(e[1] for e in f)
-    #print similar_food.vector_base_items, len(similar_food.vector_base_items)
-    #total_nutrients = [sum(row) for row in zip(*o_foods)]
-    nutrs_ids = nutr_features_ids([k for k, _ in similar_food.matrix[0][1]])
-    print nutrs_ids
-    #nutr = [nutrdesc for _, nutrdesc in nutrs_ids]
-    #food_base_nutrients = zip(nutr, [v for _, v in similar_food.vector_base_items])
-    #print food_base_nutrients
-    #for i in [zip(nutr, food) for food in o_foods]:
-    #    print i   
-
 def test():
     ndb_no = "10056"
     #ndb_no = "11667"
@@ -981,16 +953,17 @@ def test():
     food_base = similar_food.food_base
     results = similar_food.search()
     if results is not None:
-        print results
+        #print results
         last_result, distance = results.pop()
         parts = len(last_result)
         ndb_nos = [ndb_no for ndb_no, _ in last_result]
         o_foods = [similar_food.matrix_dict[ndb_no] for ndb_no in ndb_nos]
-        total_nutrients = [sum(e[1] for e in row) for row in zip(*o_foods)]
+        #print ndb_nos
         nutrs_ids = nutr_features_ids([k for k, _ in similar_food.matrix[0][1]])
-        #nutrs_ids = nutr_features_ids([k for k, _ in similar_food.vector_base_items])
-        nutr = [nutrdesc for _, nutrdesc in nutrs_ids]
-        #for i in [zip(nutr, (f[1] for f in food)) for food in o_foods]:
-        #    print i
-        f_nutrients = zip(nutr, total_nutrients)
-        print f_nutrients
+        nutrs_ids = {k: v for k, v in nutrs_ids}
+        total_nutrients = [(nutrs_ids[row[0][0]], sum(e[1] for e in row)) for row in zip(*o_foods)]
+        print total_nutrients
+        #nutrs_ids_base = nutr_features_ids([k for k, _ in similar_food.vector_base_items])
+        #nutrs_ids_base = {k: v for k, v in nutrs_ids_base}
+        #food_base_nutrients = [(nutrs_ids_base[k], v) for k, v in similar_food.vector_base_items]
+        #foods = [GFood(food_base.nutrients, parts, ndb_no=ndb_no) for ndb_no in ndb_nos]
