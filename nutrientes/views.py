@@ -231,7 +231,7 @@ def equivalents(request, ndb_no):
     food_base = similar_food.food_base
     results = similar_food.search()
     if results is not None:
-        print results
+        #print results
         last_result, distance = results.pop()
         parts = len(last_result)
         ndb_nos = [ndb_no for ndb_no, _ in last_result]

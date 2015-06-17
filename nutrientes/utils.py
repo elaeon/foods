@@ -4,6 +4,7 @@ import re
 import pickle
 
 from itertools import izip
+from collections import OrderedDict
 from django.core.exceptions import ImproperlyConfigured
 
 try:
@@ -285,7 +286,6 @@ class Rank(object):
         return category_nutr
 
     def ids2data_sorted(self):
-        from collections import OrderedDict
         data = OrderedDict()
         if self.base_food is None:
             self.base_food = set(self.foods.keys())
@@ -653,7 +653,7 @@ class Food(object):
 
     @classmethod
     def init_features(self, records):
-        features = {}
+        features = OrderedDict()
         for record in records:
             features[record] = 0
 
@@ -838,7 +838,7 @@ class MostSimilarFood(object):
         self.matrix = create_matrix(ndb_nos, only=[k for k, _ in self.vector_base_items])
         self.matrix_dict = {ndb_no: vector for ndb_no, vector in self.matrix}
 
-    def _search(self, base_size, low_grow, data, extra_data=[], min_diff=10):
+    def search_steps(self, base_size, low_grow, data, extra_data=[], min_diff=10):
         down_vectors = []
         every = 5
         count = 0
@@ -885,12 +885,12 @@ class MostSimilarFood(object):
             indexes = set([])
             yield blocks
 
-    def random(self, extra_food=[], min_amount_food=2, amount_food=5, min_diff=10):
+    def random(self, extra_food=[], min_amount_food=2, max_amount_food=5, min_diff=10):
         counting = {}
-        for food_size in xrange(min_amount_food, amount_food):
+        for food_size in xrange(min_amount_food, max_amount_food):
             data = self.random_select(food_size)
             low = []
-            foods = self._search(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
+            foods = self.search_steps(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
             for s in low:
                 for nutr_no in s:
                     counting[nutr_no] =  counting.get(nutr_no, 0) + 1
@@ -900,23 +900,25 @@ class MostSimilarFood(object):
 
     def search(self):
         _, cursor = conection()
-        results, ok = self.random()
-        if ok:
-            return results
         step_best = 1
         count = {}
         nutrs_no = set([])
-        amount_food = 5
+        max_amount_food = 5
         min_amount_food = 2
         min_diff = 10
         results_best = []
+        results, ok = self.random(
+            min_amount_food=min_amount_food, 
+            max_amount_food=max_amount_food, 
+            min_diff=min_diff)
+        if ok:
+            results_best.append((results, min_diff))        
         while True:
             new = False
             for nutr_no, _ in results:
                 if not nutr_no in nutrs_no:
                     new = True
                     query = query_build(nutr_no, self.category_to_search, order_by="DESC")
-                    #print query
                     cursor.execute(query)
                     for r in cursor.fetchall()[:10]:
                         count[r[0]] = count.get(r[0], 0) + 1
@@ -927,18 +929,18 @@ class MostSimilarFood(object):
             results, ok = self.random(
                 extra_food=best_extra_food[:step_best], 
                 min_amount_food=min_amount_food, 
-                amount_food=amount_food,
+                max_amount_food=max_amount_food,
                 min_diff=min_diff)
 
-            #print min_diff, amount_food
             if ok:
                 results_best.append((results, min_diff))
+                print min_diff
                 results = []
                 min_diff -= 1
-            elif not ok and amount_food > 6:
+            elif not ok and max_amount_food + len(best_extra_food[:step_best]) > 6:
                 break
             elif step_best > 10:
-                amount_food += 1
+                max_amount_food += 1
                 step_best = 1
                 min_amount_food = amount_food - 1
             else:
@@ -948,22 +950,9 @@ class MostSimilarFood(object):
 
 def test():
     ndb_no = "10056"
-    #ndb_no = "11667"
     similar_food = MostSimilarFood(ndb_no, "1100")
     food_base = similar_food.food_base
     results = similar_food.search()
     if results is not None:
-        #print results
-        last_result, distance = results.pop()
-        parts = len(last_result)
-        ndb_nos = [ndb_no for ndb_no, _ in last_result]
-        o_foods = [similar_food.matrix_dict[ndb_no] for ndb_no in ndb_nos]
-        #print ndb_nos
-        nutrs_ids = nutr_features_ids([k for k, _ in similar_food.matrix[0][1]])
-        nutrs_ids = {k: v for k, v in nutrs_ids}
-        total_nutrients = [(nutrs_ids[row[0][0]], sum(e[1] for e in row)) for row in zip(*o_foods)]
-        print total_nutrients
-        #nutrs_ids_base = nutr_features_ids([k for k, _ in similar_food.vector_base_items])
-        #nutrs_ids_base = {k: v for k, v in nutrs_ids_base}
-        #food_base_nutrients = [(nutrs_ids_base[k], v) for k, v in similar_food.vector_base_items]
-        #foods = [GFood(food_base.nutrients, parts, ndb_no=ndb_no) for ndb_no in ndb_nos]
+        print results
+        #last_result, distance = results.pop()
