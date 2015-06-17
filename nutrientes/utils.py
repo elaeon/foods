@@ -194,6 +194,14 @@ def alimentos_category_name(category):
     cursor.execute(query)
     return cursor.fetchall()
 
+def get_many_food(ids):
+    ids_order = ",".join(("(%s,'%s')" % (i, id) for i, id in enumerate(ids)))
+    _, cursor = conection()
+    query = """SELECT food_des.ndb_no, food_des.long_desc_es
+                FROM food_des JOIN (VALUES {ids}) as x (ordering, ndb_no) 
+                ON food_des.ndb_no = x.ndb_no ORDER BY x.ordering""".format(ids=ids_order)
+    cursor.execute(query)
+    return cursor.fetchall()
 
 def best_of_query(nutr_no_list, category_food):
     _, cursor = conection()
@@ -837,6 +845,9 @@ class MostSimilarFood(object):
         ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
         self.matrix = create_matrix(ndb_nos, only=[k for k, _ in self.vector_base_items])
         self.matrix_dict = {ndb_no: vector for ndb_no, vector in self.matrix}
+        self.max_portion = 4.0
+        self.max_total_food = 8
+
 
     def search_steps(self, base_size, low_grow, data, extra_data=[], min_diff=10):
         down_vectors = []
@@ -845,11 +856,12 @@ class MostSimilarFood(object):
         for foods in data:
             foods_extra = foods+extra_data
             rows = (self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra)
-            total = (sum(e[1] for e in sublist) for sublist in izip(*rows))
+            total = (sum(e[1] for e in sublist)/self.max_portion for sublist in izip(*rows))
             diff = [(t-b[1], b[0]) for t, b in izip(total, self.vector_base_items)]
             up_diff = filter(lambda x: x, (r >= 0 for r, _ in diff))
-            if len(self.vector_base_items) - len(up_diff) <= min_diff:
-                return foods_extra
+            distance = len(self.vector_base_items) - len(up_diff)
+            if distance <= min_diff:
+                return foods_extra, distance
 
             down_vectors.append(((r, nutr_no) for r, nutr_no in diff if r < 0))
             if count == every:
@@ -858,6 +870,7 @@ class MostSimilarFood(object):
                 count = 0
                 low_grow.append(null_grow)
             count += 1
+        return None, -1
 
     def grown(self, vectors):
         null_grow = set([])
@@ -890,13 +903,13 @@ class MostSimilarFood(object):
         for food_size in xrange(min_amount_food, max_amount_food):
             data = self.random_select(food_size)
             low = []
-            foods = self.search_steps(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
+            foods, distance = self.search_steps(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
             for s in low:
                 for nutr_no in s:
                     counting[nutr_no] =  counting.get(nutr_no, 0) + 1
             if foods is not None:
-                return foods, True
-        return sorted(counting.items(), key=lambda x: x[1], reverse=True), False
+                return foods, distance, True
+        return sorted(counting.items(), key=lambda x: x[1], reverse=True), distance, False
 
     def search(self):
         _, cursor = conection()
@@ -907,44 +920,39 @@ class MostSimilarFood(object):
         min_amount_food = 2
         min_diff = 10
         results_best = []
-        results, ok = self.random(
-            min_amount_food=min_amount_food, 
-            max_amount_food=max_amount_food, 
-            min_diff=min_diff)
-        if ok:
-            results_best.append((results, min_diff))        
+        best_extra_food = []
         while True:
-            new = False
-            for nutr_no, _ in results:
-                if not nutr_no in nutrs_no:
-                    new = True
-                    query = query_build(nutr_no, self.category_to_search, order_by="DESC")
-                    cursor.execute(query)
-                    for r in cursor.fetchall()[:10]:
-                        count[r[0]] = count.get(r[0], 0) + 1
-                    nutrs_no.add(nutr_no)
-            if new:
-                best_extra_food = sorted(count.items(), key=lambda x: x[1], reverse=True)
-            
-            results, ok = self.random(
+            results, distance, ok = self.random(
                 extra_food=best_extra_food[:step_best], 
                 min_amount_food=min_amount_food, 
                 max_amount_food=max_amount_food,
                 min_diff=min_diff)
 
             if ok:
-                results_best.append((results, min_diff))
-                print min_diff
-                results = []
+                results_best.append((results, distance))
+                print min_diff, distance
                 min_diff -= 1
-            elif not ok and max_amount_food + len(best_extra_food[:step_best]) > 6:
+                step_best = 1
+                continue
+            elif not ok and max_amount_food + len(best_extra_food[:step_best]) >= self.max_total_food + 1:
                 break
             elif step_best > 10:
                 max_amount_food += 1
                 step_best = 1
-                min_amount_food = amount_food - 1
             else:
                 step_best += 1
+
+            new = False
+            for nutr_no, _ in results:
+                if not nutr_no in nutrs_no:
+                    new = True
+                    query = query_build(nutr_no, self.category_to_search, order_by="DESC")
+                    cursor.execute(query)
+                    for r in cursor.fetchall()[:5]:
+                        count[r[0]] = count.get(r[0], 0) + 1
+                    nutrs_no.add(nutr_no)
+            if new:
+                best_extra_food = sorted(count.items(), key=lambda x: x[1], reverse=True)
 
         return results_best
 

@@ -6,32 +6,43 @@
 <div class="starter-template">
 
 <h2>{{ food_base.name }}</h2>
-<h3>Distancia: {{ distance }}</h3>
+{% if foods %}
+<p>Se encontraron las siguientes equivalencias para "{{ food_base.name }}" 100g, con {{ distance }} nutrientes no igualados.</p>
+<ul>
+{% for ndb_no, food_name in o_foods %}
+<li><a href="{% url 'view_food' ndb_no %}">{{ food_name }}</a> 25g</li>
+{% endfor %}
+</ul>
+
 <div id="chartContainer"></div>
 <div id="chartContainer3"></div>
+{% else %}
+<p>Noe encontraron equivalencias para "{{ food_base.name }}" 100g.</p>
+{% endif %}
 </div>
 </div>
-
 {% endblock %}
 
 {% block js %}
 <script type="text/javascript" src="{% static 'd3.js' %}"></script>
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
-
-
 <script type="text/javascript">
-var data = [];
+var food_compare = [];
+var foods_similar = [];
 {% for nutrient, value in food_base_nutrients %}
-    data.push({nutriente: '{{ nutrient }}', valor: {{ value }}, nombre: '{{ food_base.name }}', type: 'base'});
+    food_compare.push({nutriente: '{{ nutrient }}', valor: {{ value }}, nombre: '{{ food_base.name }}', type: 'base'});
 {% endfor %}
 {% for nutrient, value in total_nutrients %}
-    data.push({nutriente: '{{ nutrient }}', valor: {{ value }}, nombre: "Otros"});
+    food_compare.push({nutriente: '{{ nutrient }}', valor: {{ value }}, nombre: "Otros"});
+{% endfor %}
+{% for food_name, nutrient, value in foods %}
+    foods_similar.push({nutriente: '{{ nutrient }}', valor: {{ value }}, nombre: '{{ food_name }}'})
 {% endfor %}
 
-var svg = dimple.newSvg("#chartContainer", 900, 600);
-var myChart = new dimple.chart(svg, data);
+var svg = dimple.newSvg("#chartContainer", 900, 500);
+var myChart = new dimple.chart(svg, food_compare);
 myChart.assignColor('base', "#aa0000", null, .7);
-myChart.setBounds(60, 30, 750, 305);
+myChart.setBounds(60, 50, 750, 305);
 var x = myChart.addCategoryAxis("x", "nutriente");
 x.showGridlines = true;
 var y = myChart.addMeasureAxis("y", "valor");
@@ -40,29 +51,26 @@ var l = myChart.addSeries("nombre", dimple.plot.line);
 //var s = myChart.addSeries(["nombre", "otro"], dimple.plot.scatter);
 l.interpolation = "step";
 x.addOrderRule("nutriente");
-myChart.addLegend(50, 0, 60, 100, "left");
+//myChart.addLegend(50, 0, 60, 100, "left");
+myChart.addLegend(60, 10, 410, 60);
 y.useLog = true;
 y.logBase = 10;
 myChart.draw();
 x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';
 
-var data2 = [];
-{% for food_name, nutrient, value in foods %}
-    data2.push({nutriente: '{{ nutrient }}', valor: {{ value }}, nombre: '{{ food_name }}'})
-{% endfor %}
 
-
-var svg = dimple.newSvg("#chartContainer3", 900, 600);
-var myChart3 = new dimple.chart(svg, data2);
-myChart3.setBounds(60, 30, 750, 305);
+var svg = dimple.newSvg("#chartContainer3", 1000, 500);
+var myChart3 = new dimple.chart(svg, foods_similar);
+myChart3.setBounds(60, 50, 750, 305);
 var x = myChart3.addCategoryAxis("x", "nutriente");
 x.showGridlines = true;
 var y = myChart3.addPctAxis("y", "valor");
 y.showGridlines = false;
 var l = myChart3.addSeries("nombre", dimple.plot.bar);
 x.addOrderRule("nutriente");
-myChart3.addLegend(50, 0, 100, 200, "left");
+myChart3.addLegend(810, 10, 410, 300);
+//myChart3.addLegend(50, 0, 100, 200, "left");
 myChart3.draw();
 x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';

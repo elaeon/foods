@@ -226,12 +226,11 @@ def result_long_search(request):
 
 
 def equivalents(request, ndb_no):
-    from nutrientes.utils import MostSimilarFood, nutr_features_ids
+    from nutrientes.utils import MostSimilarFood, nutr_features_ids, get_many_food
     similar_food = MostSimilarFood(ndb_no, "1100")
     food_base = similar_food.food_base
     results = similar_food.search()
     if results is not None:
-        #print results
         last_result, distance = results.pop()
         parts = len(last_result)
         ndb_nos = [ndb_no for ndb_no, _ in last_result]
@@ -243,9 +242,10 @@ def equivalents(request, ndb_no):
         nutrs_ids_base = {k: v for k, v in nutrs_ids_base}
         food_base_nutrients = [(nutrs_ids_base[k], v) for k, v in similar_food.vector_base_items]
         foods = []
-        for ndb_no in ndb_nos:
+        ndb_nos_name = get_many_food(ndb_nos)
+        for ndb_no, name in ndb_nos_name:
             for nutr_no, v in similar_food.matrix_dict[ndb_no]:
-                foods.append((ndb_no, nutrs_ids[nutr_no], v))
+                foods.append((name, nutrs_ids[nutr_no], v))
     else:
         foods = []
         f_nutrients = []
@@ -254,4 +254,5 @@ def equivalents(request, ndb_no):
         "food_base_nutrients": food_base_nutrients,
         "foods": foods,
         "total_nutrients": total_nutrients,
-        "distance": distance})
+        "distance": distance,
+        "o_foods": ndb_nos_name})
