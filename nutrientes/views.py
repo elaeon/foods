@@ -54,8 +54,10 @@ def principal_nutrients_graph(request):
     features, omegas = Food.subs_omegas([(e[0], e[0], e[1], None) for e in principal_nutrients(category="1100")])
     all_nutr = features + [(omega, omega, v, u) for omega, v, u in omegas.values()]
     sorted_data = sorted(all_nutr, key=lambda x: x[2], reverse=True)
-    print sum((d[2] for d in sorted_data))
+    maximo = sum((d[2] for d in sorted_data))
+    porcentaje_data = [(d[2]*100./maximo, d[0]) for d in sorted_data]
     return render(request, "graph_all_nutr.html", {})
+
 
 def nutrient_selection(request):
     from collections import defaultdict

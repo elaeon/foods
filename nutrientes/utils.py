@@ -813,7 +813,6 @@ def principal_nutrients(category=None):
     totals = []
     for nutrdesc, avg, units in cursor.fetchall():
         val = units_scale.get(units, 0)
-        print avg, units, val
         if val != 0:
             totals.append((nutrdesc, float(avg / val)))
     return sorted(totals, key=lambda x: x[1], reverse=True)
