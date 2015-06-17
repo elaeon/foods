@@ -809,10 +809,11 @@ def principal_nutrients(category=None):
                 AND food_des.fdgrp_cd='{category}' 
                 GROUP BY nutrdesc,units ORDER BY avg desc""".format(category=category)
     cursor.execute(query)
-    units_scale = {"g": 1, "mg": 1000, "µg": 1000000}
+    units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
     totals = []
     for nutrdesc, avg, units in cursor.fetchall():
         val = units_scale.get(units, 0)
+        print avg, units, val
         if val != 0:
             totals.append((nutrdesc, float(avg / val)))
     return sorted(totals, key=lambda x: x[1], reverse=True)
@@ -857,13 +858,14 @@ class MostSimilarFood(object):
             foods_extra = foods+extra_data
             rows = (self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra)
             total = (sum(e[1] for e in sublist)/self.max_portion for sublist in izip(*rows))
-            diff = [(t-b[1], b[0]) for t, b in izip(total, self.vector_base_items)]
-            up_diff = filter(lambda x: x, (r >= 0 for r, _ in diff))
+            diff = [(b[0], t-b[1]) for t, b in izip(total, self.vector_base_items)]
+            up_diff = filter(lambda x: x[1] >= 0, diff)
             distance = len(self.vector_base_items) - len(up_diff)
             if distance <= min_diff:
+                print filter(lambda x: x[1] < 0, diff)
                 return foods_extra, distance
 
-            down_vectors.append(((r, nutr_no) for r, nutr_no in diff if r < 0))
+            down_vectors.append(filter(lambda x: x[1] < 0, diff))
             if count == every:
                 null_grow = self.grown(down_vectors)
                 down_vectors = []
@@ -875,10 +877,10 @@ class MostSimilarFood(object):
     def grown(self, vectors):
         null_grow = set([])
         for sublist in izip(*vectors):
-            if sublist[0][0] != 0:
-                grow_ = (((sublist[-1][0] / sublist[0][0])**len(sublist)) - 1) * 100
+            if sublist[0][1] != 0:
+                grow_ = (((sublist[-1][1] / sublist[0][1])**len(sublist)) - 1) * 100
                 if grow_ <= 1: #1%
-                    null_grow.add(sublist[0][1])
+                    null_grow.add(sublist[0][0])
 
         return null_grow
 

@@ -23,7 +23,8 @@ def index(request):
 
 
 def graph_all_nutr(request):
-    from nutrientes.utils import avg_nutrients_group_nutr, nutr_features, Food, avg_nutrients_group_omega
+    from nutrientes.utils import avg_nutrients_group_nutr, nutr_features
+    from nutrientes.utils import Food, avg_nutrients_group_omega
     avg_nutr = []
     fields, _ = Food.subs_omegas([(e[0], e[1], 0, None) for e in nutr_features()])
     for nutr_no, name, _, _ in fields:
@@ -47,6 +48,14 @@ def graph_all_nutr(request):
 
     return render(request, "graph_all_nutr.html", {"avg_nutr": avg_nutr})
 
+
+def principal_nutrients_graph(request):
+    from nutrientes.utils import principal_nutrients, Food
+    features, omegas = Food.subs_omegas([(e[0], e[0], e[1], None) for e in principal_nutrients(category="1100")])
+    all_nutr = features + [(omega, omega, v, u) for omega, v, u in omegas.values()]
+    sorted_data = sorted(all_nutr, key=lambda x: x[2], reverse=True)
+    print sum((d[2] for d in sorted_data))
+    return render(request, "graph_all_nutr.html", {})
 
 def nutrient_selection(request):
     from collections import defaultdict

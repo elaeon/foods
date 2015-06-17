@@ -33,4 +33,5 @@ urlpatterns = [
     url(r'^result_long_search/$', views.result_long_search, name="result_long_search"),
     url(r'^graph_all_nutr/$', views.graph_all_nutr, name="graph_all_nutr"),
     url(r'^equivalents/(?P<ndb_no>\w+)/$', views.equivalents, name="equivalents"),
+    url(r'^principal_nutrients_graph/$', views.principal_nutrients_graph, name="principal_nutrients_graph"),
 ]
