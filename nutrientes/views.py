@@ -50,13 +50,20 @@ def graph_all_nutr(request):
 
 
 def principal_nutrients_graph(request):
-    from nutrientes.utils import principal_nutrients, Food
-    features, omegas = Food.subs_omegas([(e[0], e[0], e[1], None) for e in principal_nutrients(category="1100")])
-    all_nutr = features + [(omega, omega, v, u) for omega, v, u in omegas.values()]
-    sorted_data = sorted(all_nutr, key=lambda x: x[2], reverse=True)
-    maximo = sum((d[2] for d in sorted_data))
-    porcentaje_data = [(d[2]*100./maximo, d[0]) for d in sorted_data]
-    return render(request, "graph_all_nutr.html", {})
+    from nutrientes.utils import principal_nutrients, Food, categories_foods
+    
+    data = []
+    for category, category_des in categories_foods():
+        features, omegas = Food.subs_omegas(
+            [(e[0], e[0], e[1], None) 
+            for e in principal_nutrients(category=category)])
+        all_nutr = features + [(omega, omega, v, u) for omega, v, u in omegas.values()]
+        sorted_data = sorted(all_nutr, key=lambda x: x[2], reverse=True)
+        maximo = sum((d[2] for d in sorted_data))
+        porcentaje_data = [(round(d[2]*100./maximo, 3), d[0]) for d in sorted_data]
+        for val, nutr in porcentaje_data[:10]:
+            data.append((category_des, val, nutr))
+    return render(request, "principal_nutr_category.html", {"data": data})
 
 
 def nutrient_selection(request):
