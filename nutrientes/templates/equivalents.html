@@ -7,7 +7,13 @@
 
 <h2>{{ food_base.name }}</h2>
 {% if foods %}
-<p>Se encontraron las siguientes equivalencias para "{{ food_base.name }}" 100g, con {{ distance }} nutrientes no igualados.</p>
+<p>Se encontraron las siguientes equivalencias para "{{ food_base.name }}" 100g, con {{ distance }}
+{% if distance > 1 %}
+ nutrientes no igualados.
+{% else %}
+ nutriente no igualado.
+{% endif %}
+</p>
 <ul>
 {% for ndb_no, food_name in o_foods %}
 <li><a href="{% url 'view_food' ndb_no %}">{{ food_name }}</a> 25g</li>
@@ -52,7 +58,7 @@ var l = myChart.addSeries("nombre", dimple.plot.line);
 l.interpolation = "step";
 x.addOrderRule("nutriente");
 //myChart.addLegend(50, 0, 60, 100, "left");
-myChart.addLegend(60, 10, 410, 60);
+myChart.addLegend(60, 10, 10, 600);
 y.useLog = true;
 y.logBase = 10;
 myChart.draw();

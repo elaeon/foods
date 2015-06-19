@@ -717,10 +717,11 @@ class Food(object):
             matrix = self.get_matrix(PREPROCESSED_DATA_DIR + 'matrix.p')
         fields = self.create_vector_fields_nutr()
         vector_base = self.vector_features(fields, self.nutrients)
-        foods = self.min_distance((self.ndb_no, vector_base.values()), matrix, top=top)
+        no_ids_nutr_matrix = ((ndb_no, (nutr for _, nutr in nutrs)) for ndb_no, nutrs in matrix)
+        foods = self.min_distance((self.ndb_no, vector_base.values()), no_ids_nutr_matrix, top=top)
         if raw:
-            return [(ndb_no, v) for ndb_no, v in foods]
-        return [(ndb_no, self.get_food(ndb_no), v) for ndb_no, v in foods]
+            return ((ndb_no, v) for ndb_no, v in foods)
+        return ((ndb_no, self.get_food(ndb_no), v) for ndb_no, v in foods)
 
     @classmethod
     def alimentos(self, category=None, limit="limit 10"):
