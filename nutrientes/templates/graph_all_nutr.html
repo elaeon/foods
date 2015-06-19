@@ -4,7 +4,7 @@
 {% block contenido_base %}
 <div>
 <div class="starter-template">
-<div>Nota: El valor máximo para cada nutriente es de 30 y el mínimo es 0.</div>
+<div>Nota: El valor máximo para cada nutriente es de 30 y el mínimo es 0. Otra gŕafica para los <a href="{% url 'principal_nutrients_graph' %}">nutrientes principales</a> de cada categoria.</div>
 <div id="graph"></div>
 </div>
 </div>
@@ -17,9 +17,9 @@
         data.push({cat: '{{ category }}', value: {{ value }}, unit: null, nutr: '{{ name }}'});
     {% endfor %}
     {% endfor %}
-    var svg = dimple.newSvg("#graph", 2100, 600);
+    var svg = dimple.newSvg("#graph", 2100, 700);
     var myChart = new dimple.chart(svg, data);
-    myChart.setBounds(200, 20, 1800, 500)
+    myChart.setBounds(200, 20, 1800, 400)
     var x = myChart.addCategoryAxis("x", "nutr");
     var y = myChart.addCategoryAxis("y", "cat");
     var z = myChart.addMeasureAxis("z", "value");

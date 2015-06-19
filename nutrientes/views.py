@@ -223,6 +223,8 @@ def best_of_nutrients(request):
 def about(request):
     return render(request, "about.html", {})
 
+def contact(request):
+    return render(request, "contact.html", {})
 
 def ranking_list(request):
     from utils import ranking_nutr
