@@ -14,7 +14,8 @@
 <h4>
 <a href="{% url 'list_food_category' food.group.id 'best' %}">{{ food.group.name }}</a> 
 <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Ranking" data-content="Posición en la categoria {{ food.group.name }}">#{{ ranking.category }}</a>
-<a tabindex="0" class="btn btn-xs btn-success" role="button" data-trigger="focus" title="Ranking" onclick="javascript:agregar();">+Agregar</a>
+<a tabindex="0" class="btn btn-xs btn-success" role="button" data-trigger="focus" title="Agregar alimento" onclick="javascript:agregar();">+Agregar</a>
+<a tabindex="0" href="{% url 'equivalents' food.ndb_no %}" class="btn btn-xs btn-success" role="button" data-trigger="focus" title="alimento similar">Ver sustitutos</a>
 </h4>
 {% endwith %}
 <div class="row">
@@ -63,13 +64,14 @@
 {% endwith %}
 <div id="chartContainer"></div>
 
+<b>Posición en el ranking de nutrientes global.</b>
 <div class="color-swatches">
     <div class="color-swatch bg-info" style="padding: 5px; text-align: center;">Excelente</div>
     <div class="color-swatch bg-success" style="padding: 5px; text-align: center;">Bueno</div>
     <div class="color-swatch bg-warning" style="padding: 5px; text-align: center;">Regular</div>
     <div class="color-swatch bg-danger" style="padding: 5px; text-align: center;">Cuidado</div>
 </div>
-<div>Posición en el ranking de Nutrientes global</div>
+<div>De click en cada boton para ver el nutriente involucrado</div>
 <br>
 <div class="col-xs-30">
 {% for nutr, val_fmt, type in tabla_nutr_rank %}
