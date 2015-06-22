@@ -7,12 +7,7 @@
 
 <h2>{{ food_base.name }}</h2>
 {% if foods %}
-<p>Se encontraron las siguientes equivalencias para "{{ food_base.name }}" 100g, con {{ distance }}
-{% if distance > 1 %}
- nutrientes no igualados.
-{% else %}
- nutriente no igualado.
-{% endif %}
+<p>Se encontraron con {{ total_porcentaje }}% del total las siguientes equivalencias para "{{ food_base.name }}" 100g. De los cuales los nutrientes {{ food_not_found_nutr }} no fueron igualados.
 </p>
 <ul>
 {% for ndb_no, food_name in o_foods %}
@@ -23,7 +18,7 @@
 <div id="chartContainer"></div>
 <div id="chartContainer3"></div>
 {% else %}
-<p>Noe encontraron equivalencias para "{{ food_base.name }}" 100g.</p>
+<p>No se encontraron equivalencias para "{{ food_base.name }}" 100g.</p>
 {% endif %}
 </div>
 </div>
