@@ -848,6 +848,7 @@ class MostSimilarFood(object):
         self.matrix_dict = {ndb_no: vector for ndb_no, vector in self.matrix}
         self.max_portion = 4.0
         self.max_total_food = 8
+        self.total_nutr = len(self.vector_base_items)
 
 
     def search_steps(self, base_size, low_grow, data, extra_data=[], min_diff=10):
@@ -857,14 +858,12 @@ class MostSimilarFood(object):
         for foods in data:
             foods_extra = foods+extra_data
             rows = (self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra)
-            total = (sum(e[1] for e in sublist)/self.max_portion for sublist in izip(*rows))
-            diff = [(b[0], t-b[1]) for t, b in izip(total, self.vector_base_items)]
+            sum_nutr = [(sublist[0][0], sum(e[1] for e in sublist)/self.max_portion) for sublist in izip(*rows)]
+            diff = [(b[0], t[1]-b[1]) for t, b in izip(sum_nutr, self.vector_base_items)]
             up_diff = filter(lambda x: x[1] >= 0, diff)
-            #distance = len(self.vector_base_items) - len(up_diff)
             low_diff = filter(lambda x: x[1] < 0, diff)
             if len(low_diff) <= min_diff:
-                print low_diff
-                return foods_extra, low_diff
+                return EvalSimilarFood(foods_extra, low_diff, sum_nutr, self.total_nutr)
 
             down_vectors.append(low_diff)
             if count == every:
@@ -873,7 +872,7 @@ class MostSimilarFood(object):
                 count = 0
                 low_grow.append(null_grow)
             count += 1
-        return None, None
+        return None
 
     def grown(self, vectors):
         null_grow = set([])
@@ -906,34 +905,33 @@ class MostSimilarFood(object):
         for food_size in xrange(min_amount_food, max_amount_food):
             data = self.random_select(food_size)
             low = []
-            foods, not_found_nutr = self.search_steps(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
+            foods = self.search_steps(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
             for s in low:
                 for nutr_no in s:
-                    counting[nutr_no] =  counting.get(nutr_no, 0) + 1
+                    counting[nutr_no] = counting.get(nutr_no, 0) + 1
             if foods is not None:
-                return foods, True, not_found_nutr
-        return sorted(counting.items(), key=lambda x: x[1], reverse=True), False, []
+                return foods, True
+        return sorted(counting.items(), key=lambda x: x[1], reverse=True), False
 
     def search(self):
         _, cursor = conection()
         step_best = 1
         count = {}
-        nutrs_no = set([])
+        nutrs_no = {}
         max_amount_food = 5
         min_amount_food = 2
         min_diff = 10
         results_best = []
         best_extra_food = []
         while True:
-            results, ok, not_found_nutr = self.random(
+            results, ok = self.random(
                 extra_food=best_extra_food[:step_best], 
                 min_amount_food=min_amount_food, 
                 max_amount_food=max_amount_food,
                 min_diff=min_diff)
 
             if ok:
-                results_best.append((results, not_found_nutr))
-                print min_diff, len(not_found_nutr)
+                results_best.append(results)
                 min_diff -= 1
                 step_best = 1
                 continue
@@ -948,35 +946,70 @@ class MostSimilarFood(object):
             new = False
             for nutr_no, _ in results:
                 if not nutr_no in nutrs_no:
+                    nutrs_no.setdefault(nutr_no, set([]))
                     new = True
                     query = query_build(nutr_no, self.category_to_search, order_by="DESC")
                     cursor.execute(query)
-                    for r in cursor.fetchall()[:5]:
+                    for r in cursor.fetchall()[:10]:
                         count[r[0]] = count.get(r[0], 0) + 1
-                    nutrs_no.add(nutr_no)
+                        nutrs_no[nutr_no].add(r[0]) 
             if new:
                 best_extra_food = sorted(count.items(), key=lambda x: x[1], reverse=True)
 
         return results_best
 
+class EvalSimilarFood(object):
+    def __init__(self, result, low_nutr, sum_nutr, total_nutr):
+        self.result = self.sum_equals(result)
+        self.low_nutr = low_nutr
+        self.sum_nutr = sum_nutr
+        if total_nutr > 0:
+            self.total = 100 - (len(low_nutr) * 100 / total_nutr)
+        else:
+            self.total = 0
+        self.transform_data = None
+
+    def sum_equals(self, result):
+        base = {}
+        for ndb_no, _ in result:
+            base.setdefault(ndb_no, 0)
+            base[ndb_no] += 25
+        return base.items()
+
+    def ids2name(self, similar_food):
+        ndb_nos = [ndb_no for ndb_no, _ in self.result]
+        not_ndb_not_found = [ndb_no for ndb_no, _ in self.low_nutr]
+        o_foods = [similar_food.matrix_dict[ndb_no] for ndb_no in ndb_nos]
+        nutrs_ids = nutr_features_ids([k for k, _ in similar_food.matrix[0][1]])
+        nutrs_ids = {k: v for k, v in nutrs_ids}
+        total_nutrients = [(nutrs_ids[nutr_no], total) for nutr_no, total in self.sum_nutr]
+        nutrs_ids_base = nutr_features_ids([k for k, _ in similar_food.vector_base_items])
+        nutrs_ids_base = {k: v for k, v in nutrs_ids_base}
+        food_base_nutrients = [(nutrs_ids_base[k], v) for k, v in similar_food.vector_base_items]
+        food_not_found_nutr = [nutrs_ids[e] for e in not_ndb_not_found]
+        foods = []
+        ndb_nos_name = [(data[1][0], data[1][1], data[0][1]) for data in izip(self.result, get_many_food(ndb_nos))]
+        for ndb_no, name, _ in ndb_nos_name:
+            for nutr_no, v in similar_food.matrix_dict[ndb_no]:
+                foods.append((name, nutrs_ids[nutr_no], v))
+
+        self.transform_data = {
+            "food_base_nutrients": food_base_nutrients,
+            "foods": foods,
+            "total_nutrients": total_nutrients,
+            "food_not_found_nutr": ", ".join(food_not_found_nutr),
+            "o_foods": ndb_nos_name,
+            "total_porcentaje": self.total
+        }
+        return self.transform_data
+
 def test():
-    ndb_no = "11297"
+    ndb_no = "11625"
     similar_food = MostSimilarFood(ndb_no, "1100")
     food_base = similar_food.food_base
     results = similar_food.search()
     if results is not None:
-        #print "RESULTS", results
-        last_result, distance, not_found_nutr = results.pop()
-        parts = len(last_result)
-        print "NOT", not_found_nutr
-        ndb_nos = [ndb_no for ndb_no, _ in not_found_nutr]
-        nutrs_ids = nutr_features_ids([k for k, _ in similar_food.matrix[0][1]])
-        nutrs_ids = {k: v for k, v in nutrs_ids}
-        print [nutrs_ids[e] for e in ndb_nos]
-        #ndb_nos = [ndb_no for ndb_no, _ in last_result]
-        #o_foods = [similar_food.matrix_dict[ndb_no] for ndb_no in ndb_nos]
-        #nutrs_ids = nutr_features_ids([k for k, _ in similar_food.matrix[0][1]])
-        #nutrs_ids = {k: v for k, v in nutrs_ids}
-        #total_nutrients = [(nutrs_ids[row[0][0]], sum(e[1] for e in row)) for row in zip(*o_foods)]
-        #print "TOTAL", total_nutrients
-        #last_result, distance = results.pop()
+        last_result = results.pop()
+        #print last_result.total
+        #print last_result.ids2name(similar_food)["foods"]
+

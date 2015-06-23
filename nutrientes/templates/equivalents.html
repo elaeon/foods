@@ -10,8 +10,8 @@
 <p>Se encontraron con {{ total_porcentaje }}% del total las siguientes equivalencias para "{{ food_base.name }}" 100g. De los cuales los nutrientes {{ food_not_found_nutr }} no fueron igualados.
 </p>
 <ul>
-{% for ndb_no, food_name in o_foods %}
-<li><a href="{% url 'view_food' ndb_no %}">{{ food_name }}</a> 25g</li>
+{% for ndb_no, food_name, val in o_foods %}
+<li><a href="{% url 'view_food' ndb_no %}">{{ food_name }}</a> {{ val }}g</li>
 {% endfor %}
 </ul>
 
