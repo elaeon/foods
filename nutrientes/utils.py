@@ -878,7 +878,8 @@ class MostSimilarFood(object):
         null_grow = set([])
         for sublist in izip(*vectors):
             if sublist[0][1] != 0:
-                grow_ = (((sublist[-1][1] / sublist[0][1])**len(sublist)) - 1) * 100
+                grow_ = abs((((sublist[-1][1] / sublist[0][1])**(1./len(sublist))) - 1) * 100)
+                #print grow_, sublist[0][1], sublist[-1][1]
                 if grow_ <= 1: #1%
                     null_grow.add(sublist[0][0])
 
@@ -1004,12 +1005,14 @@ class EvalSimilarFood(object):
         return self.transform_data
 
 def test():
-    ndb_no = "11625"
+    ndb_no = "11625" #09326
     similar_food = MostSimilarFood(ndb_no, "1100")
     food_base = similar_food.food_base
-    results = similar_food.search()
-    if results is not None:
-        last_result = results.pop()
-        #print last_result.total
-        #print last_result.ids2name(similar_food)["foods"]
+    for x in range(10):
+        results = similar_food.search()
+        if results is not None or len(results) > 0:
+            last_result = results.pop()
+            print last_result.total
+            print last_result.result
+            #print last_result.ids2name(similar_food)["foods"]
 
