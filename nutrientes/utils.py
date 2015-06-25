@@ -5,15 +5,10 @@ import pickle
 
 from itertools import izip
 from collections import OrderedDict
-from django.core.exceptions import ImproperlyConfigured
 
-try:
-    from django.conf import settings
-    PREPROCESSED_DATA_DIR = settings.PREPROCESSED_DATA_DIR
-except ImproperlyConfigured:
-    import os
-    PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
+import os
 
+PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
 USERNAME = 'agmartinez'
 
 
@@ -714,11 +709,10 @@ class Food(object):
 
     def similarity(self, matrix=None, raw=False, top=15):
         if matrix is None:
-            matrix = self.get_matrix(PREPROCESSED_DATA_DIR + 'matrix.p')
+            matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.p')
         fields = self.create_vector_fields_nutr()
         vector_base = self.vector_features(fields, self.nutrients)
-        no_ids_nutr_matrix = ((ndb_no, (nutr for _, nutr in nutrs)) for ndb_no, nutrs in matrix)
-        foods = self.min_distance((self.ndb_no, vector_base.values()), no_ids_nutr_matrix, top=top)
+        foods = self.min_distance((self.ndb_no, vector_base.values()), matrix.rows, top=top)
         if raw:
             return ((ndb_no, v) for ndb_no, v in foods)
         return ((ndb_no, self.get_food(ndb_no), v) for ndb_no, v in foods)
@@ -789,8 +783,10 @@ def create_matrix(ndb_nos, exclude_nutr=None, only=None):
         fields = only
     else:
         fields = Food.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr)
-    matrix = [(ndb_no, Food.vector_features(fields, Food(ndb_no).nutrients).items())
+
+    rows = [(ndb_no, Food.vector_features(fields, Food(ndb_no).nutrients).items())
                 for ndb_no in ndb_nos]
+    matrix = MatrixNutr(rows=rows)
     return matrix
 
 
@@ -845,7 +841,7 @@ class MostSimilarFood(object):
         self.vector_base_items = [(k, v) for k, v in vector_base.items() if v > 0]
         ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
         self.matrix = create_matrix(ndb_nos, only=[k for k, _ in self.vector_base_items])
-        self.matrix_dict = {ndb_no: vector for ndb_no, vector in self.matrix}
+        self.matrix_dict = self.matrix.to_dict(nutr_no=True)
         self.max_portion = 4.0
         self.max_total_food = 8
         self.total_nutr = len(self.vector_base_items)
@@ -893,11 +889,11 @@ class MostSimilarFood(object):
             blocks = []
             while len(blocks) < size:
                 #i = random.randint(0, len(keys) - 1)
-                i = random.randint(0, len(self.matrix) - 1)
+                i = random.randint(0, len(self.matrix.rows) - 1)
                 if not i in indexes:
                     indexes.add(i)
                     #blocks.append((keys[i], None))
-                    blocks.append((self.matrix[i][0], None))
+                    blocks.append((self.matrix.rows[i][0], None))
             indexes = set([])
             yield blocks
 
@@ -981,7 +977,7 @@ class EvalSimilarFood(object):
         ndb_nos = [ndb_no for ndb_no, _ in self.result]
         not_ndb_not_found = [ndb_no for ndb_no, _ in self.low_nutr]
         o_foods = [similar_food.matrix_dict[ndb_no] for ndb_no in ndb_nos]
-        nutrs_ids = nutr_features_ids([k for k, _ in similar_food.matrix[0][1]])
+        nutrs_ids = nutr_features_ids(similar_food.matrix.column)
         nutrs_ids = {k: v for k, v in nutrs_ids}
         total_nutrients = [(nutrs_ids[nutr_no], total) for nutr_no, total in self.sum_nutr]
         nutrs_ids_base = nutr_features_ids([k for k, _ in similar_food.vector_base_items])
@@ -1004,6 +1000,42 @@ class EvalSimilarFood(object):
         }
         return self.transform_data
 
+class MatrixNutr(object):
+    def __init__(self, name=None, rows=None):
+        if rows is not None:
+            self.convert_rows(rows)
+        else:
+            self.get_matrix(name)
+
+    def convert_rows(self, items):
+        rows = []
+        if len(items) > 0:
+            column = [nutr_no for nutr_no, _ in items[0][1]]
+            for ndb_no, vector in items:
+                rows.append((ndb_no, [v for _, v in vector]))
+        else:
+            column = []
+        self.rows = rows
+        self.column = column
+
+    def get_matrix(self, name):
+        try:
+            self.column, self.rows = pickle.load(open(name, 'rb'))
+        except IOError:
+            self.column, self.rows = [], []
+
+    def save_matrix(self, name):
+        pickle.dump((self.column, self.rows), open(name, 'wb'))
+
+    def get_row(self, i):
+        row = self.rows[i]
+        return (row[0], zip(self.column, row[1]))
+
+    def to_dict(self, nutr_no=False):
+        if nutr_no is True:
+            return {ndb_no: zip(self.column, vector) for ndb_no, vector in self.rows}
+        return {ndb_no: vector for ndb_no, vector in self.rows}
+
 def test():
     ndb_no = "11625" #09326
     similar_food = MostSimilarFood(ndb_no, "1100")
@@ -1016,3 +1048,23 @@ def test():
             print last_result.result
             #print last_result.ids2name(similar_food)["foods"]
 
+
+def nearest_neighbors():
+    ndb_no = "11667"
+    if 1: 
+        food = Food(ndb_no, avg=False)
+        print list(food.similarity())
+    else:
+        from sklearn.neighbors import KDTree, BallTree
+        import numpy as np
+        matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.p')
+        matrix_dict = matrix.to_dict()
+        X = np.array([row[1] for row in matrix.rows])
+        #kdt = KDTree(X, leaf_size=30, metric='euclidean')
+        kdt = BallTree(X, leaf_size=300, metric='euclidean')
+        m = np.array(matrix_dict[ndb_no])
+        dist, ind = kdt.query(m, k=15)
+        print ind
+        print [matrix.rows[i][0] for i in ind[0]]
+        #print dist
+        #print matrix.rows[4458]

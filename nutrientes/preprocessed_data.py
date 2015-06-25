@@ -1,12 +1,8 @@
 from nutrientes.utils import Food, conection, best_of_general_2
 from django.core.exceptions import ImproperlyConfigured
 
-try:
-    from django.conf import settings
-    PREPROCESSED_DATA_DIR = settings.PREPROCESSED_DATA_DIR
-except ImproperlyConfigured:
-    import os
-    PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
+import os
+PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
 
 
 def matrix_food(force=False):
@@ -14,7 +10,7 @@ def matrix_food(force=False):
     matrix = Food.get_matrix(PREPROCESSED_DATA_DIR+'matrix.p')
     if len(matrix) == 0 or force:
         matrix = create_matrix(Food.alimentos(limit="limit 9000"))#ALL FOOD
-        Food.save_matrix(PREPROCESSED_DATA_DIR+'matrix.p', matrix)
+        matrix.save_matrix(PREPROCESSED_DATA_DIR+'matrix.p')
     return matrix
 
 
@@ -145,8 +141,8 @@ def calc_ranking_detail(rank, type_category):
 def recalc_preprocessed_data():
     #print "Generate AVG"
     #calc_avg(force=True)
-    #print "Generate Matrix"
-    #matrix_food(force=True)
-    print "Generate Ranks"
-    insert_update_db_ranking()
+    print "Generate Matrix"
+    matrix_food(force=True)
+    #print "Generate Ranks"
+    #insert_update_db_ranking()
 
