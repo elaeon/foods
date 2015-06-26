@@ -5,12 +5,10 @@ import os
 PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
 
 
-def matrix_food(force=False):
+def matrix_food():
     from nutrientes.utils import create_matrix
-    matrix = Food.get_matrix(PREPROCESSED_DATA_DIR+'matrix.p')
-    if len(matrix) == 0 or force:
-        matrix = create_matrix(Food.alimentos(limit="limit 9000"))#ALL FOOD
-        matrix.save_matrix(PREPROCESSED_DATA_DIR+'matrix.p')
+    matrix = create_matrix(Food.alimentos(limit="limit 9000"))#ALL FOOD
+    matrix.save_matrix(PREPROCESSED_DATA_DIR+'matrix.csv')
     return matrix
 
 
@@ -142,7 +140,7 @@ def recalc_preprocessed_data():
     #print "Generate AVG"
     #calc_avg(force=True)
     print "Generate Matrix"
-    matrix_food(force=True)
+    matrix_food()
     #print "Generate Ranks"
     #insert_update_db_ranking()
 
