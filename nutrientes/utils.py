@@ -709,7 +709,7 @@ class Food(object):
 
     def similarity(self, matrix=None, raw=False, top=15):
         if matrix is None:
-            matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.p')
+            matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.csv')
         fields = self.create_vector_fields_nutr()
         vector_base = self.vector_features(fields, self.nutrients)
         foods = self.min_distance((self.ndb_no, vector_base.values()), matrix.rows, top=top)
@@ -1019,13 +1019,22 @@ class MatrixNutr(object):
         self.column = column
 
     def get_matrix(self, name):
-        try:
-            self.column, self.rows = pickle.load(open(name, 'rb'))
-        except IOError:
-            self.column, self.rows = [], []
+        import csv
+        with open(name, 'rb') as csvfile:
+            spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
+            for row in spamreader:
+                self.column = row
+                break
+            self.rows = [(row[0], map(float, row[1:])) for row in spamreader]
 
     def save_matrix(self, name):
-        pickle.dump((self.column, self.rows), open(name, 'wb'))
+        import csv
+        with open(name, 'wb') as csvfile:
+            spamwriter = csv.writer(csvfile, delimiter=',',
+                            quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            spamwriter.writerow(self.column)
+            for nutr_no, row in self.rows:
+                spamwriter.writerow([nutr_no]+row)
 
     def get_row(self, i):
         row = self.rows[i]
@@ -1057,7 +1066,7 @@ def nearest_neighbors():
     else:
         from sklearn.neighbors import KDTree, BallTree
         import numpy as np
-        matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.p')
+        matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.csv')
         matrix_dict = matrix.to_dict()
         X = np.array([row[1] for row in matrix.rows])
         #kdt = KDTree(X, leaf_size=30, metric='euclidean')
