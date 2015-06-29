@@ -268,7 +268,7 @@ def ranking_nutr_detail(ndb_no, type_position):
  
 
 class Rank(object):
-    def __init__(self, base_food_querys):
+    def __init__(self, base_food_querys, weights=True):
         self.foods = {}
         self.category_nutr = {}
         self.base_food = None
@@ -276,6 +276,37 @@ class Rank(object):
         self.category_nutr = self.get_categories_nutr()
         self.ranks = None
         self.results = None
+        if weights:
+            self.weight_nutrs = {
+                "255": 10.0, #Water
+                "601": 10.0, #Cholesterol
+                "269": 8.0, #Sugars, total
+                "262": 10.5, #Caffeine
+                "307": 7.5, #Sodium, Na
+                "605": 9.6, #Fatty acids, total trans
+                "606": 9.5, #Fatty acids, total saturated
+                "607": 8.5, #4:0
+                "609": 8.5, #8:0
+                "608": 8.5, #6:0
+                "204": 1.1, #Total lipid (fat)
+                "omega3": 0.05,
+                "205": 1.5, #Carbohydrate, by difference
+                "211": 5.0, #Glucose (dextrose)
+                "212": 7.0, #Fructose
+                "210": 3.0, #Sucrose
+                "203": .5,  #Protein
+                "209": 3.0, #Starch
+                "431": .5,  #Folic acid
+                "213": 4.0, #Lactose
+                "287": 4.0, #Galactose
+                "214": 3.0, #Maltose
+                "207": 3.0,  #Ash
+                "291": .5,   #Fiber, total dietary
+                "313": 8.5,  #Fluoride, F
+                "omega6": 1.8
+            }
+        else:
+            self.weight_nutrs = {}
 
     def get_categories_nutr(self):
         category_nutr = {}
@@ -304,7 +335,7 @@ class Rank(object):
     def sorted_data(self, category_nutr):
         positions = {}
         for nutr_no in category_nutr.keys():
-            weight = weight_nutrs.get(nutr_no, 1)
+            weight = self.weight_nutrs.get(nutr_no, 1)
             for i, v in self.rank2natural(category_nutr[nutr_no], f_index=lambda x: x[2]):
                 positions.setdefault(v[0], {"attr": v[:2], "i": 0, "val": []})
                 positions[v[0]]["i"] += i * weight
@@ -421,34 +452,6 @@ def normal(x, u, s):
     import math
     return math.exp(-((x-u)**2)/(2*(s**2)))/(s*((2*math.pi)**.5))
 
-weight_nutrs = {
-    "255": 10.0, #Water
-    "601": 10.0, #Cholesterol
-    "269": 8.0, #Sugars, total
-    "262": 10.5, #Caffeine
-    "307": 7.5, #Sodium, Na
-    "605": 9.6, #Fatty acids, total trans
-    "606": 9.5, #Fatty acids, total saturated
-    "607": 8.5, #4:0
-    "609": 8.5, #8:0
-    "608": 8.5, #6:0
-    "204": 1.1, #Total lipid (fat)
-    "omega3": 0.05,
-    "205": 1.5, #Carbohydrate, by difference
-    "211": 5.0, #Glucose (dextrose)
-    "212": 7.0, #Fructose
-    "210": 3.0, #Sucrose
-    "203": .5,  #Protein
-    "209": 3.0, #Starch
-    "431": .5,  #Folic acid
-    "213": 4.0, #Lactose
-    "287": 4.0, #Galactose
-    "214": 3.0, #Maltose
-    "207": 3.0,  #Ash
-    "291": .5,   #Fiber, total dietary
-    "313": 8.5,  #Fluoride, F
-    "omega6": 1.8
-}
 
 caution_nutr = {
     "601": "Cholesterol",
@@ -537,20 +540,20 @@ class Food(object):
             return {"global": global_[0][0], "category": category[0][0]}
         return None
 
-    def ranking_nutr(self):
-        _, cursor = conection()
-        nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
+    #def ranking_nutr(self):
+    #    _, cursor = conection()
+    #    nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
         # hasheamos las llaves para mantener el orden
-        nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
+    #    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
 
-        querys = []
-        for nutr_no, (avg, caution) in nutr_avg.items():
-            query = query_build(nutr_no, category)
-            cursor.execute(query)
-            querys.append((nutr_no, caution, avg, cursor.fetchall()))
+    #    querys = []
+    #    for nutr_no, (avg, caution) in nutr_avg.items():
+    #        query = query_build(nutr_no, category)
+    #        cursor.execute(query)
+    #        querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
-        rank = Rank(querys)
-        total = {food["attr"][0]: {"global": i, "name": food["attr"][1]} for i, food in rank.order()}
+    #    rank = Rank(querys)
+    #    total = {food["attr"][0]: {"global": i, "name": food["attr"][1]} for i, food in rank.order()}
 
     def radio(self):
         if self.radio_omega_raw == 0 and self.omegas.get("omega3", [0,0])[1] == 0:
@@ -789,6 +792,21 @@ def create_matrix(ndb_nos, exclude_nutr=None, only=None):
     matrix = MatrixNutr(rows=rows)
     return matrix
 
+def create_order_matrix():
+    _, cursor = conection()
+    nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
+    # hasheamos las llaves para mantener el orden
+    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
+
+    querys = []
+    for nutr_no, (avg, caution) in nutr_avg.items():
+        query = query_build(nutr_no, None)
+        cursor.execute(query)
+        querys.append((nutr_no, caution, avg, cursor.fetchall()))
+
+    rank = Rank(querys, weights=False)
+    order = [(i, food["attr"][0]) for i, food in rank.order()]
+    return order
 
 def principal_nutrients(category=None):
     _, cursor = conection()
@@ -1045,35 +1063,38 @@ class MatrixNutr(object):
             return {ndb_no: zip(self.column, vector) for ndb_no, vector in self.rows}
         return {ndb_no: vector for ndb_no, vector in self.rows}
 
-def test():
-    ndb_no = "11625" #09326
-    similar_food = MostSimilarFood(ndb_no, "1100")
-    food_base = similar_food.food_base
-    for x in range(10):
-        results = similar_food.search()
-        if results is not None or len(results) > 0:
-            last_result = results.pop()
-            print last_result.total
-            print last_result.result
-            #print last_result.ids2name(similar_food)["foods"]
+class NodeNeighbors(object):
+    def __init__(self):
+        self.nodes = {}
+        
+    def add(self, key, first, second):
+        self.nodes[key] = [first, second]
 
+class OrderSimilarity(object):
+    def __init__(self, data_list):
+        self.data_list = data_list
 
-def nearest_neighbors():
-    ndb_no = "11667"
-    if 1: 
-        food = Food(ndb_no, avg=False)
-        print list(food.similarity())
-    else:
-        from sklearn.neighbors import KDTree, BallTree
-        import numpy as np
-        matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.csv')
-        matrix_dict = matrix.to_dict()
-        X = np.array([row[1] for row in matrix.rows])
-        #kdt = KDTree(X, leaf_size=30, metric='euclidean')
-        kdt = BallTree(X, leaf_size=300, metric='euclidean')
-        m = np.array(matrix_dict[ndb_no])
-        dist, ind = kdt.query(m, k=15)
-        print ind
-        print [matrix.rows[i][0] for i in ind[0]]
-        #print dist
-        #print matrix.rows[4458]
+    def list2order(self):
+        nodes = NodeNeighbors()
+        distance = lambda x, y: sum((x_i - y_i)**2 for x_i, y_i in izip(x, y))**.5
+        nodes.add(data_list[0], data_list[1], data_list[2])
+        for x1, base, x2 in izip(data_list, data_list[1:], data_list[2:]):
+            x1, x2 = self.zero_fill(x1["vector"], x2["vector"])
+            d2 = distance(base["vector"], x2)
+            d1 = distance(base["vector"], x1)
+            if d1 <= d2:
+                nodes.add(base["ndb_no"], x1["ndb_no"], x2["ndb_no"])
+            else:
+                nodes.add(base["ndb_no"], x2["ndb_no"], x1["ndb_no"])
+        nodes.add(data_list[-1], data_list[-2], data_list[-3])
+
+    def zero_fill(self, x1, x2):
+        if len(x1) < len(x2) :
+            distance = len(x2) - len(x1)
+            for i in xrange(distance):
+                x1.append(0)
+        else:
+            distance = len(x1) - len(x2)
+            for i in xrange(distance):
+                x2.append(0)
+        return x1, x2

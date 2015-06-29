@@ -1,3 +1,37 @@
-from django.test import TestCase
+#from django.test import TestCase
 
-# Create your tests here.
+from nutrientes.utils import *
+
+def test():
+    ndb_no = "11625" #09326
+    similar_food = MostSimilarFood(ndb_no, "1100")
+    food_base = similar_food.food_base
+    for x in range(10):
+        results = similar_food.search()
+        if results is not None or len(results) > 0:
+            last_result = results.pop()
+            print last_result.total
+            print last_result.result
+            #print last_result.ids2name(similar_food)["foods"]
+
+
+def nearest_neighbors():
+    ndb_no = "11667"
+    if 1: 
+        food = Food(ndb_no, avg=False)
+        print list(food.similarity())
+    else:
+        from sklearn.neighbors import KDTree, BallTree
+        import numpy as np
+        matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.csv')
+        matrix_dict = matrix.to_dict()
+        X = np.array([row[1] for row in matrix.rows])
+        #kdt = KDTree(X, leaf_size=30, metric='euclidean')
+        kdt = BallTree(X, leaf_size=300, metric='euclidean')
+        m = np.array(matrix_dict[ndb_no])
+        dist, ind = kdt.query(m, k=15)
+        print ind
+        print [matrix.rows[i][0] for i in ind[0]]
+        #print dist
+        #print matrix.rows[4458]
+

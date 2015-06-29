@@ -11,6 +11,16 @@ def matrix_food():
     matrix.save_matrix(PREPROCESSED_DATA_DIR+'matrix.csv')
     return matrix
 
+def order_matrix():
+    from nutrientes.utils import create_order_matrix
+    foods = create_order_matrix()
+    import csv
+    foods_l = [(position, Food(ndb_no, avg=False)) for position, ndb_no in foods]
+    with open("order_matrix.csv", 'wb') as csvfile:
+        csvwriter = csv.writer(csvfile, delimiter=',',
+                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for position, food in foods_l:
+            csvwriter.writerow([position, food.ndb_no, food.group["id"]] + [v for _, _, v, _ in food.nutrients])
 
 def ranking_global():
     from nutrientes.utils import Rank
