@@ -1,0 +1,70 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div class="container">
+<div class="starter-template">
+<div class="row">
+<form action="." method="POST">
+{% csrf_token %}
+<table>
+{% for food in foods %}
+<tr>
+<td style="padding:2px;">
+<a href="{% url 'view_food' food.ndb_no %}">{{ food.name }}</a>
+</td>
+<td>{{ food.radio }}</td>
+<td><button name="analizar" value="{{ food.ndb_no }}">mejorar</button></td>
+{% endfor %}
+</table>
+</form>
+
+<div id="chartContainer"></div>
+
+<div id="text-chart">
+	<div id="chart1"></div>
+</div>
+</div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{% static 'd3.js' %}"></script>
+<script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
+<script type="text/javascript">
+var data = [];
+{% for food in foods %}
+    {% for _, nutrient, value, unit in food.nutrients %}
+    data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: '{{ food.name }}'})
+    {% endfor %}
+{% endfor %}
+
+var svg = dimple.newSvg("#chartContainer", 900, 600);
+var myChart = new dimple.chart(svg, data);
+myChart.assignColor("normal", "#0066ff", null, .5);
+myChart.assignColor("avg", "#aa0000", null, .3);
+myChart.setBounds(60, 30, 750, 305);
+var x = myChart.addCategoryAxis("x", "nutr");
+x.showGridlines = true;
+//var x = myChart.addCategoryAxis("x", ["nutr", "tipo"]);
+//x.showGridlines = true;
+var y = myChart.addMeasureAxis("y", "value");
+y.showGridlines = false;
+//var s = myChart.addSeries("tipo", dimple.plot.scatter);
+var l = myChart.addSeries("tipo", dimple.plot.line);
+//var s = myChart.addSeries("tipo", dimple.plot.bar);
+//l.stacked = false;
+//x.addOrderRule("nutr");
+
+//l.interpolation = "step";
+//l.interpolation = "cardinal";
+//myChart.addLegend(60, 10, 700, 20, "right");
+myChart.addLegend(900, 100, 60, 300, "right");
+//myChart.setStoryboard("nutr");
+y.useLog = true;
+y.logBase = 10;
+myChart.draw();
+x.titleShape.text("Nutriente");
+y.tickFormat = ',.2f';
+</script>
+{% endblock %}

@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 
 from nutrientes.utils import conection
@@ -137,22 +137,34 @@ def food(request, ndb_no):
 
 
 def food_compare(request):
-    from nutrientes.utils import create_common_table
+    from nutrientes.utils import Food, boost_food
     food_compare = request.session.get("food_compare", {})
     foods = []
-    dicts = []
-    names = []
-    if len(food_compare.keys()) >= 2:
-        from nutrientes.utils import Food
-        for ndb_no in food_compare.keys():
-            foods.append(Food(ndb_no))
-        for food in foods:
-            dicts.append({v[0]: v for v in food.nutrients})
-            names.append(food.name)
-        common_table = create_common_table(dicts)
-    return render(request, "compare_food.html", 
-        {"foods": foods, "common_table": common_table, "names": names})
-
+    if request.POST:
+        if "analizar" in request.POST:
+            list_ndb_no = request.POST.getlist("analizar")
+            if len(list_ndb_no) > 0 and list_ndb_no[0] != '':
+                food = boost_food(list_ndb_no[0])
+            if len(food_compare.keys()) >= 2:
+                for ndb_no in food_compare.keys():
+                    foods.append(Food(ndb_no))
+                return render(request, "analize_food.html", {"foods": foods})
+        else:
+            from nutrientes.utils import create_common_table
+            dicts = []
+            names = []
+            if len(food_compare.keys()) >= 2:
+                from nutrientes.utils import Food
+                for ndb_no in food_compare.keys():
+                    foods.append(Food(ndb_no))
+                for food in foods:
+                    dicts.append({v[0]: v for v in food.nutrients})
+                    names.append(food.name)
+                common_table = create_common_table(dicts)
+            return render(request, "compare_food.html", 
+                {"foods": foods, "common_table": common_table, "names": names})
+    else:
+        return redirect("index")
 
 def romega(request):
     from nutrientes.utils import get_omegas
@@ -255,3 +267,4 @@ def equivalents(request, ndb_no):
         data_result = last_result.ids2name(similar_food)
         data_result["food_base"] = food_base
     return render(request, "equivalents.html", data_result)
+

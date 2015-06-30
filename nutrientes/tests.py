@@ -36,8 +36,10 @@ def nearest_neighbors():
         #print matrix.rows[4458]
 
 def top():
+    import os
     import csv
-    with open("order_matrix.csv", 'rb') as csvfile:
+    PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
+    with open(PREPROCESSED_DATA_DIR+"order_matrix.csv", 'rb') as csvfile:
         data_list = []
         csvreader = csv.reader(csvfile, delimiter=',',
                         quotechar='"', quoting=csv.QUOTE_MINIMAL)

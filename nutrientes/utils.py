@@ -1100,4 +1100,17 @@ class OrderSimilarity(object):
         return nodes
 
     def get_top(self, k, level=10):
-        print self.nodes.sequence(k, items=level).pop()
+        return self.nodes.sequence(k, items=level).pop()
+
+def boost_food(ndb_no):
+    import csv
+    with open(PREPROCESSED_DATA_DIR+"order_matrix.csv", 'rb') as csvfile:
+        data_list = []
+        csvreader = csv.reader(csvfile, delimiter=',',
+                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for row in csvreader:
+            data_list.append({"ndb_no": row[0], "category": row[1]})
+
+    order = OrderSimilarity(data_list)
+    food = Food(order.get_top(ndb_no, level=10))
+    return food

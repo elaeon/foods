@@ -39,8 +39,9 @@
         <div style="height:200px;width:450px;background-color:#ddd;"></div>
         <div style="font-size:80%">
             <form action="{% url 'food_compare' %}" method="POST" onSubmit="return check_submit();">
-            {% csrf_token %}            
-            <button type="submit">Comparar</button>
+            {% csrf_token %}
+            <button name="comparar" type="submit">Comparar</button>
+            <button name="analizar" id="analizar" type="submit">Analizar lista</button>
             </form>
             <div id="comparationContainer">
             {% for ndb_no, name in food_compare.items %}
