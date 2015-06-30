@@ -804,8 +804,8 @@ def create_order_matrix():
         cursor.execute(query)
         querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
-    rank = Rank(querys, weights=False)
-    order = [(i, food["attr"][0]) for i, food in rank.order()]
+    rank = Rank(querys, weights=True)
+    order = [food["attr"][0] for _, food in rank.order()]
     return order
 
 def principal_nutrients(category=None):
@@ -1064,37 +1064,40 @@ class MatrixNutr(object):
         return {ndb_no: vector for ndb_no, vector in self.rows}
 
 class NodeNeighbors(object):
-    def __init__(self):
+    def __init__(self, category):
         self.nodes = {}
+        self.category = category
         
-    def add(self, key, first, second):
-        self.nodes[key] = [first, second]
+    def add(self, key, best):
+        self.nodes[key] = best
+
+    def sequence(self, k, items=10):
+        data = []
+        nk = k
+        category = self.category[nk]
+        while len(data) < items:
+            ndb_no = self.nodes[nk]
+            if ndb_no is None:
+                return data
+            if self.category[ndb_no] == category:
+                data.append(ndb_no)
+            nk = ndb_no
+        return data
+
+    def get(self, k):
+        return self.nodes[k]
 
 class OrderSimilarity(object):
     def __init__(self, data_list):
-        self.data_list = data_list
+        self.nodes = self.list2order(data_list)
 
-    def list2order(self):
-        nodes = NodeNeighbors()
-        distance = lambda x, y: sum((x_i - y_i)**2 for x_i, y_i in izip(x, y))**.5
-        nodes.add(data_list[0], data_list[1], data_list[2])
-        for x1, base, x2 in izip(data_list, data_list[1:], data_list[2:]):
-            x1, x2 = self.zero_fill(x1["vector"], x2["vector"])
-            d2 = distance(base["vector"], x2)
-            d1 = distance(base["vector"], x1)
-            if d1 <= d2:
-                nodes.add(base["ndb_no"], x1["ndb_no"], x2["ndb_no"])
-            else:
-                nodes.add(base["ndb_no"], x2["ndb_no"], x1["ndb_no"])
-        nodes.add(data_list[-1], data_list[-2], data_list[-3])
+    def list2order(self, data_list):
+        nodes = NodeNeighbors({e["ndb_no"]: e["category"] for e in data_list})
+        nodes.add(data_list[0]["ndb_no"], None)
+        for x1, base in izip(data_list, data_list[1:]):
+            nodes.add(base["ndb_no"], x1["ndb_no"])
+        nodes.add(data_list[-1]["ndb_no"], data_list[-2]["ndb_no"])
+        return nodes
 
-    def zero_fill(self, x1, x2):
-        if len(x1) < len(x2) :
-            distance = len(x2) - len(x1)
-            for i in xrange(distance):
-                x1.append(0)
-        else:
-            distance = len(x1) - len(x2)
-            for i in xrange(distance):
-                x2.append(0)
-        return x1, x2
+    def get_top(self, k, level=10):
+        print self.nodes.sequence(k, items=level).pop()

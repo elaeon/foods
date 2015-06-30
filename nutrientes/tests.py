@@ -35,3 +35,15 @@ def nearest_neighbors():
         #print dist
         #print matrix.rows[4458]
 
+def top():
+    import csv
+    with open("order_matrix.csv", 'rb') as csvfile:
+        data_list = []
+        csvreader = csv.reader(csvfile, delimiter=',',
+                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for row in csvreader:
+            data_list.append({"ndb_no": row[0], "category": row[1]})
+
+    order = OrderSimilarity(data_list)
+    order.get_top("19042", level=40)
+    #order.get_top("15184")
