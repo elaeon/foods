@@ -540,21 +540,6 @@ class Food(object):
             return {"global": global_[0][0], "category": category[0][0]}
         return None
 
-    #def ranking_nutr(self):
-    #    _, cursor = conection()
-    #    nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
-        # hasheamos las llaves para mantener el orden
-    #    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
-
-    #    querys = []
-    #    for nutr_no, (avg, caution) in nutr_avg.items():
-    #        query = query_build(nutr_no, category)
-    #        cursor.execute(query)
-    #        querys.append((nutr_no, caution, avg, cursor.fetchall()))
-
-    #    rank = Rank(querys)
-    #    total = {food["attr"][0]: {"global": i, "name": food["attr"][1]} for i, food in rank.order()}
-
     def radio(self):
         if self.radio_omega_raw == 0 and self.omegas.get("omega3", [0,0])[1] == 0:
             return "%s:0" % (round(self.omegas.get("omega6", [0,0])[1], 2),)
@@ -1114,3 +1099,8 @@ def boost_food(ndb_no):
     order = OrderSimilarity(data_list)
     food = Food(order.get_top(ndb_no, level=10))
     return food
+
+def zero_fill(max_length, vector):
+    while len(vector) < max_length:
+        vector.append(0)
+    return vector

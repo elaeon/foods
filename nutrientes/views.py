@@ -137,7 +137,7 @@ def food(request, ndb_no):
 
 
 def food_compare(request):
-    from nutrientes.utils import Food, boost_food
+    from nutrientes.utils import Food, boost_food, zero_fill
     food_compare = request.session.get("food_compare", {})
     foods = []
     if request.POST:
@@ -145,10 +145,16 @@ def food_compare(request):
             list_ndb_no = request.POST.getlist("analizar")
             if len(list_ndb_no) > 0 and list_ndb_no[0] != '':
                 food = boost_food(list_ndb_no[0])
+                print food.ndb_no
             if len(food_compare.keys()) >= 2:
                 for ndb_no in food_compare.keys():
                     foods.append(Food(ndb_no))
-                return render(request, "analize_food.html", {"foods": foods})
+                vectors_features = [
+                        food.vector_features(
+                        food.create_vector_fields_nutr(exclude_nutr_l=set([])), 
+                        food.nutrients).items() for food in foods]
+                total_food = [(v[0][0], sum(e[1] for e in v)) for v in zip(*vectors_features)]
+                return render(request, "analize_food.html", {"foods": foods, "total_food": total_food})
         else:
             from nutrientes.utils import create_common_table
             dicts = []
