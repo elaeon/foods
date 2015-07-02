@@ -14,11 +14,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
 from django.conf.urls import include, url
-#from django.contrib import admin
 from nutrientes import views
 
 urlpatterns = [
-    #url(r'^admin/', include(admin.site.urls)),
     url(r'^$', views.index, name="index"),
     url(r'^ajax_search/$', views.ajax_search, name="ajax_search"),
     url(r'^food/(?P<ndb_no>\w+)/$', views.food, name="view_food"),
@@ -34,5 +32,6 @@ urlpatterns = [
     url(r'^graph_all_nutr/$', views.graph_all_nutr, name="graph_all_nutr"),
     url(r'^equivalents/(?P<ndb_no>\w+)/$', views.equivalents, name="equivalents"),
     url(r'^principal_nutrients_graph/$', views.principal_nutrients_graph, name="principal_nutrients_graph"),
-    url(r'^contact/$', views.contact, name="contact")
+    url(r'^contact/$', views.contact, name="contact"),
+    #url(r'^ajax_boost_food/(?P<ndb_no>\w+)/$', views.ajax_boost_food, name="ajax_boost_food"),
 ]
