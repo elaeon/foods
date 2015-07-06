@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 
@@ -137,7 +138,7 @@ def food(request, ndb_no):
 
 
 def food_compare(request):
-    from nutrientes.utils import Food, boost_food, zero_fill
+    from nutrientes.utils import Food, boost_food, intake, nutr_features_ids
     food_compare = request.session.get("food_compare", {})
     foods = []
     if request.POST:
@@ -146,15 +147,22 @@ def food_compare(request):
             if len(list_ndb_no) > 0 and list_ndb_no[0] != '':
                 food = boost_food(list_ndb_no[0])
                 print food.ndb_no
-            if len(food_compare.keys()) >= 2:
-                for ndb_no in food_compare.keys():
-                    foods.append(Food(ndb_no))
-                vectors_features = [
-                        food.vector_features(
-                        food.create_vector_fields_nutr(exclude_nutr_l=set([])), 
-                        food.nutrients).items() for food in foods]
-                total_food = [(v[0][0], sum(e[1] for e in v)) for v in zip(*vectors_features)]
-                return render(request, "analize_food.html", {"foods": foods, "total_food": total_food})
+
+            for ndb_no in food_compare.keys():
+                foods.append(Food(ndb_no))
+            vectors_features = [
+                    food.vector_features(
+                    food.create_vector_fields_nutr(exclude_nutr_l=set([])), 
+                    food.nutrients).items() for food in foods]
+            total_food = [(v[0][0], sum(e[1] for e in v)) for v in zip(*vectors_features)]
+            total_food = [(nutr_no, total) for nutr_no, total in total_food if total > 0]
+            total_food_names = nutr_features_ids([nutr_no for nutr_no, _ in total_food])
+            total_food_names = [(name[1], total[1]) for name, total in zip(total_food_names, total_food)]
+            intake_data = intake(40, "H", "años")
+            return render(request, "analize_food.html", {
+                "foods": foods, 
+                "total_food": total_food_names, 
+                "intake": intake_data})
         else:
             from nutrientes.utils import create_common_table
             dicts = []

@@ -1104,3 +1104,26 @@ def zero_fill(max_length, vector):
     while len(vector) < max_length:
         vector.append(0)
     return vector
+
+def intake(edad, genero, unidad_edad):
+    _, cursor = conection()
+    query = """SELECT nutr_def.nutr_no, nutrdesc, units, value, type, edad_range
+                FROM nutr_def, nutr_intake 
+                WHERE nutr_def.nutr_no=nutr_intake.nutr_no
+                AND unidad_edad='{unidad_edad}'
+                AND genero='{genero}'""".format(
+            unidad_edad=unidad_edad,
+            genero=genero)
+    cursor.execute(query)
+    data = []
+    for nutr_no, nutrdesc, units, value, type_, edad_range in cursor.fetchall():
+        min_year, max_year = edad_range.split("-")
+        min_year = int(min_year)
+        if max_year == '':            
+            max_year = 200
+        else:
+            max_year = int(max_year)
+
+        if min_year <= edad <= max_year:
+            data.append((nutr_no, nutrdesc, units, float(value), type_))
+    return data

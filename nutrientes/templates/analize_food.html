@@ -34,7 +34,12 @@
 <script type="text/javascript">
 var data = [];
 {% for nutrient, value in total_food %}
-data.push({nombre: '{{ nutrient }}', valor: {{ value }}, type: "foods"})
+    data.push({nombre: '{{ nutrient }}', valor: {{ value }}, tipo: "total alimento", unit: ''})
+{% endfor %}
+
+var intake = [];
+{% for nutr_no, nutrient, unit, value, type in intake %}
+    data.push({nombre: '{{ nutrient }}', valor: {{ value }}, unit: '{{ unit }}', tipo: '{{ type }}'})
 {% endfor %}
 
 var svg = dimple.newSvg("#chartContainer", 900, 600);
@@ -46,12 +51,12 @@ var x = myChart.addCategoryAxis("x", "nombre");
 x.showGridlines = true;
 var y = myChart.addMeasureAxis("y", "valor");
 y.showGridlines = false;
-var l = myChart.addSeries("tipo", dimple.plot.line);
+var l = myChart.addSeries("tipo", dimple.plot.bar);
 l.stacked = false;
 x.addOrderRule("nombre");
 
-l.interpolation = "step";
-myChart.addLegend(900, 100, 60, 300, "right");
+//l.interpolation = "step";
+myChart.addLegend(850, 100, 60, 300, "right");
 y.useLog = true;
 y.logBase = 10;
 myChart.draw();

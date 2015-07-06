@@ -74,6 +74,7 @@ var data = [];
     {% endfor %}
 {% endfor %}
 
+
 var svg = dimple.newSvg("#chartContainer", 900, 600);
 var myChart = new dimple.chart(svg, data);
 myChart.assignColor("normal", "#0066ff", null, .5);

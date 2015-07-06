@@ -38,7 +38,7 @@
         <!--<img src="http://lorempixel.com/400/200/" class="img-rounded">-->
         <div style="height:200px;width:450px;background-color:#ddd;"></div>
         <div style="font-size:80%">
-            <form action="{% url 'food_compare' %}" method="POST" onSubmit="return check_submit();">
+            <form id="analyze" action="{% url 'food_compare' %}" method="POST">
             {% csrf_token %}
             <button name="comparar" type="submit">Comparar</button>
             <button name="analizar" id="analizar" type="submit">Analizar lista</button>
@@ -94,13 +94,36 @@ $(document).ready(function(){
 });
 var num_foods_added = {{ food_compare|length }};
 
-function check_submit() {
-    if(num_foods_added < 2) {
-        alert("Agregue otro producto para compararlo.");
-        return false;
+$(function()
+{
+var submitActor = null;
+var $form = $( '#analyze' );
+var $submitActors = $form.find( 'button[type=submit]' );
+
+$form.submit( function( event )
+{
+    if ( null === submitActor ) {
+    // If no actor is explicitly clicked, the browser will
+    // automatically choose the first in source-order
+    // so we do the same here
+        submitActor = $submitActors[0];
     }
-    return true;
-}
+
+    if(submitActor.name == "analizar") {
+        return true;   
+    } else {
+        if(num_foods_added < 2) {
+            alert("Agregue otro producto para compararlo.");
+            return false;
+        } else { 
+            return true;
+        }
+    }
+});
+
+$submitActors.click(function( event ){ submitActor = this;});
+
+});
 
 function agregar() {
     var request = $.ajax({
