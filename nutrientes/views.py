@@ -143,7 +143,6 @@ def food_compare(request):
     foods = []
     if request.POST:
         if "analizar" in request.POST:
-            print request.POST
             if request.POST.get('edad', '') == '':
                 if "intake_params" in request.session:
                     intake_params = request.session["intake_params"]
@@ -168,12 +167,15 @@ def food_compare(request):
                     "genero": intake_form.cleaned_data["genero"],
                     "unidad_edad": unidad_edad}
 
+            weights = [(e.split("_")[1], request.POST[e]) for e in request.POST if e.startswith("weight")]
+            if len(weights) == 0:
+                weights = [(e, 100) for e in food_compare.keys()]
             list_ndb_no = request.POST.getlist("analizar")
             if len(list_ndb_no) > 0 and list_ndb_no[0] != '':
                 food = boost_food(list_ndb_no[0])
 
-            for ndb_no in food_compare.keys():
-                foods.append(Food(ndb_no))
+            for ndb_no, weight in weights:
+                foods.append(Food(ndb_no, weight=float(weight)))
             vectors_features = [
                     food.vector_features(
                     food.create_vector_fields_nutr(exclude_nutr_l=set([])), 

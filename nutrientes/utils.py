@@ -499,7 +499,7 @@ OMEGAS = {
 }
 
 class Food(object):
-    def __init__(self, ndb_no=None, avg=True):
+    def __init__(self, ndb_no=None, avg=True, weight=100):
         self.nutrients = None
         self.name = None
         self.name_en = None
@@ -508,6 +508,7 @@ class Food(object):
         self.nutr_avg = None
         self.ndb_no = ndb_no
         self.omegas = None
+        self.weight = weight
         if self.ndb_no is not None:
             self.get(ndb_no, avg=avg)
 
@@ -515,6 +516,9 @@ class Food(object):
         if len(self.name) > 20:
             return "%s..." % (self.name[:20],)
         return self.name
+
+    def portion_value(self, v):
+        return (v * self.weight) / 100.0
 
     def radio_raw(self, omega6, omega3):
         try:
@@ -576,7 +580,8 @@ class Food(object):
         self.name = food[0][0]
         self.name_en = food[0][3]
         self.group = {"name": food[0][1], "id": food[0][2]}
-        features, omegas = self.subs_omegas(e_data)
+        features, omegas = self.subs_omegas([(nutr_no, nut, self.portion_value(v), u) 
+                            for nutr_no, nut, v, u in e_data])
         self.nutrients = features + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
         self.radio_omega_raw = self.radio_raw(omegas.get("omega 6", [0,0,0])[1], omegas.get("omega 3", [0,0,0])[1])
         self.omegas = omegas
@@ -679,7 +684,7 @@ class Food(object):
             exclude_nutr_l = exclude_nutr.keys()
         features = nutr_features()
         fields, omegas = self.subs_omegas([(e[0], e[1], 0, None) for e in features])
-        fields = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
+        fields = fields + [(v[0], None, 0, None) for _, v in omegas.items()]
         base = set([v[0] for v in fields])
         return [e for e in base.difference(set(exclude_nutr_l))]
 
