@@ -845,7 +845,7 @@ class MostSimilarFood(object):
         ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
         self.matrix = create_matrix(ndb_nos, only=[k for k, _ in self.vector_base_items])
         self.matrix_dict = self.matrix.to_dict(nutr_no=True)
-        self.max_portion = 4.0
+        self.portion_value = lambda v, w: (v * w) / 100.0
         self.max_total_food = 8
         self.total_nutr = len(self.vector_base_items)
 
@@ -857,7 +857,7 @@ class MostSimilarFood(object):
         for foods in data:
             foods_extra = foods+extra_data
             rows = (self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra)
-            sum_nutr = [(sublist[0][0], sum(e[1] for e in sublist)/self.max_portion) for sublist in izip(*rows)]
+            sum_nutr = [(sublist[0][0], sum(self.portion_value(e[1], 25) for e in sublist)) for sublist in izip(*rows)]
             diff = [(b[0], t[1]-b[1]) for t, b in izip(sum_nutr, self.vector_base_items)]
             up_diff = filter(lambda x: x[1] >= 0, diff)
             low_diff = filter(lambda x: x[1] < 0, diff)
@@ -1116,6 +1116,7 @@ def intake(edad, genero, unidad_edad):
             genero=genero)
     cursor.execute(query)
     data = []
+    convert = {"AI": "Ingesta adecuada", "RDA": "Recomendada", "UL": "Máxima ingesta tolerable"}
     for nutr_no, nutrdesc, units, value, type_, edad_range in cursor.fetchall():
         min_year, max_year = edad_range.split("-")
         min_year = int(min_year)
@@ -1125,5 +1126,5 @@ def intake(edad, genero, unidad_edad):
             max_year = int(max_year)
 
         if min_year <= edad <= max_year:
-            data.append((nutr_no, nutrdesc, units, float(value), type_))
+            data.append((nutr_no, nutrdesc, units, float(value), convert[type_]))
     return data

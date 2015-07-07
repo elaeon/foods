@@ -2,7 +2,7 @@
 
 from nutrientes.utils import *
 
-def test():
+def equivalents():
     ndb_no = "11625" #09326
     similar_food = MostSimilarFood(ndb_no, "1100")
     food_base = similar_food.food_base

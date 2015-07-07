@@ -13,3 +13,6 @@ class IntakeForm(forms.Form):
             (u"pregnancy", u"mujer-embarazo"),
             (u"lactancy", u"mujer-lactancia")
         ))
+
+class WeightForm(forms.Form):
+    weight = forms.FloatField()

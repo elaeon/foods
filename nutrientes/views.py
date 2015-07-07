@@ -143,13 +143,14 @@ def food_compare(request):
     foods = []
     if request.POST:
         if "analizar" in request.POST:
+            print request.POST
             if request.POST.get('edad', '') == '':
                 if "intake_params" in request.session:
                     intake_params = request.session["intake_params"]
                     intake_data = intake(
                         intake_params["edad"], 
                         intake_params["genero"],
-                        intake_params["unidad_edad"])
+                        intake_params["unidad_edad"].encode("utf8", "replace"))
                 else:
                     intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H"}
                 intake_form = IntakeForm(initial=intake_params)
