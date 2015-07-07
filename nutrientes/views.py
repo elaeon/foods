@@ -10,7 +10,6 @@ import random
 
 DB_VERSION = "9.1"
 
-# Create your views here.
 def index(request):
     from nutrientes.utils import category_food_list
     
@@ -139,14 +138,38 @@ def food(request, ndb_no):
 
 def food_compare(request):
     from nutrientes.utils import Food, boost_food, intake, nutr_features_ids
+    from nutrientes.forms import IntakeForm
     food_compare = request.session.get("food_compare", {})
     foods = []
     if request.POST:
         if "analizar" in request.POST:
+            if request.POST.get('edad', '') == '':
+                if "intake_params" in request.session:
+                    intake_params = request.session["intake_params"]
+                    intake_data = intake(
+                        intake_params["edad"], 
+                        intake_params["genero"],
+                        intake_params["unidad_edad"])
+                else:
+                    intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H"}
+                intake_form = IntakeForm(initial=intake_params)
+            else:
+                intake_form = IntakeForm(request.POST)
+
+            if intake_form.is_valid():
+                unidad_edad = intake_form.cleaned_data["unidad_edad"].encode("utf8", "replace")
+                intake_data = intake(
+                    intake_form.cleaned_data["edad"], 
+                    intake_form.cleaned_data["genero"], 
+                    unidad_edad)
+                request.session["intake_params"] = {
+                    "edad": intake_form.cleaned_data["edad"],
+                    "genero": intake_form.cleaned_data["genero"],
+                    "unidad_edad": unidad_edad}
+
             list_ndb_no = request.POST.getlist("analizar")
             if len(list_ndb_no) > 0 and list_ndb_no[0] != '':
                 food = boost_food(list_ndb_no[0])
-                print food.ndb_no
 
             for ndb_no in food_compare.keys():
                 foods.append(Food(ndb_no))
@@ -158,11 +181,11 @@ def food_compare(request):
             total_food = [(nutr_no, total) for nutr_no, total in total_food if total > 0]
             total_food_names = nutr_features_ids([nutr_no for nutr_no, _ in total_food])
             total_food_names = [(name[1], total[1]) for name, total in zip(total_food_names, total_food)]
-            intake_data = intake(40, "H", "años")
             return render(request, "analize_food.html", {
                 "foods": foods, 
                 "total_food": total_food_names, 
-                "intake": intake_data})
+                "intake": intake_data,
+                "intake_form": intake_form})
         else:
             from nutrientes.utils import create_common_table
             dicts = []
@@ -197,8 +220,8 @@ def set_comparation(request, ndb_no, operation):
             request.session["food_compare"] = food_compare
         else:
             if not ndb_no in food_compare:
-                if len(food_compare.keys()) >= 3:
-                    food_compare.pop(food_compare.keys()[0], 0)
+                #if len(food_compare.keys()) >= 3:
+                #food_compare.pop(food_compare.keys()[0], 0)
                 name = Food.get_food(ndb_no)[0][0]
                 food_compare[ndb_no] = name
                 request.session["food_compare"] = food_compare

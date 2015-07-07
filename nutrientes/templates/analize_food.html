@@ -8,6 +8,22 @@
 <form action="." method="POST">
 {% csrf_token %}
 <table>
+<tr>
+<th>Edad</th>
+<th>Unidad</th>
+<th>Genero</th>
+</tr>
+<tr>
+<td>{{ intake_form.edad }}</td>
+<td>{{ intake_form.unidad_edad }}</td>
+<td>{{ intake_form.genero }}</td>
+<td><button type="submit" name="analizar">Cambiar</button></td>
+</tr>
+</table>
+</form>
+<form action="." method="POST">
+{% csrf_token %}
+<table>
 {% for food in foods %}
 <tr>
 <td style="padding:2px;">
@@ -24,6 +40,8 @@
 <div id="text-chart">
 	<div id="chart1"></div>
 </div>
+<a href="http://www.ncbi.nlm.nih.gov/books/NBK114316/?report=reader#!po=100.000">Data</a>
+<a href="http://books.nap.edu/openbook.php?record_id=11537">DRI INFO</a>
 </div>
 </div>
 {% endblock %}
@@ -43,7 +61,7 @@ var intake = [];
 {% endfor %}
 
 var svg = dimple.newSvg("#chartContainer", 900, 600);
-var myChart = new dimple.chart(svg, data);
+var myChart = new dimple.chart(svg);
 myChart.assignColor("foods", "#0066ff", null, .5);
 
 myChart.setBounds(60, 30, 750, 305);
@@ -51,11 +69,14 @@ var x = myChart.addCategoryAxis("x", "nombre");
 x.showGridlines = true;
 var y = myChart.addMeasureAxis("y", "valor");
 y.showGridlines = false;
-var l = myChart.addSeries("tipo", dimple.plot.bar);
-l.stacked = false;
+var bar = myChart.addSeries("tipo", dimple.plot.bar, [x, y]);
+bar.data = data//dimple.filterData(data, "group", "scatter");
+var line = myChart.addSeries("tipo", dimple.plot.line, [x, y]);
+line.data = dimple.filterData(data, "tipo", "total alimento");
+bar.stacked = false;
 x.addOrderRule("nombre");
 
-//l.interpolation = "step";
+line.interpolation = "step";
 myChart.addLegend(850, 100, 60, 300, "right");
 y.useLog = true;
 y.logBase = 10;
