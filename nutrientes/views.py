@@ -138,11 +138,13 @@ def food(request, ndb_no):
 
 def food_compare(request):
     from nutrientes.utils import Food, boost_food, intake, nutr_features_ids
-    from nutrientes.forms import IntakeForm
+    from nutrientes.forms import IntakeForm, WeightForm
+    from django.forms.formsets import formset_factory
     food_compare = request.session.get("food_compare", {})
     foods = []
     if request.POST:
         if "analizar" in request.POST:
+            WeightFormSet = formset_factory(WeightForm, extra=0)
             if request.POST.get('edad', '') == '':
                 if "intake_params" in request.session:
                     intake_params = request.session["intake_params"]
@@ -153,8 +155,17 @@ def food_compare(request):
                 else:
                     intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H"}
                 intake_form = IntakeForm(initial=intake_params)
+                foods = [{"food": Food(ndb_no, weight=float(100)), "weight": 100, "ndb_no": ndb_no} 
+                        for ndb_no in food_compare.keys()]
+                formset = WeightFormSet(initial=foods)
             else:
                 intake_form = IntakeForm(request.POST)
+                formset = WeightFormSet(request.POST)
+                if formset.is_valid():
+                    for form in formset:
+                        weight = form.cleaned_data["weight"]
+                        ndb_no = form.cleaned_data["ndb_no"]
+                        form.food = Food(ndb_no, weight=weight)
 
             if intake_form.is_valid():
                 unidad_edad = intake_form.cleaned_data["unidad_edad"].encode("utf8", "replace")
@@ -167,28 +178,24 @@ def food_compare(request):
                     "genero": intake_form.cleaned_data["genero"],
                     "unidad_edad": unidad_edad}
 
-            weights = [(e.split("_")[1], request.POST[e]) for e in request.POST if e.startswith("weight")]
-            if len(weights) == 0:
-                weights = [(e, 100) for e in food_compare.keys()]
-            list_ndb_no = request.POST.getlist("analizar")
-            if len(list_ndb_no) > 0 and list_ndb_no[0] != '':
-                food = boost_food(list_ndb_no[0])
-
-            for ndb_no, weight in weights:
-                foods.append(Food(ndb_no, weight=float(weight)))
+            #list_ndb_no = request.POST.getlist("analizar")
+            #if len(list_ndb_no) > 0 and list_ndb_no[0] != '':
+            #    food = boost_food(list_ndb_no[0])
+            
             vectors_features = [
-                    food.vector_features(
-                    food.create_vector_fields_nutr(exclude_nutr_l=set([])), 
-                    food.nutrients).items() for food in foods]
+                    form.food.vector_features(
+                    form.food.create_vector_fields_nutr(exclude_nutr_l=set([])), 
+                    form.food.nutrients).items() for form in formset]
             total_food = [(v[0][0], sum(e[1] for e in v)) for v in zip(*vectors_features)]
             total_food = [(nutr_no, total) for nutr_no, total in total_food if total > 0]
             total_food_names = nutr_features_ids([nutr_no for nutr_no, _ in total_food])
             total_food_names = [(name[1], total[1]) for name, total in zip(total_food_names, total_food)]
+            
             return render(request, "analize_food.html", {
-                "foods": foods, 
                 "total_food": total_food_names, 
                 "intake": intake_data,
-                "intake_form": intake_form})
+                "intake_form": intake_form,
+                "formset": formset})
         else:
             from nutrientes.utils import create_common_table
             dicts = []

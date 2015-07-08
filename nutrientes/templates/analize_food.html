@@ -27,13 +27,14 @@
 <th>Alimento</th>
 <th>Peso(g)</th>
 </tr>
-{% for food in foods %}
+{{ formset.management_form }}
+{% for form in formset %}
 <tr>
 <td style="padding:2px;">
-<a href="{% url 'view_food' food.ndb_no %}">{{ food.name }}</a>
+<a href="{% url 'view_food' form.food.ndb_no %}">{{ form.food.name }}</a>
 </td>
-<td><input type="text" name="weight_{{ food.ndb_no }}" style="width:40px;" value="100"></td>
-<td><button name="analizar" value="{{ food.ndb_no }}">mejorar</button></td>
+<td>{{ form.ndb_no }}{{ form.weight }}</td>
+<td><button name="analizar" value="{{ form.food.ndb_no }}">mejorar</button></td>
 {% endfor %}
 </table>
 </form>
@@ -44,8 +45,8 @@
 	<div id="chart1"></div>
 </div>
 <p>Los valores de referencia para el consumo diario de nutrientes fueron sacados de:</p>
-<a href="http://www.ncbi.nlm.nih.gov/books/NBK114316/?report=reader#!po=100.000">Fuente 1</a>
-<a href="http://books.nap.edu/openbook.php?record_id=11537">Fuente 2</a>
+<a href="http://www.ncbi.nlm.nih.gov/books/NBK114316/?report=reader#!po=100.000">NCBI</a>,
+<a href="http://books.nap.edu/openbook.php?record_id=11537">Book</a>
 </div>
 </div>
 {% endblock %}
