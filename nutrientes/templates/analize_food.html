@@ -39,14 +39,23 @@
 </table>
 </form>
 
+<br>
 <div id="chartContainer"></div>
 
-<div id="text-chart">
-	<div id="chart1"></div>
-</div>
-<p>Los valores de referencia para el consumo diario de nutrientes fueron sacados de:</p>
+<h3>Resumen de nutrientes que debes de checar.</h3>
+{% for type, nutrs in type_intake.items %}
+    <h4>{{ type }}</h4>
+    <ul>
+    {% for nutr in nutrs %}
+    <li>{{ nutr.1 }}</li>
+    {% endfor %}
+    </ul>
+{% endfor %}
+
+<br>
+<p>Los valores de referencia para el consumo diario de nutrientes fueron sacados de:
 <a href="http://www.ncbi.nlm.nih.gov/books/NBK114316/?report=reader#!po=100.000">NCBI</a>,
-<a href="http://books.nap.edu/openbook.php?record_id=11537">Book</a>
+<a href="http://books.nap.edu/openbook.php?record_id=11537">Book</a></p>
 </div>
 </div>
 {% endblock %}

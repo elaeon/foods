@@ -148,12 +148,13 @@ def food_compare(request):
             if request.POST.get('edad', '') == '':
                 if "intake_params" in request.session:
                     intake_params = request.session["intake_params"]
-                    intake_data = intake(
+                else:
+                    intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H"}
+
+                intake_data = intake(
                         intake_params["edad"], 
                         intake_params["genero"],
                         intake_params["unidad_edad"].encode("utf8", "replace"))
-                else:
-                    intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H"}
                 intake_form = IntakeForm(initial=intake_params)
                 foods = [{"food": Food(ndb_no, weight=float(100)), "weight": 100, "ndb_no": ndb_no} 
                         for ndb_no in food_compare.keys()]
@@ -191,15 +192,20 @@ def food_compare(request):
             total_food_names = nutr_features_ids([nutr_no for nutr_no, _ in total_food])
             total_food_names = {name[1]: total[1] for name, total in zip(total_food_names, total_food)}
 
-            resume_intake = [nutr_intake.resume(total_food_names[nutrdesc])
-                    for nutrdesc, nutr_intake in intake_data]
+            type_intake = {}
+            for nutrdesc, nutr_intake in intake_data.items():
+                resumen = nutr_intake.resumen(total_food_names.get(nutrdesc, 0))
+                print nutr_intake.score(resumen)
+                for label, value in resumen.items():
+                    type_intake.setdefault(label, [])
+                    type_intake[label].append((value, nutr_intake.nutrdesc))
 
             return render(request, "analize_food.html", {
                 "total_food": total_food_names, 
                 "intake": intake_data,
                 "intake_form": intake_form,
                 "formset": formset,
-                "resume_intake": resume_intake})
+                "type_intake": type_intake})
         else:
             from nutrientes.utils import create_common_table
             dicts = []

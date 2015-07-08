@@ -1131,9 +1131,9 @@ def intake(edad, genero, unidad_edad):
 
         if min_year <= edad <= max_year:
             if not nutr_no in nutrs:
-                nutrs[nutr_no] = NutrIntake(nutr_no, nutrdesc)
-                nutrs[nutr_no].units = units
-            nutrs[nutr_no].add_value(float(value), label)
+                nutrs[nutrdesc] = NutrIntake(nutr_no, nutrdesc)
+                nutrs[nutrdesc].units = units
+            nutrs[nutrdesc].add_value(float(value), label)
     return nutrs
 
 class NutrIntake(object):
@@ -1153,7 +1153,22 @@ class NutrIntake(object):
         return [(self.nutrdesc, value, self.units, self.labels[label])
                 for label, value in self.values.items() if value != None]
 
-    def resume(self, other_value):
+    def resumen(self, other_value):
+        data = {}
         for label, nutr_value in self.values.items():
-            yield (other_value - nutr_value, self.units)
-                    
+            if label == "AI" or label == "RDA":
+                if other_value < nutr_value:
+                    data[self.labels[label]] = other_value - nutr_value
+            elif label == "UI":
+                if nutr_value < other_value:
+                    data[self.labels[label]] = nutr_value - other_value
+        return data
+                   
+    def score(self, resumen):
+        if len(resumen) == 0:
+            return 100
+        else:
+            total = 100
+            for label, v in resumen.items():
+                total += v
+            return total
