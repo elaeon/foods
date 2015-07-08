@@ -189,13 +189,17 @@ def food_compare(request):
             total_food = [(v[0][0], sum(e[1] for e in v)) for v in zip(*vectors_features)]
             total_food = [(nutr_no, total) for nutr_no, total in total_food if total > 0]
             total_food_names = nutr_features_ids([nutr_no for nutr_no, _ in total_food])
-            total_food_names = [(name[1], total[1]) for name, total in zip(total_food_names, total_food)]
-            
+            total_food_names = {name[1]: total[1] for name, total in zip(total_food_names, total_food)}
+
+            resume_intake = [nutr_intake.resume(total_food_names[nutrdesc])
+                    for nutrdesc, nutr_intake in intake_data]
+
             return render(request, "analize_food.html", {
                 "total_food": total_food_names, 
                 "intake": intake_data,
                 "intake_form": intake_form,
-                "formset": formset})
+                "formset": formset,
+                "resume_intake": resume_intake})
         else:
             from nutrientes.utils import create_common_table
             dicts = []

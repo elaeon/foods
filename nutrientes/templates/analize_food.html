@@ -56,13 +56,15 @@
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
 <script type="text/javascript">
 var data = [];
-{% for nutrient, value in total_food %}
+{% for nutrient, value in total_food.items %}
     data.push({nombre: '{{ nutrient }}', valor: {{ value }}, tipo: "total alimento", unit: ''})
 {% endfor %}
 
 var intake = [];
-{% for nutr_no, nutrient, unit, value, type in intake %}
-    data.push({nombre: '{{ nutrient }}', valor: {{ value }}, unit: '{{ unit }}', tipo: '{{ type }}'})
+{% for nutr_obj in intake.values %}
+    {% for nutrient, value, units, type in nutr_obj.raw %}
+    data.push({nombre: '{{ nutrient }}', valor: {{ value }}, unit: '{{ units }}', tipo: '{{ type }}'});
+    {% endfor %}
 {% endfor %}
 
 var svg = dimple.newSvg("#chartContainer", 1100, 600);

@@ -1120,9 +1120,8 @@ def intake(edad, genero, unidad_edad):
             unidad_edad=unidad_edad,
             genero=genero)
     cursor.execute(query)
-    data = []
-    convert = {"AI": "Ingesta adecuada", "RDA": "Recomendada", "UL": "Máxima ingesta tolerable"}
-    for nutr_no, nutrdesc, units, value, type_, edad_range in cursor.fetchall():
+    nutrs = {}
+    for nutr_no, nutrdesc, units, value, label, edad_range in cursor.fetchall():
         min_year, max_year = edad_range.split("-")
         min_year = int(min_year)
         if max_year == '':            
@@ -1131,5 +1130,30 @@ def intake(edad, genero, unidad_edad):
             max_year = int(max_year)
 
         if min_year <= edad <= max_year:
-            data.append((nutr_no, nutrdesc, units, float(value), convert[type_]))
-    return data
+            if not nutr_no in nutrs:
+                nutrs[nutr_no] = NutrIntake(nutr_no, nutrdesc)
+                nutrs[nutr_no].units = units
+            nutrs[nutr_no].add_value(float(value), label)
+    return nutrs
+
+class NutrIntake(object):
+    def __init__(self, nutr_no, nutrdesc):
+        self.nutr_no = nutr_no
+        self.nutrdesc = nutrdesc
+        self.labels = {"AI": "Ingesta adecuada", 
+                        "RDA": "Recomendada", 
+                        "UL": "Máxima ingesta tolerable"}
+        self.values = {label: None for label in self.labels}
+        self.units = None
+
+    def add_value(self, value, label):
+        self.values[label] = value
+
+    def raw(self):
+        return [(self.nutrdesc, value, self.units, self.labels[label])
+                for label, value in self.values.items() if value != None]
+
+    def resume(self, other_value):
+        for label, nutr_value in self.values.items():
+            yield (other_value - nutr_value, self.units)
+                    
