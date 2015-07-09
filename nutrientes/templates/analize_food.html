@@ -41,20 +41,21 @@
 
 <br>
 <div id="chartContainer"></div>
-
+<h3>Energia: {{ energy.0 }} {{ energy.1 }}</h3>
 <h3>Calificacion: {{ score }} de 100</h3>
 {% if radio_omega > 4 %}
 <h3>El radio omega es alto {{ radio_omega }}:1</h3>
 {% endif %}
 <h3>Resumen de nutrientes que debes de checar.</h3>
-{% for type, nutrs in type_intake.items %}
-    <h4>{{ type }}</h4>
-    <ul>
-    {% for nutr in nutrs %}
-    <li>{{ nutr.1 }}</li>
-    {% endfor %}
-    </ul>
+<ul>
+{% for nutr, penality in type_intake %}
+{% if penality > 0 %}
+<li><span style="color: #a00;">{{ nutr }}</span></li>
+{% else %}
+<li>{{ nutr }}</li>
+{% endif %}
 {% endfor %}
+</ul>
 
 <br>
 <p>Los valores de referencia para el consumo diario de nutrientes fueron sacados de:
@@ -70,7 +71,7 @@
 <script type="text/javascript">
 var data = [];
 {% for nutrient, value in total_food.items %}
-    data.push({nombre: '{{ nutrient }}', valor: {{ value }}, tipo: "total alimento", unit: ''})
+    data.push({nombre: '{{ nutrient }}', valor: {{ value.0 }}, tipo: "total alimento", unit: '{{ value.1 }}'})
 {% endfor %}
 
 var intake = [];

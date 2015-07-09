@@ -16,7 +16,7 @@ class IntakeForm(forms.Form):
 
 class WeightForm(forms.Form):
     ndb_no = forms.CharField(widget=forms.HiddenInput())
-    weight = forms.FloatField()
+    weight = forms.FloatField(widget=forms.NumberInput(attrs={"style": "width:50px;"}))
 
     def __init__(self, *args, **kwargs):
         super(WeightForm, self).__init__(*args, **kwargs)

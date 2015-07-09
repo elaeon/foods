@@ -137,7 +137,7 @@ def food(request, ndb_no):
 
 
 def food_compare(request):
-    from nutrientes.utils import Food, boost_food, intake, nutr_features_ids
+    from nutrientes.utils import Food, boost_food, intake, nutr_features_ids, nutr_units_ids
     from nutrientes.forms import IntakeForm, WeightForm
     from django.forms.formsets import formset_factory
     food_compare = request.session.get("food_compare", {})
@@ -190,27 +190,38 @@ def food_compare(request):
             total_food = [(v[0][0], sum(e[1] for e in v)) for v in zip(*vectors_features)]
             total_food = [(nutr_no, total) for nutr_no, total in total_food if total > 0]
             total_food_names = nutr_features_ids([nutr_no for nutr_no, _ in total_food])
-            total_food_names = {name[1]: total[1] for name, total in zip(total_food_names, total_food)}
+            total_food_units = nutr_units_ids([nutr_no for nutr_no, _ in total_food])
+            total_food_names = {name[1]: (total[1], units[1]) 
+                for name, total, units in zip(total_food_names, total_food, total_food_units)}
             try:
-                radio_omega = round(total_food_names.get("omega 6", 0)/total_food_names.get("omega 3", 0), 2)
+                radio_omega = round(
+                    total_food_names.get("omega 6", [0])[0] / total_food_names.get("omega 3", [0])[0], 2)
             except ZeroDivisionError:
                 radio_omega = 0
-            type_intake = {}
+            type_intake = []
             total_penality = 0
             for nutrdesc, nutr_intake in intake_data.items():
-                resumen = nutr_intake.resumen(total_food_names.get(nutrdesc, 0))
-                print "PPP", nutr_intake.penality(resumen)
-                total_penality += nutr_intake.penality(resumen)
-                for label, value in resumen.items():
-                    type_intake.setdefault(label, [])
-                    type_intake[label].append((value, nutr_intake.nutrdesc))
+                resumen = nutr_intake.resumen(total_food_names.get(nutrdesc, [0])[0])
+                penality = nutr_intake.penality(resumen)
+                total_penality += penality
+                if len(resumen) > 0:
+                    type_intake.append((nutr_intake.nutrdesc, penality))
 
             maximum = 27
             if total_penality > maximum:
                 total = 100
             else:
                 total = total_penality * 100 / maximum
-            print total_penality
+
+            units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
+            totals = []
+            for nutrdesc, (total, units) in total_food_names.items():
+                val = units_scale.get(units, 0)
+                if val != 0:
+                    totals.append((nutrdesc, float(total / val)))
+            maximo = sum((d[1] for d in totals))
+            porcentaje_data = [(round(d[1]*100./maximo, 3), d[0]) for d in totals]
+            print sorted(porcentaje_data, reverse=True)[:10]
             return render(request, "analize_food.html", {
                 "total_food": total_food_names, 
                 "intake": intake_data,
@@ -218,6 +229,7 @@ def food_compare(request):
                 "formset": formset,
                 "type_intake": type_intake,
                 "score": 100 - total,
+                "energy": total_food_names["Energy"],
                 "radio_omega": radio_omega})
         else:
             from nutrientes.utils import create_common_table

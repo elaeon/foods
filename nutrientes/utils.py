@@ -55,6 +55,28 @@ def nutr_features_ids(ids):
     else:
         return []
 
+def nutr_units_ids(ids):
+    _, cursor = conection()
+    ids_order = ",".join(("(%s,'%s')" % (i, id) for i, id in enumerate(ids)))
+    omegas = {omega.replace(" ", ""): omega for omega in OMEGAS.keys()}
+    omegas_index = []
+    for omega_k, omega_v in omegas.items():
+        try:
+            omegas_index.append((ids.index(omega_k), omega_k))
+        except ValueError:
+            pass
+    if len(ids_order) > 0:
+        query = """SELECT nutr_def.nutr_no, units 
+                    FROM nutr_def JOIN (VALUES {ids}) as x (ordering, nutr_no) 
+                    ON nutr_def.nutr_no = x.nutr_no ORDER BY x.ordering""".format(ids=ids_order)
+        cursor.execute(query)
+        data = cursor.fetchall()
+        for index, omega_k in omegas_index:
+            data.insert(index, (omega_k, 'g'))
+        return data
+    else:
+        return []
+
 def categories_foods():
     _, cursor = conection()
     query  = """SELECT fdgrp_cd, fdgrp_desc_es FROM fd_group ORDER BY fdgrp_desc_es"""
@@ -771,13 +793,13 @@ def create_common_table(dicts):
         table.append(data_c+data_nc)
     return table
 
-def create_matrix(ndb_nos, exclude_nutr=None, only=None):
+def create_matrix(ndb_nos, exclude_nutr=None, only=None, weight=100):
     if only is not None:
         fields = only
     else:
         fields = Food.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr)
 
-    rows = [(ndb_no, Food.vector_features(fields, Food(ndb_no).nutrients).items())
+    rows = [(ndb_no, Food.vector_features(fields, Food(ndb_no, weight=weight).nutrients).items())
                 for ndb_no in ndb_nos]
     matrix = MatrixNutr(rows=rows)
     return matrix
@@ -848,9 +870,8 @@ class MostSimilarFood(object):
             self.food_base.nutrients)
         self.vector_base_items = [(k, v) for k, v in vector_base.items() if v > 0]
         ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
-        self.matrix = create_matrix(ndb_nos, only=[k for k, _ in self.vector_base_items])
+        self.matrix = create_matrix(ndb_nos, only=[k for k, _ in self.vector_base_items], weight=25)
         self.matrix_dict = self.matrix.to_dict(nutr_no=True)
-        self.portion_value = lambda v, w: (v * w) / 100.0
         self.max_total_food = 8
         self.total_nutr = len(self.vector_base_items)
 
@@ -862,7 +883,7 @@ class MostSimilarFood(object):
         for foods in data:
             foods_extra = foods+extra_data
             rows = (self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra)
-            sum_nutr = [(sublist[0][0], sum(self.portion_value(e[1], 25) for e in sublist)) for sublist in izip(*rows)]
+            sum_nutr = [(sublist[0][0], sum(e[1] for e in sublist)) for sublist in izip(*rows)]
             diff = [(b[0], t[1]-b[1]) for t, b in izip(sum_nutr, self.vector_base_items)]
             up_diff = filter(lambda x: x[1] >= 0, diff)
             low_diff = filter(lambda x: x[1] < 0, diff)
@@ -1171,7 +1192,7 @@ class NutrIntake(object):
         if len(resumen) == 0:
             return 0
         else:
-            print self.nutrdesc, resumen
+            print self.nutrdesc, resumen, self.nutavg
             IA = abs(magnitude(resumen.get("Ingesta adecuada", 0)))
             RDA = abs(magnitude(resumen.get("Recomendada", 0)))
             UI = abs(magnitude(resumen.get("Máxima ingesta tolerable", 0)))
@@ -1183,7 +1204,7 @@ class NutrIntake(object):
             elif UI > avg:
                 return UI - avg
             else:
-                return 1
+                return 0
 
 def magnitude(number):
     try:
@@ -1197,3 +1218,4 @@ def magnitude(number):
         return 0
     else:
         return len(left) - 1
+
