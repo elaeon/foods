@@ -1144,6 +1144,9 @@ class NutrIntake(object):
                         "RDA": "Recomendada", 
                         "UL": "Máxima ingesta tolerable"}
         self.values = {label: None for label in self.labels}
+        nutavg_vector = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
+        tmp = {nutr_no: v for nutr_no, _, v, _ in nutavg_vector}
+        self.nutavg = tmp[self.nutr_no]
         self.units = None
 
     def add_value(self, value, label):
@@ -1158,17 +1161,39 @@ class NutrIntake(object):
         for label, nutr_value in self.values.items():
             if label == "AI" or label == "RDA":
                 if other_value < nutr_value:
-                    data[self.labels[label]] = other_value - nutr_value
+                    data[self.labels[label]] = nutr_value - other_value
             elif label == "UI":
                 if nutr_value < other_value:
-                    data[self.labels[label]] = nutr_value - other_value
+                    data[self.labels[label]] = other_value - nutr_value
         return data
                    
-    def score(self, resumen):
+    def penality(self, resumen):
         if len(resumen) == 0:
-            return 100
+            return 0
         else:
-            total = 100
-            for label, v in resumen.items():
-                total += v
-            return total
+            print self.nutrdesc, resumen
+            IA = abs(magnitude(resumen.get("Ingesta adecuada", 0)))
+            RDA = abs(magnitude(resumen.get("Recomendada", 0)))
+            UI = abs(magnitude(resumen.get("Máxima ingesta tolerable", 0)))
+            avg = abs(magnitude(self.nutavg))
+            if IA > avg:
+                return IA - avg
+            elif RDA > avg:
+                return RDA - avg
+            elif UI > avg:
+                return UI - avg
+            else:
+                return 1
+
+def magnitude(number):
+    try:
+        left, right = str(float(number)).split(".")
+    except ValueError:
+        return -int(str(float(number)).split("-").pop())
+    if left == '0':
+        for i, digit in enumerate(right, 1):
+            if digit != '0':
+                return -i
+        return 0
+    else:
+        return len(left) - 1

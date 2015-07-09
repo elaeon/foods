@@ -191,21 +191,34 @@ def food_compare(request):
             total_food = [(nutr_no, total) for nutr_no, total in total_food if total > 0]
             total_food_names = nutr_features_ids([nutr_no for nutr_no, _ in total_food])
             total_food_names = {name[1]: total[1] for name, total in zip(total_food_names, total_food)}
-
+            try:
+                radio_omega = round(total_food_names.get("omega 6", 0)/total_food_names.get("omega 3", 0), 2)
+            except ZeroDivisionError:
+                radio_omega = 0
             type_intake = {}
+            total_penality = 0
             for nutrdesc, nutr_intake in intake_data.items():
                 resumen = nutr_intake.resumen(total_food_names.get(nutrdesc, 0))
-                print nutr_intake.score(resumen)
+                print "PPP", nutr_intake.penality(resumen)
+                total_penality += nutr_intake.penality(resumen)
                 for label, value in resumen.items():
                     type_intake.setdefault(label, [])
                     type_intake[label].append((value, nutr_intake.nutrdesc))
 
+            maximum = 27
+            if total_penality > maximum:
+                total = 100
+            else:
+                total = total_penality * 100 / maximum
+            print total_penality
             return render(request, "analize_food.html", {
                 "total_food": total_food_names, 
                 "intake": intake_data,
                 "intake_form": intake_form,
                 "formset": formset,
-                "type_intake": type_intake})
+                "type_intake": type_intake,
+                "score": 100 - total,
+                "radio_omega": radio_omega})
         else:
             from nutrientes.utils import create_common_table
             dicts = []
