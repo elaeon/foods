@@ -34,7 +34,6 @@
 <a href="{% url 'view_food' form.food.ndb_no %}">{{ form.food.name }}</a>
 </td>
 <td>{{ form.ndb_no }}{{ form.weight }}</td>
-<td><button name="analizar" value="{{ form.food.ndb_no }}">mejorar</button></td>
 {% endfor %}
 </table>
 </form>
@@ -44,6 +43,7 @@
 <p>Principales nutrientes</p>
 <div id="barContainer"></div>
 <h3>Energia: {{ energy.0 }} {{ energy.1 }}</h3>
+<h3>Total de alimento consumido: {{ total_weight }}g</h3>
 <h3>Calificacion: {{ score }} de 100</h3>
 {% if radio_omega > 4 %}
 <h3>El radio omega es alto {{ radio_omega }}:1</h3>

@@ -137,7 +137,8 @@ def food(request, ndb_no):
 
 
 def food_compare(request):
-    from nutrientes.utils import Food, boost_food, intake, nutr_features_ids, nutr_units_ids
+    from nutrientes.utils import Food, intake
+    from nutrientes.utils import IntakeList
     from nutrientes.forms import IntakeForm, WeightForm
     from django.forms.formsets import formset_factory
     food_compare = request.session.get("food_compare", {})
@@ -145,6 +146,7 @@ def food_compare(request):
     if request.POST:
         if "analizar" in request.POST:
             WeightFormSet = formset_factory(WeightForm, extra=0)
+            intake_list = IntakeList()
             if request.POST.get('edad', '') == '':
                 if "intake_params" in request.session:
                     intake_params = request.session["intake_params"]
@@ -179,61 +181,21 @@ def food_compare(request):
                     "genero": intake_form.cleaned_data["genero"],
                     "unidad_edad": unidad_edad}
 
-            #list_ndb_no = request.POST.getlist("analizar")
-            #if len(list_ndb_no) > 0 and list_ndb_no[0] != '':
-            #    food = boost_food(list_ndb_no[0])
-            
-            vectors_features = [
-                    form.food.vector_features(
-                    form.food.create_vector_fields_nutr(exclude_nutr_l=set([])), 
-                    form.food.nutrients).items() for form in formset]
-            total_food = [(v[0][0], sum(e[1] for e in v)) for v in zip(*vectors_features)]
-            total_food = [(nutr_no, total) for nutr_no, total in total_food if total > 0]
-            total_food_names = nutr_features_ids([nutr_no for nutr_no, _ in total_food])
-            total_food_units = nutr_units_ids([nutr_no for nutr_no, _ in total_food])
-            total_food_names = {name[1]: (total[1], units[1]) 
-                for name, total, units in zip(total_food_names, total_food, total_food_units)}
-            try:
-                radio_omega = round(
-                    total_food_names.get("omega 6", [0])[0] / total_food_names.get("omega 3", [0])[0], 2)
-            except ZeroDivisionError:
-                radio_omega = 0
-            type_intake = []
-            total_penality = 0
-            for nutrdesc, nutr_intake in intake_data.items():
-                resumen = nutr_intake.resumen(total_food_names.get(nutrdesc, [0])[0])
-                penality = nutr_intake.penality(resumen)
-                total_penality += penality
-                if len(resumen) > 0:
-                    type_intake.append((nutr_intake.nutrdesc, penality))
+            intake_list.from_formset(formset)
+            total_nutr_names = intake_list.total_nutr_data()
+            score, resume_intake = intake_list.score(intake_data)
 
-            #print total_penality
-            maximum = 27
-            if total_penality > maximum:
-                total = 100
-            else:
-                total = total_penality * 100 / maximum
-
-            units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
-            totals = []
-            for nutrdesc, (total, units) in total_food_names.items():
-                val = units_scale.get(units, 0)
-                if val != 0:
-                    totals.append((nutrdesc, float(total / val)))
-
-            principals = sorted(totals, reverse=True, key=lambda x:x[1])
-            principals_resumen = [(elem[1], elem[0]) for elem in principals[:10]] +\
-            [(sum([elem[1] for elem in principals[10:]]), "otros")]
             return render(request, "analize_food.html", {
-                "total_food": total_food_names, 
+                "total_food": total_nutr_names, 
                 "intake": intake_data,
                 "intake_form": intake_form,
                 "formset": formset,
-                "type_intake": type_intake,
-                "score": 100 - total,
-                "energy": total_food_names["Energy"],
-                "radio_omega": radio_omega,
-                "principals": principals_resumen})
+                "type_intake": resume_intake,
+                "score": score,
+                "energy": total_nutr_names["Energy"],
+                "radio_omega": intake_list.radio_omega,
+                "principals": intake_list.principals_nutrients(),
+                "total_weight": intake_list.calc_weight()})
         else:
             from nutrientes.utils import create_common_table
             dicts = []
@@ -308,9 +270,7 @@ def best_of_nutrients(request):
         except IndexError:
             categoria = ""
     else:
-        foods = []
-        categoria = ""
-        nutrs = []
+        return redirect("index")
     return render(request, "food_attr_check.html", {
         "foods": rank.order(),
         "categoria": categoria, 

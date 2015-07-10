@@ -1036,13 +1036,12 @@ class MatrixNutr(object):
             self.get_matrix(name)
 
     def convert_rows(self, items):
-        rows = []
         if len(items) > 0:
             column = [nutr_no for nutr_no, _ in items[0][1]]
-            for ndb_no, vector in items:
-                rows.append((ndb_no, [v for _, v in vector]))
+            rows = [(ndb_no, [v for _, v in vector]) for ndb_no, vector in items]
         else:
             column = []
+            rows = []
         self.rows = rows
         self.column = column
 
@@ -1125,11 +1124,6 @@ def boost_food(ndb_no):
     food = Food(order.get_top(ndb_no, level=10))
     return food
 
-def zero_fill(max_length, vector):
-    while len(vector) < max_length:
-        vector.append(0)
-    return vector
-
 def intake(edad, genero, unidad_edad):
     _, cursor = conection()
     query = """SELECT nutr_def.nutr_no, nutrdesc, units, value, type, edad_range
@@ -1191,7 +1185,7 @@ class NutrIntake(object):
         if len(resumen) == 0:
             return 0
         else:
-            print(self.nutrdesc, resumen, self.nutavg)
+            #print(self.nutrdesc, resumen, self.nutavg)
             IA = abs(magnitude(resumen.get("Ingesta adecuada", 0)))
             RDA = abs(magnitude(resumen.get("Recomendada", 0)))
             UI = abs(magnitude(resumen.get("Máxima ingesta tolerable", 0)))
@@ -1217,4 +1211,69 @@ def magnitude(number):
         return 0
     else:
         return len(left) - 1
+
+class IntakeList(object):
+    def __init__(self):
+        self.foods = None
+        self.total_weight = None
+        self.radio_omega = None
+        self.total_nutr_names = None
+
+    def from_formset(self, formset):
+        self.foods = {form.food.ndb_no: form.food for form in formset}
+
+    def vector_features(self):
+        return [food.vector_features(
+        food.create_vector_fields_nutr(exclude_nutr_l=set([])), 
+        food.nutrients).items() for food in self.foods.values()]
+
+    def calc_weight(self, force=False):
+        if self.total_weight is None or force:
+            return sum(food.weight for food in self.foods.values())
+        return self.total_weight
+
+    def total_nutr_data(self):
+        vectors_features = self.vector_features()
+        total_food = [(v[0][0], sum(e[1] for e in v)) for v in zip(*vectors_features)]
+        total_food = [(nutr_no, total) for nutr_no, total in total_food if total > 0]
+        total_nutr_names = nutr_features_ids([nutr_no for nutr_no, _ in total_food])
+        total_nutr_units = nutr_units_ids([nutr_no for nutr_no, _ in total_food])
+        total_nutr_names = {name[1]: (total[1], units[1]) 
+            for name, total, units in zip(total_nutr_names, total_food, total_nutr_units)}
+        try:
+            self.radio_omega = round(
+                total_nutr_names.get("omega 6", [0])[0] / total_nutr_names.get("omega 3", [0])[0], 2)
+        except ZeroDivisionError:
+            self.radio_omega = 0
+        self.total_nutr_names = total_nutr_names
+        return self.total_nutr_names
+
+    def score(self, perfil_intake):
+        resume_intake = []
+        total_penality = 0
+        for nutrdesc, nutr_intake in perfil_intake.items():
+            resumen = nutr_intake.resumen(self.total_nutr_names.get(nutrdesc, [0])[0])
+            penality = nutr_intake.penality(resumen)
+            total_penality += penality
+            if len(resumen) > 0:
+                resume_intake.append((nutr_intake.nutrdesc, penality))
+
+        maximum = 27
+        if total_penality > maximum:
+            total = 100
+        else:
+            total = total_penality * 100 / maximum
+        return 100 - total, resume_intake
+
+    def principals_nutrients(self):
+        units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
+        totals = []
+        for nutrdesc, (total, units) in self.total_nutr_names.items():
+            val = units_scale.get(units, 0)
+            if val != 0:
+                totals.append((nutrdesc, float(total / val)))
+
+        principals = sorted(totals, reverse=True, key=lambda x:x[1])
+        return [(elem[1], elem[0]) for elem in principals[:9]] +\
+            [(sum([elem[1] for elem in principals[9:]]), "otros")]
 
