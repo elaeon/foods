@@ -41,6 +41,8 @@
 
 <br>
 <div id="chartContainer"></div>
+<p>Principales nutrientes</p>
+<div id="barContainer"></div>
 <h3>Energia: {{ energy.0 }} {{ energy.1 }}</h3>
 <h3>Calificacion: {{ score }} de 100</h3>
 {% if radio_omega > 4 %}
@@ -60,7 +62,8 @@
 <br>
 <p>Los valores de referencia para el consumo diario de nutrientes fueron sacados de:
 <a href="http://www.ncbi.nlm.nih.gov/books/NBK114316/?report=reader#!po=100.000">NCBI</a>,
-<a href="http://books.nap.edu/openbook.php?record_id=11537">Book</a></p>
+<a href="http://books.nap.edu/openbook.php?record_id=11537">Book</a>
+<a href="http://www.nal.usda.gov/fnic/DRI/Essential_Guide/DRIEssentialGuideNutReq.pdf">PDF</a></p>
 </div>
 </div>
 {% endblock %}
@@ -79,6 +82,12 @@ var intake = [];
     {% for nutrient, value, units, type in nutr_obj.raw %}
     data.push({nombre: '{{ nutrient }}', valor: {{ value }}, unit: '{{ units }}', tipo: '{{ type }}'});
     {% endfor %}
+{% endfor %}
+
+var principals = [];
+
+{% for porcentaje, nutrdesc in principals %}
+principals.push({nombre: '{{ nutrdesc }}', porcentaje: {{ porcentaje }}, tipo: "principales"});
 {% endfor %}
 
 var svg = dimple.newSvg("#chartContainer", 1100, 600);
@@ -107,5 +116,15 @@ y.logBase = 10;
 myChart.draw();
 x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';
+
+var svg = dimple.newSvg("#barContainer", 1100, 210);
+var barChart = new dimple.chart(svg, principals);
+barChart.setBounds(10, 30, 950, 130)
+barChart.addPctAxis("x", "porcentaje");
+barChart.addCategoryAxis("y", "tipo");
+var barSeries = barChart.addSeries("nombre", dimple.plot.bar);
+barSeries.stacked = true;
+barChart.addLegend(10, 10, 1100, 30, "right");
+barChart.draw();
 </script>
 {% endblock %}

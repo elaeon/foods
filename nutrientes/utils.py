@@ -3,7 +3,6 @@ import psycopg2
 import re
 import pickle
 
-from itertools import izip
 from collections import OrderedDict
 
 import os
@@ -186,7 +185,7 @@ def category_food_list():
 
     omegas = category_avg_omegas()
     for category_food_e, cat_id, count in category_food_l:
-        nutr_calif = len(filter(lambda x:x < 0, category_results[category_food_e]))
+        nutr_calif = len(list(filter(lambda x:x < 0, category_results[category_food_e])))
         omega_calif = 0 if omegas[category_food_e] > 4 else 1
         calif = int(((nutr_calif + omega_calif) / (float(len(category_results[category_food_e]) + 1)))*100)
         yield category_food_e, cat_id, count, category_results[category_food_e], omegas[category_food_e], calif
@@ -324,7 +323,7 @@ class Rank(object):
                 "214": 3.0, #Maltose
                 "207": 3.0,  #Ash
                 "291": .5,   #Fiber, total dietary
-                "313": 8.5,  #Fluoride, F
+                "313": 1.3,  #Fluoride, F
                 "omega6": 1.8
             }
         else:
@@ -491,7 +490,7 @@ caution_nutr = {
     "607": "4:0",
     "609": "8:0",
     "608": "6:0",
-    "313": "Fluoride, F",
+    #"313": "Fluoride, F",
     "212": "Fructose",
     "211": "Glucose (dextrose)",
 }
@@ -687,14 +686,14 @@ class Food(object):
 
     def cosine_similarity(self, v1, v2):
         "compute cosine similarity of v1 to v2: (v1 dot v1)/{||v1||*||v2||)"
-        sumxy = sum((x*y for x, y in izip(v1, v2)))
+        sumxy = sum((x*y for x, y in zip(v1, v2)))
         sumxx = sum((x*x for x in v1))
         sumyy = sum((y*y for y in v2))
         return sumxy / (sumxx * sumyy)**.5
 
     def min_distance(self, vector_base, vectors, top=15):
         import heapq
-        distance = lambda x, y: sum((x_i - y_i)**2 for x_i, y_i in izip(x, y))**.5
+        distance = lambda x, y: sum((x_i - y_i)**2 for x_i, y_i in zip(x, y))**.5
         #distance = self. cosine_similarity
         distances = ((vector[0], distance(vector_base[1], vector[1])) for vector in vectors if vector_base[0] != vector[0])
         return heapq.nsmallest(top, distances, key=lambda x: x[1])
@@ -758,8 +757,8 @@ class Food(object):
         return mark_caution_nutr(self.nutrients)
 
     def caution_good_nutr_avg(self):
-        good = len(filter(lambda x: x[5], self.mark_caution_good_nutrients()))
-        bad = len(filter(lambda x: x[4], self.mark_caution_good_nutrients()))
+        good = len(list(filter(lambda x: x[5], self.mark_caution_good_nutrients())))
+        bad = len(list(filter(lambda x: x[4], self.mark_caution_good_nutrients())))
         return {"total": len(self.nutrients),
             "good": good,
             "bad": bad}
@@ -882,11 +881,11 @@ class MostSimilarFood(object):
         count = 0
         for foods in data:
             foods_extra = foods+extra_data
-            rows = (self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra)
-            sum_nutr = [(sublist[0][0], sum(e[1] for e in sublist)) for sublist in izip(*rows)]
-            diff = [(b[0], t[1]-b[1]) for t, b in izip(sum_nutr, self.vector_base_items)]
-            up_diff = filter(lambda x: x[1] >= 0, diff)
-            low_diff = filter(lambda x: x[1] < 0, diff)
+            rows = [self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra]
+            sum_nutr = [(sublist[0][0], sum(e[1] for e in sublist)) for sublist in zip(*rows)]
+            diff = [(b[0], t[1]-b[1]) for t, b in zip(sum_nutr, self.vector_base_items)]
+            up_diff = list(filter(lambda x: x[1] >= 0, diff))
+            low_diff = list(filter(lambda x: x[1] < 0, diff))
             if len(low_diff) <= min_diff:
                 return EvalSimilarFood(foods_extra, low_diff, sum_nutr, self.total_nutr)
 
@@ -901,7 +900,7 @@ class MostSimilarFood(object):
 
     def grown(self, vectors):
         null_grow = set([])
-        for sublist in izip(*vectors):
+        for sublist in zip(*vectors):
             if sublist[0][1] != 0:
                 grow_ = abs((((sublist[-1][1] / sublist[0][1])**(1./len(sublist))) - 1) * 100)
                 #print grow_, sublist[0][1], sublist[-1][1]
@@ -914,7 +913,7 @@ class MostSimilarFood(object):
         import random
         indexes = set([])
         #keys = self.matrix.keys()
-        for i in xrange(100):
+        for i in range(100):
             blocks = []
             while len(blocks) < size:
                 #i = random.randint(0, len(keys) - 1)
@@ -928,7 +927,7 @@ class MostSimilarFood(object):
 
     def random(self, extra_food=[], min_amount_food=2, max_amount_food=5, min_diff=10):
         counting = {}
-        for food_size in xrange(min_amount_food, max_amount_food):
+        for food_size in range(min_amount_food, max_amount_food):
             data = self.random_select(food_size)
             low = []
             foods = self.search_steps(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
@@ -1014,7 +1013,7 @@ class EvalSimilarFood(object):
         food_base_nutrients = [(nutrs_ids_base[k], v) for k, v in similar_food.vector_base_items]
         food_not_found_nutr = [nutrs_ids[e] for e in not_ndb_not_found]
         foods = []
-        ndb_nos_name = [(data[1][0], data[1][1], data[0][1]) for data in izip(self.result, get_many_food(ndb_nos))]
+        ndb_nos_name = [(data[1][0], data[1][1], data[0][1]) for data in zip(self.result, get_many_food(ndb_nos))]
         for ndb_no, name, _ in ndb_nos_name:
             for nutr_no, v in similar_food.matrix_dict[ndb_no]:
                 foods.append((name, nutrs_ids[nutr_no], v))
@@ -1071,7 +1070,7 @@ class MatrixNutr(object):
 
     def to_dict(self, nutr_no=False):
         if nutr_no is True:
-            return {ndb_no: zip(self.column, vector) for ndb_no, vector in self.rows}
+            return {ndb_no: list(zip(self.column, vector)) for ndb_no, vector in self.rows}
         return {ndb_no: vector for ndb_no, vector in self.rows}
 
 class NodeNeighbors(object):
@@ -1105,7 +1104,7 @@ class OrderSimilarity(object):
     def list2order(self, data_list):
         nodes = NodeNeighbors({e["ndb_no"]: e["category"] for e in data_list})
         nodes.add(data_list[0]["ndb_no"], None)
-        for x1, base in izip(data_list, data_list[1:]):
+        for x1, base in zip(data_list, data_list[1:]):
             nodes.add(base["ndb_no"], x1["ndb_no"])
         nodes.add(data_list[-1]["ndb_no"], data_list[-2]["ndb_no"])
         return nodes
@@ -1192,7 +1191,7 @@ class NutrIntake(object):
         if len(resumen) == 0:
             return 0
         else:
-            print self.nutrdesc, resumen, self.nutavg
+            print(self.nutrdesc, resumen, self.nutavg)
             IA = abs(magnitude(resumen.get("Ingesta adecuada", 0)))
             RDA = abs(magnitude(resumen.get("Recomendada", 0)))
             UI = abs(magnitude(resumen.get("Máxima ingesta tolerable", 0)))

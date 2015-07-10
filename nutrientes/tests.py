@@ -8,10 +8,10 @@ def equivalents():
     food_base = similar_food.food_base
     for x in range(10):
         results = similar_food.search()
-        if results is not None or len(results) > 0:
+        if results is not None and len(results) > 0:
             last_result = results.pop()
-            print last_result.total
-            print last_result.result
+            print(last_result.total)
+            print(last_result.result)
             #print last_result.ids2name(similar_food)["foods"]
 
 
@@ -19,7 +19,7 @@ def nearest_neighbors():
     ndb_no = "11667"
     if 1: 
         food = Food(ndb_no, avg=False)
-        print list(food.similarity())
+        print(list(food.similarity()))
     else:
         from sklearn.neighbors import KDTree, BallTree
         import numpy as np
@@ -30,8 +30,8 @@ def nearest_neighbors():
         kdt = BallTree(X, leaf_size=300, metric='euclidean')
         m = np.array(matrix_dict[ndb_no])
         dist, ind = kdt.query(m, k=15)
-        print ind
-        print [matrix.rows[i][0] for i in ind[0]]
+        print(ind)
+        print([matrix.rows[i][0] for i in ind[0]])
         #print dist
         #print matrix.rows[4458]
 

@@ -207,6 +207,7 @@ def food_compare(request):
                 if len(resumen) > 0:
                     type_intake.append((nutr_intake.nutrdesc, penality))
 
+            #print total_penality
             maximum = 27
             if total_penality > maximum:
                 total = 100
@@ -219,9 +220,10 @@ def food_compare(request):
                 val = units_scale.get(units, 0)
                 if val != 0:
                     totals.append((nutrdesc, float(total / val)))
-            maximo = sum((d[1] for d in totals))
-            porcentaje_data = [(round(d[1]*100./maximo, 3), d[0]) for d in totals]
-            print sorted(porcentaje_data, reverse=True)[:10]
+
+            principals = sorted(totals, reverse=True, key=lambda x:x[1])
+            principals_resumen = [(elem[1], elem[0]) for elem in principals[:10]] +\
+            [(sum([elem[1] for elem in principals[10:]]), "otros")]
             return render(request, "analize_food.html", {
                 "total_food": total_food_names, 
                 "intake": intake_data,
@@ -230,7 +232,8 @@ def food_compare(request):
                 "type_intake": type_intake,
                 "score": 100 - total,
                 "energy": total_food_names["Energy"],
-                "radio_omega": radio_omega})
+                "radio_omega": radio_omega,
+                "principals": principals_resumen})
         else:
             from nutrientes.utils import create_common_table
             dicts = []
