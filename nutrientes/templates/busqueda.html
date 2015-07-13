@@ -19,6 +19,23 @@
         <ul class="nav navbar-nav">
             <li><a href="{% url 'about' %}">Acerca de</a></li>
             <li><a href="{% url 'contact' %}">Contacto</a></li>
+            {% if my_food_list %}
+            <li class="dropdown">
+                <a id="drop1" class="dropdown-toggle" 
+                    aria-expanded="false" aria-haspopup="true" 
+                    role="button" data-toggle="dropdown" href="#">
+                    Mi lista
+                    <span class="caret"></span>
+                </a>
+            <ul class="dropdown-menu" aria-labelledby="drop3">
+            {% for food_list_name, food_list in  my_food_list.items %}
+                <li>
+                <a href="{% url 'analyze_food' %}?intake_list_name={{ food_list_name }}">{{ food_list_name }} <span style="font-size:70%">Score: {{ food_list.score }}</span></a>
+                </li>
+            {% endfor %}
+            </ul>
+            </li>
+            {% endif %}
         </ul>
         <form id="search-form" class="navbar-form navbar-right form-inline" onsubmit="return verify_search_term();" name="search-form" action="{% url 'result_long_search' %}" method="post">
             {% csrf_token %}

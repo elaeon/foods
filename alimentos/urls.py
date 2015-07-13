@@ -23,6 +23,7 @@ urlpatterns = [
     url(r'^romega/$', views.romega, name="view_romega"),
     url(r'^set_comparation/(?P<ndb_no>\w+)/(?P<operation>\w+)/$', views.set_comparation, name="view_set_comparation"),
     url(r'^food_compare/$', views.food_compare, name="food_compare"),
+    url(r'^analyze_food/$', views.analyze_food, name="analyze_food"),
     url(r'^category_food/(?P<category_id>\w+)/(?P<order>\w+)/$', views.list_food_category, name="list_food_category"),
     url(r'^best_of_nutrients/$', views.best_of_nutrients, name="best_of_nutrients"),
     url(r'^about/$', views.about, name="about"),

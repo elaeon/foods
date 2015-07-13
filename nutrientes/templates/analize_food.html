@@ -5,7 +5,7 @@
 <div class="container">
 <div class="starter-template">
 <div class="row">
-<form action="." method="POST" id="intake_form">
+<form action="{% url 'food_compare' %}" method="POST" id="intake_form">
 {% csrf_token %}
 <table>
 <tr>

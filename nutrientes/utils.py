@@ -1223,6 +1223,7 @@ class IntakeList(object):
 
     def from_formset(self, formset):
         self.foods = {form.food.ndb_no: form.food for form in formset}
+        self.total_nutr_data()
 
     def build_perfil(self, edad, genero, unidad_edad):
         return {"edad": edad, "genero": genero, "unidad_edad": unidad_edad}
@@ -1251,7 +1252,6 @@ class IntakeList(object):
         except ZeroDivisionError:
             self.radio_omega = 0
         self.total_nutr_names = total_nutr_names
-        return self.total_nutr_names
 
     def score(self):
         resume_intake = []
@@ -1290,13 +1290,15 @@ class IntakeList(object):
 
     def light_format(self):
         return {"perfil": self.perfil,
-                "foods": {food.ndb_no: food.weight for food in self.foods.values()}}
+                "foods": {food.ndb_no: food.weight for food in self.foods.values()},
+                "score": self.score()[0]}
 
     @classmethod
     def from_light_format(self, intake_light_format):
         perfil = intake_light_format["perfil"]
         foods = intake_light_format["foods"]
-        intake_list = IntakeList(perfil["edad"], perfil["genero"], perfil["unidad_edad"])
-        intake_list.foods = {form.food.ndb_no: Food(ndb_no, weight=weight, avg=False)
+        intake_list = IntakeList(perfil["edad"], perfil["genero"], perfil["unidad_edad"].encode("utf8", "replace"))
+        intake_list.foods = {ndb_no: Food(ndb_no, weight=weight, avg=False)
             for ndb_no, weight in foods.items()}
+        intake_list.total_nutr_data()
         return intake_list
