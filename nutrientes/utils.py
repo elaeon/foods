@@ -1213,7 +1213,9 @@ def magnitude(number):
         return len(left) - 1
 
 class IntakeList(object):
-    def __init__(self):
+    def __init__(self, edad, genero, unidad_edad):
+        self.perfil = self.build_perfil(edad, genero, unidad_edad)
+        self.perfil_intake = self.perfil_intake()
         self.foods = None
         self.total_weight = None
         self.radio_omega = None
@@ -1221,6 +1223,9 @@ class IntakeList(object):
 
     def from_formset(self, formset):
         self.foods = {form.food.ndb_no: form.food for form in formset}
+
+    def build_perfil(self, edad, genero, unidad_edad):
+        return {"edad": edad, "genero": genero, "unidad_edad": unidad_edad}
 
     def vector_features(self):
         return [food.vector_features(
@@ -1248,10 +1253,10 @@ class IntakeList(object):
         self.total_nutr_names = total_nutr_names
         return self.total_nutr_names
 
-    def score(self, perfil_intake):
+    def score(self):
         resume_intake = []
         total_penality = 0
-        for nutrdesc, nutr_intake in perfil_intake.items():
+        for nutrdesc, nutr_intake in self.perfil_intake.items():
             resumen = nutr_intake.resumen(self.total_nutr_names.get(nutrdesc, [0])[0])
             penality = nutr_intake.penality(resumen)
             total_penality += penality
@@ -1277,3 +1282,21 @@ class IntakeList(object):
         return [(elem[1], elem[0]) for elem in principals[:9]] +\
             [(sum([elem[1] for elem in principals[9:]]), "otros")]
 
+    def perfil_intake(self):
+        return intake(
+            self.perfil["edad"], 
+            self.perfil["genero"], 
+            self.perfil["unidad_edad"])
+
+    def light_format(self):
+        return {"perfil": self.perfil,
+                "foods": {food.ndb_no: food.weight for food in self.foods.values()}}
+
+    @classmethod
+    def from_light_format(self, intake_light_format):
+        perfil = intake_light_format["perfil"]
+        foods = intake_light_format["foods"]
+        intake_list = IntakeList(perfil["edad"], perfil["genero"], perfil["unidad_edad"])
+        intake_list.foods = {form.food.ndb_no: Food(ndb_no, weight=weight, avg=False)
+            for ndb_no, weight in foods.items()}
+        return intake_list

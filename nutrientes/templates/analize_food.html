@@ -5,7 +5,7 @@
 <div class="container">
 <div class="starter-template">
 <div class="row">
-<form action="." method="POST">
+<form action="." method="POST" id="intake_form">
 {% csrf_token %}
 <table>
 <tr>
@@ -17,11 +17,12 @@
 <td>{{ intake_form.edad }}</td>
 <td>{{ intake_form.unidad_edad }}</td>
 <td>{{ intake_form.genero }}</td>
+<input type="hidden" value="" id="intake_list_name" name="intake_list_name">
 <td><button type="submit" name="analizar">Calcular</button></td>
+<td><button type="submit" name="save">Guardar lista</button></td>
 </tr>
 </table>
 
-{% csrf_token %}
 <table>
 <tr>
 <th>Alimento</th>
@@ -72,6 +73,7 @@
 <script type="text/javascript" src="{% static 'd3.js' %}"></script>
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
 <script type="text/javascript">
+
 var data = [];
 {% for nutrient, value in total_food.items %}
     data.push({nombre: '{{ nutrient }}', valor: {{ value.0 }}, tipo: "total alimento", unit: '{{ value.1 }}'})
@@ -126,5 +128,37 @@ var barSeries = barChart.addSeries("nombre", dimple.plot.bar);
 barSeries.stacked = true;
 barChart.addLegend(10, 10, 1100, 30, "right");
 barChart.draw();
+
+$(function()
+{
+var submitActor = null;
+var $form = $( '#intake_form' );
+var $submitActors = $form.find( 'button[type=submit]' );
+
+$form.submit( function( event )
+{
+    if ( null === submitActor ) {
+    // If no actor is explicitly clicked, the browser will
+    // automatically choose the first in source-order
+    // so we do the same here
+        submitActor = $submitActors[0];
+    }
+
+    if(submitActor.name == "save") {
+        name_list = prompt("Escriba el nombre de la lista.")
+        if(name_list) {
+            $("#intake_list_name").val(name_list)
+            return true;
+        } else {
+            return false;
+        }   
+    } else {
+        return true;
+    }
+});
+
+$submitActors.click(function( event ){ submitActor = this;});
+
+});
 </script>
 {% endblock %}

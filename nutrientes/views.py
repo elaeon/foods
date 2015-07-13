@@ -144,19 +144,14 @@ def food_compare(request):
     food_compare = request.session.get("food_compare", {})
     foods = []
     if request.POST:
-        if "analizar" in request.POST:
+        if "analizar" in request.POST or "save" in request.POST:
             WeightFormSet = formset_factory(WeightForm, extra=0)
-            intake_list = IntakeList()
             if request.POST.get('edad', '') == '':
-                if "intake_params" in request.session:
-                    intake_params = request.session["intake_params"]
+                if "intake_perfil" in request.session:
+                    intake_params = request.session["intake_perfil"]
                 else:
                     intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H"}
 
-                intake_data = intake(
-                        intake_params["edad"], 
-                        intake_params["genero"],
-                        intake_params["unidad_edad"].encode("utf8", "replace"))
                 intake_form = IntakeForm(initial=intake_params)
                 foods = [{"food": Food(ndb_no, weight=float(100)), "weight": 100, "ndb_no": ndb_no} 
                         for ndb_no in food_compare.keys()]
@@ -171,23 +166,29 @@ def food_compare(request):
                         form.food = Food(ndb_no, weight=weight)
 
             if intake_form.is_valid():
-                unidad_edad = intake_form.cleaned_data["unidad_edad"].encode("utf8", "replace")
-                intake_data = intake(
-                    intake_form.cleaned_data["edad"], 
-                    intake_form.cleaned_data["genero"], 
-                    unidad_edad)
-                request.session["intake_params"] = {
-                    "edad": intake_form.cleaned_data["edad"],
-                    "genero": intake_form.cleaned_data["genero"],
-                    "unidad_edad": unidad_edad}
-
+                intake_list = IntakeList(
+                    intake_form.cleaned_data["edad"],
+                    intake_form.cleaned_data["genero"],
+                    intake_form.cleaned_data["unidad_edad"].encode("utf8", "replace"))
+                
+            request.session["intake_perfil"] = intake_list.perfil
             intake_list.from_formset(formset)
             total_nutr_names = intake_list.total_nutr_data()
-            score, resume_intake = intake_list.score(intake_data)
+            score, resume_intake = intake_list.score()
+
+            if "save" in request.POST:
+                intake_list_name = request.POST["intake_list_name"]
+                try:
+                    if not intake_list_name in request.session["intake_names_list"]:
+                        request.session["intake_names_list"] = {}
+                except KeyError:
+                    request.session["intake_names_list"] = {}
+
+                request.session["intake_names_list"][intake_list_name] = intake_list.light_format()
 
             return render(request, "analize_food.html", {
                 "total_food": total_nutr_names, 
-                "intake": intake_data,
+                "intake": intake_list.perfil_intake,
                 "intake_form": intake_form,
                 "formset": formset,
                 "type_intake": resume_intake,
@@ -212,6 +213,15 @@ def food_compare(request):
                 {"foods": foods, "common_table": common_table, "names": names})
     else:
         return redirect("index")
+
+def analyze_food(request):
+    if request.method == "GET":
+        intake_list_name = request.GET["food_name"]
+        try:
+            intake_light_format = request.session["intake_names_list"][intake_list_name]
+            intake_list = IntakeList.from_light_format(intake_light_format)
+        except KeyError:
+            pass
 
 def romega(request):
     from nutrientes.utils import get_omegas
@@ -280,8 +290,10 @@ def best_of_nutrients(request):
 def about(request):
     return render(request, "about.html", {})
 
+
 def contact(request):
     return render(request, "contact.html", {})
+
 
 def ranking_list(request):
     from utils import ranking_nutr
