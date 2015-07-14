@@ -1213,9 +1213,13 @@ def magnitude(number):
         return len(left) - 1
 
 class IntakeList(object):
-    def __init__(self, edad, genero, unidad_edad):
-        self.perfil = self.build_perfil(edad, genero, unidad_edad)
-        self.perfil_intake = self.perfil_intake()
+    def __init__(self, edad, genero, unidad_edad, blank=False):
+        if not blank:
+            self.perfil = self.build_perfil(edad, genero, unidad_edad)
+            self.perfil_intake = self.perfil_intake()
+        else:
+            self.perfil = None
+            self.perfil_intake = None
         self.foods = None
         self.total_weight = None
         self.radio_omega = None
@@ -1302,3 +1306,25 @@ class IntakeList(object):
             for ndb_no, weight in foods.items()}
         intake_list.total_nutr_data()
         return intake_list
+
+    @classmethod
+    def merge(self, *intake_list_list):
+        intake_total = IntakeList('', '', '', blank=True)
+        intake_total.perfil = intake_list_list[0].perfil
+        intake_total.perfil_intake = intake_list_list[0].perfil_intake
+        foods_tmp = {}
+        for intake_list in intake_list_list:
+            for ndb_no, food in intake_list.foods.items():
+                if ndb_no in foods_tmp:
+                    foods_tmp[ndb_no].append(food)
+                else:
+                    foods_tmp[ndb_no] = [food]
+        foods = {}
+        for ndb_no, foods_ndb_no in foods_tmp.items():
+            if len(foods_ndb_no) > 1:
+                foods[ndb_no] = Food(ndb_no, weight=sum(food.weight for food in foods_ndb_no))
+            else:
+                foods[ndb_no] = foods_ndb_no.pop()
+        intake_total.foods = foods
+        intake_total.total_nutr_data()
+        return intake_total

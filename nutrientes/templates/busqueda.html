@@ -28,11 +28,19 @@
                     <span class="caret"></span>
                 </a>
             <ul class="dropdown-menu" aria-labelledby="drop3">
+            <form action="{% url 'analyze_food' %}" method="POST">
+            {% csrf_token %}
             {% for food_list_name, food_list in  my_food_list.items %}
-                <li>
-                <a href="{% url 'analyze_food' %}?intake_list_name={{ food_list_name }}">{{ food_list_name }} <span style="font-size:70%">Score: {{ food_list.score }}</span></a>
+                <li><input type="checkbox" style="display:inline-block;padding-left:5px;" 
+                    value="{{ food_list_name }}" name="food_list">
+                    {{ food_list_name }} <span style="font-size:70%">{{ food_list.score }} puntos</span>
                 </li>
             {% endfor %}
+            <li><div style="padding-right: 10px; text-align:right;">
+                <button type="submit" class="btn btn-xs btn-primary">Analizar</button>
+                </div>
+            </li>
+            </form>
             </ul>
             </li>
             {% endif %}

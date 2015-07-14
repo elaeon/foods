@@ -222,19 +222,22 @@ def analyze_food(request):
     from nutrientes.utils import IntakeList
     from nutrientes.forms import IntakeForm, WeightForm
     from django.forms.formsets import formset_factory
-    if request.method == "GET":
+    if request.method == "POST":
         try:
             WeightFormSet = formset_factory(WeightForm, extra=0)
-            intake_list_name = request.GET["intake_list_name"]
-            intake_light_format = request.session["intake_names_list"][intake_list_name]
-            intake_list = IntakeList.from_light_format(intake_light_format)
-            score, resume_intake = intake_list.score()
+            foods = []
+            intake_list_list = []
+            for intake_list_name in request.POST.getlist("food_list"):
+                intake_light_format = request.session["intake_names_list"][intake_list_name]
+                intake_list = IntakeList.from_light_format(intake_light_format)
+                foods += [{"food": food, "weight": food.weight, "ndb_no": food.ndb_no}
+                            for food in intake_list.foods.values()]
+                intake_list_list.append(intake_list)
             intake_params = intake_light_format["perfil"]
-
             intake_form = IntakeForm(initial=intake_params)
-            foods = [{"food": food, "weight": food.weight, "ndb_no": food.ndb_no}
-                        for food in intake_list.foods.values()]
             formset = WeightFormSet(initial=foods)
+            intake_list = IntakeList.merge(*intake_list_list)
+            score, resume_intake = intake_list.score()
             return render(request, "analize_food.html", {
                 "total_food": intake_list.total_nutr_names, 
                 "intake": intake_list.perfil_intake,
