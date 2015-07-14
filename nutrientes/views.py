@@ -189,6 +189,9 @@ def food_compare(request):
                     request.session["intake_names_list"] = {}
 
                 request.session["intake_names_list"][intake_list_name] = intake_list.light_format()
+                request.session["food_compare"] = intake_list.food2name()
+            else:
+                intake_list_name = ""
 
             return render(request, "analize_food.html", {
                 "total_food": intake_list.total_nutr_names, 
@@ -197,10 +200,17 @@ def food_compare(request):
                 "formset": formset,
                 "type_intake": resume_intake,
                 "score": score,
-                "energy": intake_list.total_nutr_names["Energy"],
+                "energy": intake_list.total_nutr_names.get("Energy", 0),
                 "radio_omega": intake_list.radio_omega,
                 "principals": intake_list.principals_nutrients(),
-                "total_weight": intake_list.calc_weight()})
+                "total_weight": intake_list.calc_weight(),
+                "intake_name_list": intake_list_name})
+        elif "borrar" in request.POST:
+            name = request.POST.get("intake_list_name", None)
+            if name is not None:
+                del request.session["intake_names_list"][name]
+                request.session["intake_names_list"] = request.session["intake_names_list"]
+            return redirect("index")
         else:
             from nutrientes.utils import create_common_table
             dicts = []
@@ -227,7 +237,8 @@ def analyze_food(request):
             WeightFormSet = formset_factory(WeightForm, extra=0)
             foods = []
             intake_list_list = []
-            for intake_list_name in request.POST.getlist("food_list"):
+            intake_names_list = request.POST.getlist("food_list")
+            for intake_list_name in intake_names_list:
                 intake_light_format = request.session["intake_names_list"][intake_list_name]
                 intake_list = IntakeList.from_light_format(intake_light_format)
                 foods += [{"food": food, "weight": food.weight, "ndb_no": food.ndb_no}
@@ -245,10 +256,11 @@ def analyze_food(request):
                 "formset": formset,
                 "type_intake": resume_intake,
                 "score": score,
-                "energy": intake_list.total_nutr_names["Energy"],
+                "energy": intake_list.total_nutr_names.get("Energy", 0),
                 "radio_omega": intake_list.radio_omega,
                 "principals": intake_list.principals_nutrients(),
-                "total_weight": intake_list.calc_weight()})
+                "total_weight": intake_list.calc_weight(),
+                "intake_name_list": "" if len(intake_names_list) > 1 else intake_names_list[0]})
         except KeyError:
             pass
 

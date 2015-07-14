@@ -1185,7 +1185,6 @@ class NutrIntake(object):
         if len(resumen) == 0:
             return 0
         else:
-            #print(self.nutrdesc, resumen, self.nutavg)
             IA = abs(magnitude(resumen.get("Ingesta adecuada", 0)))
             RDA = abs(magnitude(resumen.get("Recomendada", 0)))
             UI = abs(magnitude(resumen.get("Máxima ingesta tolerable", 0)))
@@ -1296,6 +1295,9 @@ class IntakeList(object):
         return {"perfil": self.perfil,
                 "foods": {food.ndb_no: food.weight for food in self.foods.values()},
                 "score": self.score()[0]}
+
+    def food2name(self):
+        return {food.ndb_no: food.name for food in self.foods.values()}
 
     @classmethod
     def from_light_format(self, intake_light_format):
