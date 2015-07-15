@@ -1190,9 +1190,9 @@ class NutrIntake(object):
         if len(resumen) == 0:
             return 0
         else:
-            IA = abs(magnitude(resumen.get("Ingesta adecuada", 0)))
-            RDA = abs(magnitude(resumen.get("Recomendada", 0)))
-            UL = abs(magnitude(resumen.get("Máxima ingesta tolerable", 0)))
+            IA = magnitude(resumen.get("Ingesta adecuada", 0))
+            RDA = magnitude(resumen.get("Recomendada", 0))
+            UL = magnitude(resumen.get("Máxima ingesta tolerable", 0))
             if IA > 0:
                 return IA
             elif RDA > 0:
@@ -1272,7 +1272,10 @@ class IntakeList(object):
             if len(resumen) > 0:
                 resume_intake.append((nutr_intake.nutrdesc, penality))
 
-        return int(round(total_nutr_value * 100 / total_intake_value, 0)), resume_intake
+        if total_intake_value >= total_nutr_value:
+            return int(round(total_nutr_value * 100 / total_intake_value, 0)), resume_intake
+        else:
+            return 100, resume_intake
 
     def principals_nutrients(self):
         units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}

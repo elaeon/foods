@@ -191,7 +191,7 @@ def food_compare(request):
                 request.session["intake_names_list"][intake_name_list] = intake_list.light_format()
                 request.session["food_compare"] = intake_list.food2name()
             else:
-                intake_name_list = ""
+                intake_name_list = request.POST.get("intake_list_name", "")
 
             return render(request, "analize_food.html", {
                 "total_food": intake_list.total_nutr_names, 
@@ -205,6 +205,10 @@ def food_compare(request):
                 "principals": intake_list.principals_nutrients(),
                 "total_weight": intake_list.calc_weight(),
                 "intake_name_list": intake_name_list})
+        elif "export" in request.POST:
+            intake_list_name = request.POST.get("intake_list_name", "")
+            intake_light_format = request.session["intake_names_list"][intake_list_name]
+            return HttpResponse(json.dumps(intake_light_format), content_type='text/json')
         elif "borrar" in request.POST:
             name = request.POST.get("intake_list_name", None)
             if name is not None:

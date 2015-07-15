@@ -1,4 +1,4 @@
-#from django.test import TestCase
+# -*- coding: utf-8 -*-
 
 from nutrientes.utils import *
 
@@ -49,3 +49,17 @@ def top():
     order = OrderSimilarity(data_list)
     order.get_top("19042", level=40)
     #order.get_top("15184")
+
+def top_perfil():
+    #select long_desc,amount,msre_desc,gm_wgt from food_des,weight where food_des.ndb_no=weight.ndb_no and food_des.ndb_no='11529';
+    import heapq
+    from nutrientes.utils import IntakeList, alimentos_category
+    scores = []
+    for ndb_no in Food.alimentos(limit="limit 9000"):
+        intake_light_format = {
+            "perfil": {"edad": 35, "genero": "H", "unidad_edad": u"años"}, 
+            "foods": {ndb_no: 100},
+            "score": 0}
+        intake_list = IntakeList.from_light_format(intake_light_format)
+        scores.append((intake_list.score()[0], intake_list.foods.values()[0].name))
+    print(heapq.nlargest(15, scores, key=lambda x: x[0]))
