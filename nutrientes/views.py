@@ -181,17 +181,17 @@ def food_compare(request):
             score, resume_intake = intake_list.score()
 
             if "save" in request.POST:
-                intake_list_name = request.POST["intake_list_name"]
+                intake_name_list = request.POST["intake_list_name"]
                 try:
                     if type(request.session["intake_names_list"]) != type({}):
                         request.session["intake_names_list"] = {}
                 except KeyError:
                     request.session["intake_names_list"] = {}
 
-                request.session["intake_names_list"][intake_list_name] = intake_list.light_format()
+                request.session["intake_names_list"][intake_name_list] = intake_list.light_format()
                 request.session["food_compare"] = intake_list.food2name()
             else:
-                intake_list_name = ""
+                intake_name_list = ""
 
             return render(request, "analize_food.html", {
                 "total_food": intake_list.total_nutr_names, 
@@ -204,7 +204,7 @@ def food_compare(request):
                 "radio_omega": intake_list.radio_omega,
                 "principals": intake_list.principals_nutrients(),
                 "total_weight": intake_list.calc_weight(),
-                "intake_name_list": intake_list_name})
+                "intake_name_list": intake_name_list})
         elif "borrar" in request.POST:
             name = request.POST.get("intake_list_name", None)
             if name is not None:

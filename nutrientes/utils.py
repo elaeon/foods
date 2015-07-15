@@ -170,10 +170,10 @@ def category_avg_omegas():
     return {food_group:round(avg,1) for food_group, avg in cursor.fetchall()}
 
 def category_food_list():
-    from collections import defaultdict
     nutr = avg_nutrients()
-    category_results = defaultdict(list)
+    category_results = {}
     category_food_l = category_food()
+    #fixed size list, because some categories could don't have values for a nutrient
     for cat, _, count in category_food_l:
         category_results[cat] = [None, None, None, None, None, None, None]
     # 606 grasa saturada
@@ -1144,7 +1144,7 @@ def intake(edad, genero, unidad_edad):
             max_year = int(max_year)
 
         if min_year <= edad <= max_year:
-            if not nutr_no in nutrs:
+            if not nutrdesc in nutrs:
                 nutrs[nutrdesc] = NutrIntake(nutr_no, nutrdesc)
                 nutrs[nutrdesc].units = units
             nutrs[nutrdesc].add_value(float(value), label)
@@ -1158,9 +1158,6 @@ class NutrIntake(object):
                         "RDA": "Recomendada", 
                         "UL": "Máxima ingesta tolerable"}
         self.values = {label: None for label in self.labels}
-        nutavg_vector = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
-        tmp = {nutr_no: v for nutr_no, _, v, _ in nutavg_vector}
-        self.nutavg = tmp[self.nutr_no]
         self.units = None
 
     def add_value(self, value, label):
@@ -1173,28 +1170,35 @@ class NutrIntake(object):
     def resumen(self, other_value):
         data = {}
         for label, nutr_value in self.values.items():
-            if label == "AI" or label == "RDA":
+            if (label == "AI" or label == "RDA") and nutr_value is not None:
                 if other_value < nutr_value:
                     data[self.labels[label]] = nutr_value - other_value
-            elif label == "UI":
+            elif label == "UL" and nutr_value is not None:
                 if nutr_value < other_value:
                     data[self.labels[label]] = other_value - nutr_value
         return data
-                   
+    
+    def nutr_intake_value(self):
+        if self.values["RDA"] is not None:
+            return self.values["RDA"]
+        elif self.values["AI"] is not None:
+            return self.values["AI"]
+        else:
+            return self.values["UL"]
+   
     def penality(self, resumen):
         if len(resumen) == 0:
             return 0
         else:
             IA = abs(magnitude(resumen.get("Ingesta adecuada", 0)))
             RDA = abs(magnitude(resumen.get("Recomendada", 0)))
-            UI = abs(magnitude(resumen.get("Máxima ingesta tolerable", 0)))
-            avg = abs(magnitude(self.nutavg))
-            if IA > avg:
-                return IA - avg
-            elif RDA > avg:
-                return RDA - avg
-            elif UI > avg:
-                return UI - avg
+            UL = abs(magnitude(resumen.get("Máxima ingesta tolerable", 0)))
+            if IA > 0:
+                return IA
+            elif RDA > 0:
+                return RDA
+            elif UL > 0:
+                return UL
             else:
                 return 0
 
@@ -1258,20 +1262,17 @@ class IntakeList(object):
 
     def score(self):
         resume_intake = []
-        total_penality = 0
+        total_intake_value = 0
+        total_nutr_value = 0
         for nutrdesc, nutr_intake in self.perfil_intake.items():
             resumen = nutr_intake.resumen(self.total_nutr_names.get(nutrdesc, [0])[0])
             penality = nutr_intake.penality(resumen)
-            total_penality += penality
+            total_intake_value += nutr_intake.nutr_intake_value()
+            total_nutr_value += self.total_nutr_names.get(nutrdesc, [0])[0]
             if len(resumen) > 0:
                 resume_intake.append((nutr_intake.nutrdesc, penality))
 
-        maximum = 27
-        if total_penality > maximum:
-            total = 100
-        else:
-            total = total_penality * 100 / maximum
-        return 100 - total, resume_intake
+        return int(round(total_nutr_value * 100 / total_intake_value, 0)), resume_intake
 
     def principals_nutrients(self):
         units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
