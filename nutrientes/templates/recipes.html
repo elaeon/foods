@@ -1,0 +1,27 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div class="container">
+<div class="starter-template">
+<h2>Recetas</h2>
+<div class="row">
+{% for name, score, radio_omega, energy in recipes %}
+  <div class="col-sm-6 col-md-4">
+    <div class="thumbnail">
+        <a href="#">
+            <div class="caption">
+                <h3>{{ name }}</h3>
+                <p>Puntaje: {{ score }} de 100</p>
+                <p>Energia: {{ energy.0 }}{{ energy.1 }}</p>
+                <p>Radio Omega: {{ radio_omega }}</p>
+            </div>
+        </a>
+    </div>
+  </div>
+{% endfor %}
+
+</div>
+</div>
+{% endblock %}
+
