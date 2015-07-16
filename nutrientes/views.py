@@ -264,7 +264,7 @@ def analyze_food(request):
                 "formset": formset,
                 "type_intake": resume_intake,
                 "score": score,
-                "energy": intake_list.total_nutr_names.get("Energy", 0),
+                "energy": intake_list.energy(),
                 "radio_omega": intake_list.radio_omega,
                 "principals": intake_list.principals_nutrients(),
                 "total_weight": intake_list.calc_weight(),
@@ -376,4 +376,6 @@ def equivalents(request, ndb_no):
 
 
 def recipes(request):
-    return render(request, "recipes.html", {})
+    from nutrientes.utils import recipes_list
+    recipes = recipes_list(10, {"edad": 35, "genero": "H", "unidad_edad": u"años"})
+    return render(request, "recipes.html", {"recipes": recipes})

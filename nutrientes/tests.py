@@ -63,3 +63,8 @@ def top_perfil():
         intake_list = IntakeList.from_light_format(intake_light_format)
         scores.append((intake_list.score()[0], intake_list.foods.values()[0].name))
     print(heapq.nlargest(15, scores, key=lambda x: x[0]))
+
+def test_recipes_list():
+    from nutrientes.utils import recipes_list
+    recipes = recipes_list(10, {"edad": 35, "genero": "H", "unidad_edad": u"años"})
+    print(recipes)

@@ -34,5 +34,6 @@ urlpatterns = [
     url(r'^equivalents/(?P<ndb_no>\w+)/$', views.equivalents, name="equivalents"),
     url(r'^principal_nutrients_graph/$', views.principal_nutrients_graph, name="principal_nutrients_graph"),
     url(r'^contact/$', views.contact, name="contact"),
+    url(r'^recipes/$', views.recipes, name="recipes"),
     #url(r'^ajax_boost_food/(?P<ndb_no>\w+)/$', views.ajax_boost_food, name="ajax_boost_food"),
 ]

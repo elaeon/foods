@@ -1214,11 +1214,37 @@ def magnitude(number):
     else:
         return len(left) - 1
 
+def recipes_list(number, perfil):
+    from collections import defaultdict
+    _, cursor = conection()
+    query = """SELECT recipe.name, recipe_ingredient.ndb_no, recipe_ingredient.weight
+                FROM recipe, recipe_ingredient 
+                WHERE recipe.id=recipe_ingredient.recipe"""
+    cursor.execute(query)
+    recipes = defaultdict(dict)
+    for name, ndb_no, weight in cursor.fetchall():
+        recipes[name][ndb_no] = float(weight)
+
+    intake_recipes = []
+    perfil_intake = intake(perfil["edad"], perfil["genero"], perfil["unidad_edad"].encode("utf8", "replace"))
+    for name, foods in recipes.items():
+            light_format = {
+                "perfil": perfil,
+                "foods": foods,
+                "score": 0
+            }
+            intake_list = IntakeList.from_light_format(light_format, perfil_intake=perfil_intake)
+            intake_recipes.append((name, intake_list.score()[0], intake_list.radio_omega, intake_list.energy()))
+    return sorted(intake_recipes, key=lambda x:x[1], reverse=True)
+
 class IntakeList(object):
-    def __init__(self, edad, genero, unidad_edad, blank=False):
+    def __init__(self, edad, genero, unidad_edad, blank=False, perfil_intake=None):
         if not blank:
             self.perfil = self.build_perfil(edad, genero, unidad_edad)
-            self.perfil_intake = self.perfil_intake()
+            if perfil_intake is None:
+                self.perfil_intake = self.perfil_intake()
+            else:
+                self.perfil_intake = perfil_intake
         else:
             self.perfil = None
             self.perfil_intake = None
@@ -1226,6 +1252,9 @@ class IntakeList(object):
         self.total_weight = None
         self.radio_omega = None
         self.total_nutr_names = None
+
+    def energy(self):
+        return self.total_nutr_names.get("Energy", 0)
 
     def from_formset(self, formset):
         self.foods = {form.food.ndb_no: form.food for form in formset}
@@ -1310,10 +1339,14 @@ class IntakeList(object):
         conn.commit()
 
     @classmethod
-    def from_light_format(self, intake_light_format):
+    def from_light_format(self, intake_light_format, perfil_intake=None):
         perfil = intake_light_format["perfil"]
         foods = intake_light_format["foods"]
-        intake_list = IntakeList(perfil["edad"], perfil["genero"], perfil["unidad_edad"].encode("utf8", "replace"))
+        intake_list = IntakeList(
+            perfil["edad"], 
+            perfil["genero"], 
+            perfil["unidad_edad"].encode("utf8", "replace"),
+            perfil_intake=perfil_intake)
         intake_list.foods = {ndb_no: Food(ndb_no, weight=weight, avg=False)
             for ndb_no, weight in foods.items()}
         intake_list.total_nutr_data()
