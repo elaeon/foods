@@ -208,7 +208,11 @@ def food_compare(request):
         elif "export" in request.POST:
             intake_list_name = request.POST.get("intake_list_name", "")
             intake_light_format = request.session["intake_names_list"][intake_list_name]
-            return HttpResponse(json.dumps(intake_light_format), content_type='text/json')
+            intake_list = IntakeList.from_light_format(intake_light_format)
+            intake_list.save2db(intake_list_name)
+            response = HttpResponse(json.dumps(intake_light_format), content_type='text/json')
+            response['Content-Disposition'] = 'attachment; filename={filename}.json'.format(filename=intake_list_name)
+            return response
         elif "borrar" in request.POST:
             name = request.POST.get("intake_list_name", None)
             if name is not None:
@@ -370,3 +374,6 @@ def equivalents(request, ndb_no):
         data_result["food_base"] = food_base
     return render(request, "equivalents.html", data_result)
 
+
+def recipes(request):
+    return render(request, "recipes.html", {})

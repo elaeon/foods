@@ -1142,7 +1142,6 @@ def intake(edad, genero, unidad_edad):
             max_year = 200
         else:
             max_year = int(max_year)
-
         if min_year <= edad <= max_year:
             if not nutrdesc in nutrs:
                 nutrs[nutrdesc] = NutrIntake(nutr_no, nutrdesc)
@@ -1172,10 +1171,10 @@ class NutrIntake(object):
         for label, nutr_value in self.values.items():
             if (label == "AI" or label == "RDA") and nutr_value is not None:
                 if other_value < nutr_value:
-                    data[self.labels[label]] = nutr_value - other_value
+                    data[self.labels[label]] = other_value * 100 / nutr_value
             elif label == "UL" and nutr_value is not None:
                 if nutr_value < other_value:
-                    data[self.labels[label]] = other_value - nutr_value
+                    data[self.labels[label]] = nutr_value * 100 / other_value
         return data
     
     def nutr_intake_value(self):
@@ -1186,21 +1185,21 @@ class NutrIntake(object):
         else:
             return self.values["UL"]
    
-    def penality(self, resumen):
+    def score(self, resumen):
         if len(resumen) == 0:
-            return 0
+            return 100
         else:
-            IA = magnitude(resumen.get("Ingesta adecuada", 0))
-            RDA = magnitude(resumen.get("Recomendada", 0))
-            UL = magnitude(resumen.get("Máxima ingesta tolerable", 0))
-            if IA > 0:
+            IA = resumen.get("Ingesta adecuada", None)
+            RDA = resumen.get("Recomendada", None)
+            UL = resumen.get("Máxima ingesta tolerable", None)
+            if IA is not None:
                 return IA
-            elif RDA > 0:
+            elif RDA is not None:
                 return RDA
-            elif UL > 0:
-                return UL
+            elif UL is not None:
+                return -UL
             else:
-                return 0
+                return 100
 
 def magnitude(number):
     try:
@@ -1262,20 +1261,15 @@ class IntakeList(object):
 
     def score(self):
         resume_intake = []
-        total_intake_value = 0
-        total_nutr_value = 0
+        total_nutr_scorer = 0
         for nutrdesc, nutr_intake in self.perfil_intake.items():
             resumen = nutr_intake.resumen(self.total_nutr_names.get(nutrdesc, [0])[0])
-            penality = nutr_intake.penality(resumen)
-            total_intake_value += nutr_intake.nutr_intake_value()
-            total_nutr_value += self.total_nutr_names.get(nutrdesc, [0])[0]
+            nutr_score = nutr_intake.score(resumen)
+            total_nutr_scorer += nutr_score
             if len(resumen) > 0:
-                resume_intake.append((nutr_intake.nutrdesc, penality))
-
-        if total_intake_value >= total_nutr_value:
-            return int(round(total_nutr_value * 100 / total_intake_value, 0)), resume_intake
-        else:
-            return 100, resume_intake
+                resume_intake.append((nutr_intake.nutrdesc, nutr_score))
+        score = round(total_nutr_scorer / len(self.perfil_intake), 2)
+        return score, resume_intake
 
     def principals_nutrients(self):
         units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
@@ -1302,6 +1296,18 @@ class IntakeList(object):
 
     def food2name(self):
         return {food.ndb_no: food.name for food in self.foods.values()}
+
+    def save2db(self, name):
+        conn, cursor = conection()
+        query = """INSERT INTO recipe (name) VALUES (%s) RETURNING id"""
+        cursor.execute(query, [name])
+        recipe = cursor.fetchone()[0]
+        for food in self.foods.values():
+            query = """INSERT INTO recipe_ingredient 
+                    (recipe, ndb_no, weight) 
+                    VALUES (%s, %s, %s)"""
+            cursor.execute(query, [recipe, food.ndb_no, food.weight])
+        conn.commit()
 
     @classmethod
     def from_light_format(self, intake_light_format):

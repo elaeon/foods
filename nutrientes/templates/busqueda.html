@@ -17,8 +17,28 @@
     </div>
     <div class="navbar-collapse collapse" id="navbar">
         <ul class="nav navbar-nav">
-            <li><a href="{% url 'about' %}">Acerca de</a></li>
-            <li><a href="{% url 'contact' %}">Contacto</a></li>
+            <li class="dropdown">
+                <a id="drop1" class="dropdown-toggle" 
+                    aria-expanded="false" aria-haspopup="true" 
+                    role="button" data-toggle="dropdown" href="#">Acerca de
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="drop3">
+                    <li><a href="{% url 'about' %}">Datos</a></li>
+                    <li><a href="{% url 'contact' %}">Contacto</a></li>
+                </ul>
+            </li>
+            <li class="dropdown">
+                <a id="drop1" class="dropdown-toggle" 
+                    aria-expanded="false" aria-haspopup="true" 
+                    role="button" data-toggle="dropdown" href="#">Recetas
+                    <span class="caret"></span>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="drop3">
+                    <li><a href="{% url 'recipes' %}">Recetas</a></li>
+                    <li><a href="{% url 'contact' %}">Menu para un día</a></li>
+                </ul>
+            </li>
             {% if my_food_list %}
             <li class="dropdown">
                 <a id="drop1" class="dropdown-toggle" 
@@ -33,7 +53,7 @@
             {% for food_list_name, food_list in  my_food_list.items %}
                 <li><input type="checkbox" style="display:inline-block;padding-left:5px;" 
                     value="{{ food_list_name }}" name="food_list">
-                    {{ food_list_name }} <span style="font-size:70%">{{ food_list.score }} puntos</span>
+                    {{ food_list_name }} <span style="font-size:70%">[{{ food_list.score }}]</span>
                 </li>
             {% endfor %}
             <li><div style="padding-right: 10px; text-align:right;">

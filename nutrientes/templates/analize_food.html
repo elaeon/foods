@@ -53,9 +53,9 @@
 {% endif %}
 <h3>Resumen de nutrientes que debes de checar.</h3>
 <ul>
-{% for nutr, penality in type_intake %}
-{% if penality > 0 %}
-<li><span style="color: #a00;">{{ nutr }}</span></li>
+{% for nutr, score in type_intake %}
+{% if score < 20 %}
+<li><span style="color: #a00;">{{ nutr }} [bajo]</span></li>
 {% else %}
 <li>{{ nutr }}</li>
 {% endif %}

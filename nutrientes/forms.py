@@ -11,7 +11,7 @@ class IntakeForm(forms.Form):
             (u"H", u"hombre"),
             (u"M", u"mujer"),
             (u"pregnancy", u"mujer-embarazo"),
-            (u"lactancy", u"mujer-lactancia")
+            (u"lactation", u"mujer-lactancia")
         ))
 
 class WeightForm(forms.Form):
