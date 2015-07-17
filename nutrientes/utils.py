@@ -1135,7 +1135,9 @@ def intake(edad, genero, unidad_edad):
             genero=genero)
     cursor.execute(query)
     nutrs = {}
+    print(query)
     for nutr_no, nutrdesc, units, value, label, edad_range in cursor.fetchall():
+        #print(nutrdesc)
         min_year, max_year = edad_range.split("-")
         min_year = int(min_year)
         if max_year == '':            
@@ -1147,6 +1149,7 @@ def intake(edad, genero, unidad_edad):
                 nutrs[nutrdesc] = NutrIntake(nutr_no, nutrdesc)
                 nutrs[nutrdesc].units = units
             nutrs[nutrdesc].add_value(float(value), label)
+    #print(nutrs.keys())
     return nutrs
 
 class NutrIntake(object):

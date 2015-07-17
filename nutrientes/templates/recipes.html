@@ -8,15 +8,15 @@
 <div class="row">
 {% for name, score, radio_omega, energy in recipes %}
   <div class="col-sm-6 col-md-4">
-    <div class="thumbnail">
-        <a href="#">
-            <div class="caption">
-                <h3>{{ name }}</h3>
-                <p>Puntaje: {{ score }} de 100</p>
-                <p>Energia: {{ energy.0 }}{{ energy.1 }}</p>
-                <p>Radio Omega: {{ radio_omega }}</p>
-            </div>
-        </a>
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+            <span class="badge">{{ score }}</span>
+            <h3 class="panel-title">{{ name }}</h3>
+        </div>
+        <div class="panel-body">
+            <p>Energia: {{ energy.0 }}{{ energy.1 }}</p>
+            <p>Radio Omega: {{ radio_omega }}</p>
+        </div>
     </div>
   </div>
 {% endfor %}

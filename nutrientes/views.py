@@ -92,11 +92,11 @@ def ajax_search(request):
         conn, cursor = conection()
         search_word = request.GET.get("query", "").strip()
 
-        query = [fuzzy_query(DB_VERSION, term, ordering=False) for term in search_word.split(" ")]
+        query = [fuzzy_query(DB_VERSION, term.strip(), ordering=False) for term in search_word.split(" ")]
         if len(query) > 1:
-            query = " INTERSECT ".join(query) + "ORDER BY r DESC LIMIT 15"
+            query = " INTERSECT ".join(query) + "ORDER BY r, name ASC LIMIT 15"
         else:
-            query = "".join(query) + "ORDER BY r DESC LIMIT 15"
+            query = "".join(query) + "ORDER BY r, name ASC LIMIT 15"
 
         cursor.execute(query)
         records = cursor.fetchall()

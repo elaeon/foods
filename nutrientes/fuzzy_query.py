@@ -4,7 +4,7 @@ def fuzzy_query(pg_version, term, ordering=True, headline=False):
     elif headline and pg_version != "9.1":
         headline = "ts_headline('spanish', searchall_index.long_desc_es, query) as name"
     else:
-        headline = "searchall_index.long_desc_es"
+        headline = "searchall_index.long_desc_es as name"
 
     if pg_version == "9.1":
         query = """
