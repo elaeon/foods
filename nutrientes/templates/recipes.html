@@ -6,7 +6,7 @@
 <div class="starter-template">
 <h2>Recetas</h2>
 <div class="row">
-{% for name, score, radio_omega, energy in recipes %}
+{% for name, score, radio_omega, energy, weight in recipes %}
   <div class="col-sm-6 col-md-4">
     <div class="panel panel-default">
         <div class="panel-heading list-group-item">
@@ -16,6 +16,7 @@
         <div class="panel-body">
             <p>Energia: {{ energy.0 }}{{ energy.1 }}</p>
             <p>Radio Omega: {{ radio_omega }}</p>
+            <p>Cantidad: {{ weight }}g</p>
         </div>
     </div>
   </div>

@@ -1137,7 +1137,6 @@ def intake(edad, genero, unidad_edad):
     nutrs = {}
     print(query)
     for nutr_no, nutrdesc, units, value, label, edad_range in cursor.fetchall():
-        #print(nutrdesc)
         min_year, max_year = edad_range.split("-")
         min_year = int(min_year)
         if max_year == '':            
@@ -1149,7 +1148,6 @@ def intake(edad, genero, unidad_edad):
                 nutrs[nutrdesc] = NutrIntake(nutr_no, nutrdesc)
                 nutrs[nutrdesc].units = units
             nutrs[nutrdesc].add_value(float(value), label)
-    #print(nutrs.keys())
     return nutrs
 
 class NutrIntake(object):
@@ -1237,7 +1235,7 @@ def recipes_list(number, perfil):
                 "score": 0
             }
             intake_list = IntakeList.from_light_format(light_format, perfil_intake=perfil_intake)
-            intake_recipes.append((name, intake_list.score()[0], intake_list.radio_omega, intake_list.energy()))
+            intake_recipes.append((name, intake_list.score()[0], intake_list.radio_omega, intake_list.energy(), intake_list.total_weight))
     return sorted(intake_recipes, key=lambda x:x[1], reverse=True)
 
 class IntakeList(object):
@@ -1273,7 +1271,7 @@ class IntakeList(object):
 
     def calc_weight(self, force=False):
         if self.total_weight is None or force:
-            return sum(food.weight for food in self.foods.values())
+            self.total_weight = sum(food.weight for food in self.foods.values())
         return self.total_weight
 
     def total_nutr_data(self):
@@ -1290,6 +1288,7 @@ class IntakeList(object):
         except ZeroDivisionError:
             self.radio_omega = 0
         self.total_nutr_names = total_nutr_names
+        self.calc_weight()
 
     def score(self):
         resume_intake = []
