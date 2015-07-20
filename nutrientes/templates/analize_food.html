@@ -17,11 +17,18 @@
 <td>{{ intake_form.edad }}</td>
 <td>{{ intake_form.unidad_edad }}</td>
 <td>{{ intake_form.genero }}</td>
-<input type="hidden" value="{{ intake_name_list }}" id="intake_list_name" name="intake_list_name">
+<input type="hidden" value="{{ intake_list_name }}" id="intake_list_name" name="intake_list_name">
 <td style="padding-right:5px;"><button type="submit" name="analizar" class="btn btn-xs btn-primary">Calcular</button></td>
-<td style="padding-right:5px;"><button type="submit" name="save" class="btn btn-xs btn-success">Guardar en mi lista</button></td>
-<td style="padding-right:5px;"><button type="submit" name="borrar" class="btn btn-xs btn-danger">Borrar lista</button></td>
-<td><button type="submit" name="export" class="btn btn-xs btn-info">Exportar a la Base de Datos</button></td>
+<td style="padding-right:5px;">
+<button type="submit" name="save" class="btn btn-xs btn-success">Guardar en mi lista</button>
+</td>
+<td style="padding-right:5px;">
+<button type="submit" name="borrar" class="btn btn-xs btn-danger">Borrar lista</button>
+</td>
+<td>
+<!--nclick="javascript:agregar();">-->
+<a tabindex="0" class="btn btn-xs btn-info" role="button" data-trigger="focus" title="" onclick="javascript:save_recipe();">Exportar a la Base de Datos</a>
+</td>
 </tr>
 </table>
 
@@ -75,6 +82,28 @@
 <script type="text/javascript" src="{% static 'd3.js' %}"></script>
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
 <script type="text/javascript">
+function save_recipe() {
+    var request = $.ajax({
+        type: "POST",
+        url: "{% url 'save_recipe' %}",
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            intake_list_name: '{{ intake_list_name }}'
+        }
+    });
+    request.done(function(data) {
+        if(data) {
+            if(data.result == 'ok') {
+                alert("Los datos fueron guardados.");
+            } else {
+                if(data.result == 'no key') {
+                    alert("Antes de exportar, debe apretar el botón 'Guardar en mi lista'.")
+                }
+            }
+        }
+    });
+}
+
 
 var data = [];
 {% for nutrient, value in total_food.items %}

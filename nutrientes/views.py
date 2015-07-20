@@ -181,17 +181,17 @@ def food_compare(request):
             score, resume_intake = intake_list.score()
 
             if "save" in request.POST:
-                intake_name_list = request.POST["intake_list_name"]
+                intake_list_name = request.POST["intake_list_name"]
                 try:
                     if type(request.session["intake_names_list"]) != type({}):
                         request.session["intake_names_list"] = {}
                 except KeyError:
                     request.session["intake_names_list"] = {}
 
-                request.session["intake_names_list"][intake_name_list] = intake_list.light_format()
+                request.session["intake_names_list"][intake_list_name] = intake_list.light_format()
                 request.session["food_compare"] = intake_list.food2name()
             else:
-                intake_name_list = request.POST.get("intake_list_name", "")
+                intake_list_name = request.POST.get("intake_list_name", "")
 
             return render(request, "analize_food.html", {
                 "total_food": intake_list.total_nutr_names, 
@@ -204,15 +204,7 @@ def food_compare(request):
                 "radio_omega": intake_list.radio_omega,
                 "principals": intake_list.principals_nutrients(),
                 "total_weight": intake_list.calc_weight(),
-                "intake_name_list": intake_name_list})
-        elif "export" in request.POST:
-            intake_list_name = request.POST.get("intake_list_name", "")
-            intake_light_format = request.session["intake_names_list"][intake_list_name]
-            intake_list = IntakeList.from_light_format(intake_light_format)
-            intake_list.save2db(intake_list_name)
-            response = HttpResponse(json.dumps(intake_light_format), content_type='text/json')
-            response['Content-Disposition'] = 'attachment; filename={filename}.json'.format(filename=intake_list_name)
-            return response
+                "intake_list_name": intake_list_name})
         elif "borrar" in request.POST:
             name = request.POST.get("intake_list_name", None)
             if name is not None:
@@ -268,7 +260,7 @@ def analyze_food(request):
                 "radio_omega": intake_list.radio_omega,
                 "principals": intake_list.principals_nutrients(),
                 "total_weight": intake_list.calc_weight(),
-                "intake_name_list": "" if len(intake_names_list) > 1 else intake_names_list[0]})
+                "intake_list_name": "" if len(intake_names_list) > 1 else intake_names_list[0]})
         except KeyError:
             pass
 
@@ -379,3 +371,27 @@ def recipes(request):
     from nutrientes.utils import recipes_list
     recipes = recipes_list(10, {"edad": 35, "genero": "H", "unidad_edad": u"años"})
     return render(request, "recipes.html", {"recipes": recipes})
+
+
+def analyze_menu(request):
+    from nutrientes.utils import MenuRecipe
+    if request.method == "POST":
+        recipes_txt = request.POST.get("menu-recipes", "")
+        recipes_ids = recipes_txt.split(",")
+        menu = MenuRecipe(recipes_ids, {"edad": 35, "genero": "H", "unidad_edad": u"años"})
+    return render(request, "analyze_menu.html", {"menu": menu})
+
+
+def save_recipe(request):
+    from nutrientes.utils import IntakeList
+    if request.is_ajax():
+        intake_list_name = request.POST.get("intake_list_name", "")
+        try:
+            intake_light_format = request.session["intake_names_list"][intake_list_name]
+            intake_list = IntakeList.from_light_format(intake_light_format)
+            intake_list.save2db(intake_list_name)
+        except KeyError:
+            result = "no key"
+        else:
+            result = "ok"
+        return HttpResponse(json.dumps({"result": result}), content_type='text/json')

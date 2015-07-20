@@ -1129,13 +1129,10 @@ def intake(edad, genero, unidad_edad):
     query = """SELECT nutr_def.nutr_no, nutrdesc, units, value, type, edad_range
                 FROM nutr_def, nutr_intake 
                 WHERE nutr_def.nutr_no=nutr_intake.nutr_no
-                AND unidad_edad='{unidad_edad}'
-                AND genero='{genero}'""".format(
-            unidad_edad=unidad_edad,
-            genero=genero)
-    cursor.execute(query)
+                AND unidad_edad=%s
+                AND genero=%s"""
+    cursor.execute(query, [unidad_edad, genero])
     nutrs = {}
-    print(query)
     for nutr_no, nutrdesc, units, value, label, edad_range in cursor.fetchall():
         min_year, max_year = edad_range.split("-")
         min_year = int(min_year)
@@ -1218,26 +1215,71 @@ def magnitude(number):
 def recipes_list(number, perfil):
     from collections import defaultdict
     _, cursor = conection()
-    query = """SELECT recipe.name, recipe_ingredient.ndb_no, recipe_ingredient.weight
+    query = """SELECT recipe.id, recipe.name, recipe_ingredient.ndb_no, recipe_ingredient.weight
                 FROM recipe, recipe_ingredient 
                 WHERE recipe.id=recipe_ingredient.recipe"""
     cursor.execute(query)
     recipes = defaultdict(dict)
-    for name, ndb_no, weight in cursor.fetchall():
-        recipes[name][ndb_no] = float(weight)
+    for recipe_id, name, ndb_no, weight in cursor.fetchall():
+        recipes["{}-{}".format(recipe_id, name)][ndb_no] = float(weight)
 
     intake_recipes = []
     perfil_intake = intake(perfil["edad"], perfil["genero"], perfil["unidad_edad"].encode("utf8", "replace"))
-    for name, foods in recipes.items():
+    for recipe_id_name, foods in recipes.items():
             light_format = {
                 "perfil": perfil,
                 "foods": foods,
                 "score": 0
             }
+            recipe_id, name = recipe_id_name.split("-")
             intake_list = IntakeList.from_light_format(light_format, perfil_intake=perfil_intake)
-            intake_recipes.append((name, intake_list.score()[0], intake_list.radio_omega, intake_list.energy(), intake_list.total_weight))
-    return sorted(intake_recipes, key=lambda x:x[1], reverse=True)
+            intake_recipes.append({"name": name, 
+                "score": intake_list.score()[0], 
+                "radio_omega": intake_list.radio_omega, 
+                "energy": intake_list.energy(), 
+                "weight": intake_list.total_weight,
+                "id": recipe_id})
+    return sorted(intake_recipes, key=lambda x:x["score"], reverse=True)
 
+class MenuRecipe(object):
+    def __init__(self, recipes_ids, perfil):
+        self.recipes = self.ids2recipes(recipes_ids, perfil)
+        self.merged_recipes = IntakeList.merge(*self.recipes)
+
+    def ids2recipes(self, recipes_ids, perfil):
+        from collections import defaultdict
+        _, cursor = conection()
+        ids = ["%s" for e in recipes_ids]
+        query = """SELECT recipe.id, recipe.name, recipe_ingredient.ndb_no, recipe_ingredient.weight
+                    FROM recipe, recipe_ingredient 
+                    WHERE recipe.id=recipe_ingredient.recipe
+                    AND recipe.id IN ({ids})""".format(ids=",".join(ids))
+        cursor.execute(query, recipes_ids)
+        recipes = defaultdict(dict)
+        for recipe_id, name, ndb_no, weight in cursor.fetchall():
+            recipes["{}-{}".format(recipe_id, name)][ndb_no] = float(weight)
+
+        intake_recipes = []
+        perfil_intake = intake(perfil["edad"], perfil["genero"], perfil["unidad_edad"].encode("utf8", "replace"))
+        for recipe_id_name, foods in recipes.items():
+            light_format = {
+                "perfil": perfil,
+                "foods": foods,
+                "score": 0
+            }
+            intake_recipes.append(IntakeList.from_light_format(light_format, perfil_intake=perfil_intake))
+        return intake_recipes
+
+    def score(self):
+        return self.merged_recipes.score()[0]
+
+    def resume_intake(self):
+        return self.merged_recipes.score()[1]
+
+    def energy(self):
+        return self.merged_recipes.energy()
+
+#fix: change name intakelist for recipe
 class IntakeList(object):
     def __init__(self, edad, genero, unidad_edad, blank=False, perfil_intake=None):
         if not blank:

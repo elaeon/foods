@@ -4,25 +4,57 @@
 {% block contenido_base %}
 <div class="container">
 <div class="starter-template">
-<h2>Recetas</h2>
+<h2 style="display:inline-block;">Recetas</h2><span> / individuales</span>
+<form style="display:inline;" action="{% url 'analyze_menu' %}" method="POST">
+{% csrf_token %}
+<button type="submit" id="menu-recipes" name="menu-recipes" class="btn btn-xs btn-info" onclick="set_recipes();">Analizar menú</button>
+</form>
 <div class="row">
-{% for name, score, radio_omega, energy, weight in recipes %}
+{% for recipe in recipes %}
   <div class="col-sm-6 col-md-4">
     <div class="panel panel-default">
         <div class="panel-heading list-group-item">
-            <span class="badge">{{ score }}</span>
-            <h3 class="panel-title">{{ name }}</h3>
+            <span class="badge">{{ recipe.score }}</span>
+            <span class="glyphicon glyphicon-plus" aria-hidden="true" style="cursor:pointer;float:left;padding-right:5px;" onclick="change_icon(this);" id="{{ recipe.id }}"></span>
+            <h3 class="panel-title">{{ recipe.name }}</h3>
         </div>
         <div class="panel-body">
-            <p>Energia: {{ energy.0 }}{{ energy.1 }}</p>
-            <p>Radio Omega: {{ radio_omega }}</p>
-            <p>Cantidad: {{ weight }}g</p>
+            <p>Energia: {{ recipe.energy.0 }}{{ recipe.energy.1 }}</p>
+            <p>Radio Omega: {{ recipe.radio_omega }}</p>
+            <p>Cantidad: {{ recipe.weight }}g</p>
         </div>
     </div>
   </div>
 {% endfor %}
-
 </div>
 </div>
 {% endblock %}
 
+{% block js %}
+<script type="text/javascript">
+var recipes = {};
+function set_recipes() {
+    recipes_l = [];
+    for(var recipe in recipes) {
+        recipes_l.push(recipe);
+    }
+    $("#menu-recipes").val(recipes_l.join(","));
+    return true;
+}
+function change_icon(e) {
+    var id = e.id;
+    if(!recipes.hasOwnProperty(id)) {
+        recipes[id] = id;
+    } else {
+        delete recipes[id];
+    }
+    if(e.className.indexOf("glyphicon-plus") > -1) {
+        $("#"+id).removeClass('glyphicon-plus');
+        $("#"+id).addClass('glyphicon-minus');
+    } else {
+        $("#"+id).removeClass('glyphicon-minus');
+        $("#"+id).addClass('glyphicon-plus');
+    }
+}
+</script>
+{% endblock %}

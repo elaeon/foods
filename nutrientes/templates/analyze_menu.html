@@ -1,0 +1,48 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div class="container">
+<div class="starter-template">
+<form>
+<table>
+<tr>
+<th>Receta</th>
+<th>Peso(g)</th>
+</tr>
+{{ formset.management_form }}
+{% for form in formset %}
+<tr>
+<td style="padding:2px;">
+<a href="{% url 'view_food' form.food.ndb_no %}">{{ form.food.name }}</a>
+</td>
+<td>{{ form.ndb_no }}{{ form.weight }}</td>
+{% endfor %}
+</table>
+</form>
+
+<br>
+<div id="chartContainer"></div>
+<p>Principales nutrientes</p>
+<div id="barContainer"></div>
+<h3>Energia: {{ menu.energy.0 }} {{ menu.energy.1 }}</h3>
+<h3>Total de alimento consumido: {{ total_weight }}g</h3>
+<h3>Calificacion: {{ menu.score }} de 100</h3>
+{% if radio_omega > 4 %}
+<h3>El radio omega es alto {{ radio_omega }}:1</h3>
+{% endif %}
+<h3>Resumen de nutrientes que debes de checar.</h3>
+<ul>
+{% for nutr, score in type_intake %}
+{% if score < 20 %}
+<li><span style="color: #a00;">{{ nutr }} [bajo]</span></li>
+{% else %}
+<li>{{ nutr }}</li>
+{% endif %}
+{% endfor %}
+</ul>
+
+</div>
+</div>
+{% endblock %}
+

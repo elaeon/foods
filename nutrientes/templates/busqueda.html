@@ -51,8 +51,8 @@
             <form action="{% url 'analyze_food' %}" method="POST">
             {% csrf_token %}
             {% for food_list_name, food_list in  my_food_list.items %}
-                <li><div style="display:block;clear: both; color: #333;font-weight: 400;line-height: 1.42857; padding: 3px 20px; white-space: nowrap;">
-                    <input type="checkbox"value="{{ food_list_name }}" name="food_list">
+                <li><div style="display:block;clear: both;color: #333;font-weight: 400;line-height: 1.42857; padding: 3px 20px;white-space: nowrap;">
+                    <input type="checkbox" value="{{ food_list_name }}" name="food_list">
                     {{ food_list_name }} <span class="badge" style="font-size:70%">{{ food_list.score }}</span>
                     </div>
                 </li>
@@ -64,6 +64,15 @@
             </form>
             </ul>
             </li>
+            <li class="dropdown">
+                <a id="drop1" class="dropdown-toggle" 
+                    aria-expanded="false" aria-haspopup="true" 
+                    role="button" data-toggle="dropdown" href="#">
+                    <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                    <span class="caret"></span>
+                </a>
+            </li>
+            <ul class="dropdown-menu" aria-labelledby="drop3">
             {% endif %}
         </ul>
         <form id="search-form" class="navbar-form navbar-right form-inline" onsubmit="return verify_search_term();" name="search-form" action="{% url 'result_long_search' %}" method="post">
@@ -71,7 +80,7 @@
             <div class="form-group">
                 <label class="form-control sr-only" for="exampleInputAmount">Busqueda</label>
                 <div class="input-group">
-                    <input name="text-input" id="text-input" type="text" style="width: 500px;" 
+                    <input name="text-input" id="text-input" type="text" style="width: 400px;" 
                         class="form-control" placeholder="Busqueda">
                     <div class="input-group-addon"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>
                 </div>
