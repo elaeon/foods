@@ -139,7 +139,7 @@ def food(request, ndb_no):
 
 def food_compare(request):
     from nutrientes.utils import Food, intake
-    from nutrientes.utils import IntakeList
+    from nutrientes.utils import Recipe
     from nutrientes.forms import PerfilIntakeForm, WeightForm
     from django.forms.formsets import formset_factory
     foods = []
@@ -157,7 +157,7 @@ def food_compare(request):
                 foods = [{"food": Food(ndb_no, weight=float(100)), "weight": 100, "ndb_no": ndb_no} 
                         for ndb_no in food_list.keys()]
                 formset = WeightFormSet(initial=foods)
-                recipe = IntakeList(
+                recipe = Recipe(
                     intake_params["edad"],
                     intake_params["genero"],
                     intake_params["unidad_edad"].encode("utf8", "replace"))
@@ -171,7 +171,7 @@ def food_compare(request):
                         form.food = Food(ndb_no, weight=weight)
 
                 if intake_form.is_valid():
-                    recipe = IntakeList(
+                    recipe = Recipe(
                         intake_form.cleaned_data["edad"],
                         intake_form.cleaned_data["genero"],
                         intake_form.cleaned_data["unidad_edad"].encode("utf8", "replace"))
@@ -221,7 +221,7 @@ def food_compare(request):
         return redirect("index")
 
 def analyze_food(request):
-    from nutrientes.utils import IntakeList, MenuRecipe
+    from nutrientes.utils import Recipe, MenuRecipe
     from nutrientes.forms import PerfilIntakeForm, WeightForm
     from django.forms.formsets import formset_factory
 
@@ -238,7 +238,7 @@ def analyze_food(request):
             intake_list_names = request.POST.getlist("food_list")
             for intake_name in intake_list_names:
                 intake_light_format = request.session["intake_names_list"][intake_name]
-                intake_list = IntakeList.from_light_format(intake_light_format)
+                intake_list = Recipe.from_light_format(intake_light_format)
                 foods += [{"food": food, "weight": food.weight, "ndb_no": food.ndb_no}
                             for food in intake_list.foods.values()]
                 intake_list_list.append(intake_list)
@@ -255,7 +255,7 @@ def analyze_food(request):
 
     intake_form = PerfilIntakeForm(initial=perfil)
     formset = WeightFormSet(initial=foods)
-    recipe = IntakeList.merge(*intake_list_list)
+    recipe = Recipe.merge(*intake_list_list)
     return render(request, "analize_food.html", {
         "recipe": recipe,
         "intake_form": intake_form,
@@ -365,7 +365,11 @@ def equivalents(request, ndb_no):
 
 def recipes(request):
     from nutrientes.utils import recipes_list
-    recipes = recipes_list(10, {"edad": 35, "genero": "H", "unidad_edad": u"años"})
+    if "intake_perfil" in request.session:
+        perfil = request.session["intake_perfil"]
+    else:
+        perfil = {"edad": 35, "genero": "H", "unidad_edad": u"años"}
+    recipes = recipes_list(10, perfil)
     return render(request, "recipes.html", {"recipes": recipes})
 
 
@@ -395,12 +399,12 @@ def analyze_menu(request):
 
 
 def save_recipe(request):
-    from nutrientes.utils import IntakeList
+    from nutrientes.utils import Recipe
     if request.is_ajax():
         intake_list_name = request.POST.get("intake_list_name", "")
         try:
             intake_light_format = request.session["intake_names_list"][intake_list_name]
-            intake_list = IntakeList.from_light_format(intake_light_format)
+            intake_list = Recipe.from_light_format(intake_light_format)
             intake_list.save2db(intake_list_name)
         except KeyError:
             result = "no key"

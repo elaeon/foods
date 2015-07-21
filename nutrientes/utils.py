@@ -1233,7 +1233,7 @@ def recipes_list(number, perfil):
                 "name": name
             }
             
-            intake_list = IntakeList.from_light_format(light_format, perfil_intake=perfil_intake)
+            intake_list = Recipe.from_light_format(light_format, perfil_intake=perfil_intake)
             intake_list.id = recipe_id
             intake_recipes.append(intake_list)
     return sorted(intake_recipes, key=lambda x:x.score, reverse=True)
@@ -1241,7 +1241,7 @@ def recipes_list(number, perfil):
 class MenuRecipe(object):
     def __init__(self, recipes_ids, perfil):
         self.recipes = self.ids2recipes(recipes_ids, perfil)
-        self.merged_recipes = IntakeList.merge(*self.recipes)
+        self.merged_recipes = Recipe.merge(*self.recipes)
 
     @classmethod
     def ids2recipes(self, recipes_ids, perfil):
@@ -1266,7 +1266,7 @@ class MenuRecipe(object):
                 "foods": foods,
                 "name": name   
             }
-            intake_recipes.append(IntakeList.from_light_format(light_format, perfil_intake=perfil_intake))
+            intake_recipes.append(Recipe.from_light_format(light_format, perfil_intake=perfil_intake))
         return intake_recipes
 
     def score(self):
@@ -1284,8 +1284,7 @@ class MenuRecipe(object):
     def radio_omega(self):
         return self.merged_recipes.radio_omega
 
-#fix: change name intakelist for recipe
-class IntakeList(object):
+class Recipe(object):
     def __init__(self, edad, genero, unidad_edad, blank=False, perfil_intake=None, name=None):
         if not blank:
             self.perfil = self.build_perfil(edad, genero, unidad_edad)
@@ -1397,10 +1396,11 @@ class IntakeList(object):
         conn, cursor = conection()
         query = """SELECT id FROM recipe WHERE name=%s"""
         cursor.execute(query, [name])
-        if cursor.fetchone():
+        recipe_id = cursor.fetchone()
+        if recipe_id:
             for food in self.foods.values():
-                query = """UPDATE recipe_ingredient SET weight=%s WHERE name=%s"""
-                cursor.execute(query, [food.weight, name])
+                query = """UPDATE recipe_ingredient SET weight=%s WHERE recipe=%s AND ndb_no=%s"""
+                cursor.execute(query, [food.weight, recipe_id[0], food.ndb_no])
         else:
             query = """INSERT INTO recipe (name) VALUES (%s) RETURNING id"""
             cursor.execute(query, [name])
@@ -1416,7 +1416,7 @@ class IntakeList(object):
     def from_light_format(self, intake_light_format, perfil_intake=None):
         perfil = intake_light_format["perfil"]
         foods = intake_light_format["foods"]
-        intake_list = IntakeList(
+        intake_list = Recipe(
             perfil["edad"], 
             perfil["genero"], 
             perfil["unidad_edad"].encode("utf8", "replace"),
@@ -1429,7 +1429,7 @@ class IntakeList(object):
 
     @classmethod
     def merge(self, *intake_list_list):
-        intake_total = IntakeList('', '', '', blank=True)
+        intake_total = Recipe('', '', '', blank=True)
         intake_total.perfil = intake_list_list[0].perfil
         intake_total.perfil_intake = intake_list_list[0].perfil_intake
         foods_tmp = {}
