@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django import forms
 
-class IntakeForm(forms.Form):
+class PerfilIntakeForm(forms.Form):
     edad = forms.IntegerField()
     unidad_edad = forms.ChoiceField( 
         choices=((u"meses", u"meses"), 
@@ -22,3 +22,12 @@ class WeightForm(forms.Form):
         super(WeightForm, self).__init__(*args, **kwargs)
         if 'initial' in kwargs:
             self.food = kwargs['initial'].get('food', '')
+
+class MenuRecipeForm(forms.Form):
+    recipe = forms.IntegerField(widget=forms.HiddenInput())
+    weight = forms.FloatField(widget=forms.NumberInput(attrs={"style": "width:70px;"}))
+
+    def __init__(self, *args, **kwargs):
+        super(MenuRecipeForm, self).__init__(*args, **kwargs)
+        if 'initial' in kwargs:
+            self.name = kwargs['initial'].get('name', '')

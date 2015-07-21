@@ -52,15 +52,13 @@
 <div id="chartContainer"></div>
 <p>Principales nutrientes</p>
 <div id="barContainer"></div>
-<h3>Energia: {{ energy.0 }} {{ energy.1 }}</h3>
-<h3>Total de alimento consumido: {{ total_weight }}g</h3>
-<h3>Calificacion: {{ score }} de 100</h3>
-{% if radio_omega > 4 %}
-<h3>El radio omega es alto {{ radio_omega }}:1</h3>
-{% endif %}
+<h3>Energia: {{ recipe.energy.0 }} {{ recipe.energy.1 }}</h3>
+<h3>Total de alimento consumido: {{ recipe.weight }}g</h3>
+<h3>Calificación: {{ recipe.score }} de 100</h3>
+<h3>El radio omega es: {{ recipe.radio_omega }}:1</h3>
 <h3>Resumen de nutrientes que debes de checar.</h3>
 <ul>
-{% for nutr, score in type_intake %}
+{% for nutr, score in recipe.resume_intake %}
 {% if score < 20 %}
 <li><span style="color: #a00;">{{ nutr }} [bajo]</span></li>
 {% else %}
@@ -106,12 +104,12 @@ function save_recipe() {
 
 
 var data = [];
-{% for nutrient, value in total_food.items %}
+{% for nutrient, value in recipe.total_nutr_names.items %}
     data.push({nombre: '{{ nutrient }}', valor: {{ value.0 }}, tipo: "total alimento", unit: '{{ value.1 }}'})
 {% endfor %}
 
 var intake = [];
-{% for nutr_obj in intake.values %}
+{% for nutr_obj in recipe.perfil_intake.values %}
     {% for nutrient, value, units, type in nutr_obj.raw %}
     data.push({nombre: '{{ nutrient }}', valor: {{ value }}, unit: '{{ units }}', tipo: '{{ type }}'});
     {% endfor %}
@@ -119,7 +117,7 @@ var intake = [];
 
 var principals = [];
 
-{% for porcentaje, nutrdesc in principals %}
+{% for porcentaje, nutrdesc in recipe.principals_nutrients %}
 principals.push({nombre: '{{ nutrdesc }}', porcentaje: {{ porcentaje }}, tipo: "principales"});
 {% endfor %}
 

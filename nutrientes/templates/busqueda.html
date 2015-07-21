@@ -71,6 +71,15 @@
                     <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
                     <span class="caret"></span>
                 </a>
+            <ul class="dropdown-menu" aria-labelledby="drop3">
+                <li><div style="display:block;clear: both;color: #333;font-weight: 400;line-height: 1.42857; padding: 3px 20px;white-space: nowrap;">{{ request.session.intake_perfil.genero }}</div></li>
+                <li><div style="display:block;clear: both;color: #333;font-weight: 400;line-height: 1.42857; padding: 3px 20px;white-space: nowrap;">{{ request.session.intake_perfil.edad }} 
+                    {{ request.session.intake_perfil.unidad_edad }}</div>
+                </li>
+                <li>
+                    <a tabindex="0" class="btn btn-xs btn-primary" role="button" data-container="body" data-placement="right" href="#">Cambiar Perfil</a>
+                </li>
+            </ul>
             </li>
             <ul class="dropdown-menu" aria-labelledby="drop3">
             {% endif %}

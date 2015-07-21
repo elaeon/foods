@@ -140,7 +140,7 @@ def food(request, ndb_no):
 def food_compare(request):
     from nutrientes.utils import Food, intake
     from nutrientes.utils import IntakeList
-    from nutrientes.forms import IntakeForm, WeightForm
+    from nutrientes.forms import PerfilIntakeForm, WeightForm
     from django.forms.formsets import formset_factory
     foods = []
     food_list = request.session.get("food_compare", {})
@@ -153,16 +153,16 @@ def food_compare(request):
                 else:
                     intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H"}
 
-                intake_form = IntakeForm(initial=intake_params)
+                intake_form = PerfilIntakeForm(initial=intake_params)
                 foods = [{"food": Food(ndb_no, weight=float(100)), "weight": 100, "ndb_no": ndb_no} 
                         for ndb_no in food_list.keys()]
                 formset = WeightFormSet(initial=foods)
-                intake_list = IntakeList(
+                recipe = IntakeList(
                     intake_params["edad"],
                     intake_params["genero"],
                     intake_params["unidad_edad"].encode("utf8", "replace"))
             else:
-                intake_form = IntakeForm(request.POST)
+                intake_form = PerfilIntakeForm(request.POST)
                 formset = WeightFormSet(request.POST)
                 if formset.is_valid():
                     for form in formset:
@@ -171,14 +171,13 @@ def food_compare(request):
                         form.food = Food(ndb_no, weight=weight)
 
                 if intake_form.is_valid():
-                    intake_list = IntakeList(
+                    recipe = IntakeList(
                         intake_form.cleaned_data["edad"],
                         intake_form.cleaned_data["genero"],
                         intake_form.cleaned_data["unidad_edad"].encode("utf8", "replace"))
                 
-            request.session["intake_perfil"] = intake_list.perfil
-            intake_list.from_formset(formset)
-            score, resume_intake = intake_list.score()
+            request.session["intake_perfil"] = recipe.perfil
+            recipe.from_formset(formset)
 
             if "save" in request.POST:
                 intake_list_name = request.POST["intake_list_name"]
@@ -188,22 +187,15 @@ def food_compare(request):
                 except KeyError:
                     request.session["intake_names_list"] = {}
 
-                request.session["intake_names_list"][intake_list_name] = intake_list.light_format()
-                request.session["food_compare"] = intake_list.food2name()
+                request.session["intake_names_list"][intake_list_name] = recipe.light_format()
+                request.session["food_compare"] = recipe.food2name()
             else:
                 intake_list_name = request.POST.get("intake_list_name", "")
 
             return render(request, "analize_food.html", {
-                "total_food": intake_list.total_nutr_names, 
-                "intake": intake_list.perfil_intake,
+                "recipe": recipe,
                 "intake_form": intake_form,
                 "formset": formset,
-                "type_intake": resume_intake,
-                "score": score,
-                "energy": intake_list.total_nutr_names.get("Energy", 0),
-                "radio_omega": intake_list.radio_omega,
-                "principals": intake_list.principals_nutrients(),
-                "total_weight": intake_list.calc_weight(),
                 "intake_list_name": intake_list_name})
         elif "borrar" in request.POST:
             name = request.POST.get("intake_list_name", None)
@@ -230,37 +222,29 @@ def food_compare(request):
 
 def analyze_food(request):
     from nutrientes.utils import IntakeList
-    from nutrientes.forms import IntakeForm, WeightForm
+    from nutrientes.forms import PerfilIntakeForm, WeightForm
     from django.forms.formsets import formset_factory
     if request.method == "POST":
         try:
             WeightFormSet = formset_factory(WeightForm, extra=0)
             foods = []
             intake_list_list = []
-            intake_names_list = request.POST.getlist("food_list")
-            for intake_list_name in intake_names_list:
-                intake_light_format = request.session["intake_names_list"][intake_list_name]
+            intake_list_names = request.POST.getlist("food_list")
+            for intake_name in intake_list_names:
+                intake_light_format = request.session["intake_names_list"][intake_name]
                 intake_list = IntakeList.from_light_format(intake_light_format)
                 foods += [{"food": food, "weight": food.weight, "ndb_no": food.ndb_no}
                             for food in intake_list.foods.values()]
                 intake_list_list.append(intake_list)
             intake_params = intake_light_format["perfil"]
-            intake_form = IntakeForm(initial=intake_params)
+            intake_form = PerfilIntakeForm(initial=intake_params)
             formset = WeightFormSet(initial=foods)
-            intake_list = IntakeList.merge(*intake_list_list)
-            score, resume_intake = intake_list.score()
+            recipe = IntakeList.merge(*intake_list_list)
             return render(request, "analize_food.html", {
-                "total_food": intake_list.total_nutr_names, 
-                "intake": intake_list.perfil_intake,
+                "recipe": recipe,
                 "intake_form": intake_form,
                 "formset": formset,
-                "type_intake": resume_intake,
-                "score": score,
-                "energy": intake_list.energy(),
-                "radio_omega": intake_list.radio_omega,
-                "principals": intake_list.principals_nutrients(),
-                "total_weight": intake_list.calc_weight(),
-                "intake_list_name": "" if len(intake_names_list) > 1 else intake_names_list[0]})
+                "intake_list_name": "" if len(intake_list_names) > 1 else intake_list_names[0]})
         except KeyError:
             pass
 
@@ -281,8 +265,6 @@ def set_comparation(request, ndb_no, operation):
             request.session["food_compare"] = food_compare
         else:
             if not ndb_no in food_compare:
-                #if len(food_compare.keys()) >= 3:
-                #food_compare.pop(food_compare.keys()[0], 0)
                 name = Food.get_food(ndb_no)[0][0]
                 food_compare[ndb_no] = name
                 request.session["food_compare"] = food_compare
@@ -375,11 +357,22 @@ def recipes(request):
 
 def analyze_menu(request):
     from nutrientes.utils import MenuRecipe
+    from nutrientes.forms import MenuRecipeForm
+    from django.forms.formsets import formset_factory
+
+    MenuRecipeFormSet = formset_factory(MenuRecipeForm, extra=0)
     if request.method == "POST":
         recipes_txt = request.POST.get("menu-recipes", "")
         recipes_ids = recipes_txt.split(",")
-        menu = MenuRecipe(recipes_ids, {"edad": 35, "genero": "H", "unidad_edad": u"años"})
-    return render(request, "analyze_menu.html", {"menu": menu})
+        menu_recipe = MenuRecipe(recipes_ids, {"edad": 35, "genero": "H", "unidad_edad": u"años"})
+        recipes = [{"weight": recipe.weight, "recipe": recipe_id, "name": recipe.name}
+                        for recipe, recipe_id in zip(menu_recipe.recipes, recipes_ids)]
+        formset = MenuRecipeFormSet(initial=recipes)
+        return render(request, "analyze_menu.html", {
+            "menu": menu_recipe, 
+            "formset": formset})
+    else:
+        return redirect("index")
 
 
 def save_recipe(request):

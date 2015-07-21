@@ -1226,20 +1226,17 @@ def recipes_list(number, perfil):
     intake_recipes = []
     perfil_intake = intake(perfil["edad"], perfil["genero"], perfil["unidad_edad"].encode("utf8", "replace"))
     for recipe_id_name, foods in recipes.items():
+            recipe_id, name = recipe_id_name.split("-")
             light_format = {
                 "perfil": perfil,
                 "foods": foods,
-                "score": 0
+                "name": name
             }
-            recipe_id, name = recipe_id_name.split("-")
+            
             intake_list = IntakeList.from_light_format(light_format, perfil_intake=perfil_intake)
-            intake_recipes.append({"name": name, 
-                "score": intake_list.score()[0], 
-                "radio_omega": intake_list.radio_omega, 
-                "energy": intake_list.energy(), 
-                "weight": intake_list.total_weight,
-                "id": recipe_id})
-    return sorted(intake_recipes, key=lambda x:x["score"], reverse=True)
+            intake_list.id = recipe_id
+            intake_recipes.append(intake_list)
+    return sorted(intake_recipes, key=lambda x:x.score, reverse=True)
 
 class MenuRecipe(object):
     def __init__(self, recipes_ids, perfil):
@@ -1262,26 +1259,33 @@ class MenuRecipe(object):
         intake_recipes = []
         perfil_intake = intake(perfil["edad"], perfil["genero"], perfil["unidad_edad"].encode("utf8", "replace"))
         for recipe_id_name, foods in recipes.items():
+            _, name = recipe_id_name.split("-")
             light_format = {
                 "perfil": perfil,
                 "foods": foods,
-                "score": 0
+                "name": name   
             }
             intake_recipes.append(IntakeList.from_light_format(light_format, perfil_intake=perfil_intake))
         return intake_recipes
 
     def score(self):
-        return self.merged_recipes.score()[0]
+        return self.merged_recipes.score
 
     def resume_intake(self):
-        return self.merged_recipes.score()[1]
+        return self.merged_recipes.resume_intake
 
     def energy(self):
         return self.merged_recipes.energy()
 
+    def weight(self):
+        return self.merged_recipes.weight
+
+    def radio_omega(self):
+        return self.merged_recipes.radio_omega
+
 #fix: change name intakelist for recipe
 class IntakeList(object):
-    def __init__(self, edad, genero, unidad_edad, blank=False, perfil_intake=None):
+    def __init__(self, edad, genero, unidad_edad, blank=False, perfil_intake=None, name=None):
         if not blank:
             self.perfil = self.build_perfil(edad, genero, unidad_edad)
             if perfil_intake is None:
@@ -1292,9 +1296,12 @@ class IntakeList(object):
             self.perfil = None
             self.perfil_intake = None
         self.foods = None
-        self.total_weight = None
+        self.weight = None
         self.radio_omega = None
         self.total_nutr_names = None
+        self.name = name
+        self.score = None
+        self.resume_intake = None
 
     def energy(self):
         return self.total_nutr_names.get("Energy", 0)
@@ -1312,9 +1319,16 @@ class IntakeList(object):
         food.nutrients).items() for food in self.foods.values()]
 
     def calc_weight(self, force=False):
-        if self.total_weight is None or force:
-            self.total_weight = sum(food.weight for food in self.foods.values())
-        return self.total_weight
+        if self.weight is None or force:
+            self.weight = sum(food.weight for food in self.foods.values())
+        return self.weight
+
+    def calc_radio_omega(self):
+        try:
+            self.radio_omega = round(
+                self.total_nutr_names.get("omega 6", [0])[0] / self.total_nutr_names.get("omega 3", [0])[0], 2)
+        except ZeroDivisionError:
+            self.radio_omega = 0
 
     def total_nutr_data(self):
         vectors_features = self.vector_features()
@@ -1324,15 +1338,12 @@ class IntakeList(object):
         total_nutr_units = nutr_units_ids([nutr_no for nutr_no, _ in total_food])
         total_nutr_names = {name[1]: (total[1], units[1]) 
             for name, total, units in zip(total_nutr_names, total_food, total_nutr_units)}
-        try:
-            self.radio_omega = round(
-                total_nutr_names.get("omega 6", [0])[0] / total_nutr_names.get("omega 3", [0])[0], 2)
-        except ZeroDivisionError:
-            self.radio_omega = 0
         self.total_nutr_names = total_nutr_names
         self.calc_weight()
+        self.calc_score()
+        self.calc_radio_omega()
 
-    def score(self):
+    def score_resume(self):
         resume_intake = []
         total_nutr_scorer = 0
         for nutrdesc, nutr_intake in self.perfil_intake.items():
@@ -1343,6 +1354,16 @@ class IntakeList(object):
                 resume_intake.append((nutr_intake.nutrdesc, nutr_score))
         score = round(total_nutr_scorer / len(self.perfil_intake), 2)
         return score, resume_intake
+
+    def calc_score(self):
+        if self.score is None:
+            self.score, self.resume_intake = self.score_resume()
+        return self.score
+
+    def calc_resume_intake(self):
+        if self.resume_intake is None:
+            self.score, self.resume_intake = self.score_resume()
+        return self.resume_intake
 
     def principals_nutrients(self):
         units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
@@ -1365,7 +1386,8 @@ class IntakeList(object):
     def light_format(self):
         return {"perfil": self.perfil,
                 "foods": {food.ndb_no: food.weight for food in self.foods.values()},
-                "score": self.score()[0]}
+                "score": self.calc_score(),
+                "name": self.name}
 
     def food2name(self):
         return {food.ndb_no: food.name for food in self.foods.values()}
@@ -1390,7 +1412,8 @@ class IntakeList(object):
             perfil["edad"], 
             perfil["genero"], 
             perfil["unidad_edad"].encode("utf8", "replace"),
-            perfil_intake=perfil_intake)
+            perfil_intake=perfil_intake,
+            name=intake_light_format.get("name", None))
         intake_list.foods = {ndb_no: Food(ndb_no, weight=weight, avg=False)
             for ndb_no, weight in foods.items()}
         intake_list.total_nutr_data()
