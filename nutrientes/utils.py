@@ -1243,6 +1243,7 @@ class MenuRecipe(object):
         self.recipes = self.ids2recipes(recipes_ids, perfil)
         self.merged_recipes = IntakeList.merge(*self.recipes)
 
+    @classmethod
     def ids2recipes(self, recipes_ids, perfil):
         from collections import defaultdict
         _, cursor = conection()
@@ -1394,14 +1395,21 @@ class IntakeList(object):
 
     def save2db(self, name):
         conn, cursor = conection()
-        query = """INSERT INTO recipe (name) VALUES (%s) RETURNING id"""
+        query = """SELECT id FROM recipe WHERE name=%s"""
         cursor.execute(query, [name])
-        recipe = cursor.fetchone()[0]
-        for food in self.foods.values():
-            query = """INSERT INTO recipe_ingredient 
-                    (recipe, ndb_no, weight) 
-                    VALUES (%s, %s, %s)"""
-            cursor.execute(query, [recipe, food.ndb_no, food.weight])
+        if cursor.fetchone():
+            for food in self.foods.values():
+                query = """UPDATE recipe_ingredient SET weight=%s WHERE name=%s"""
+                cursor.execute(query, [food.weight, name])
+        else:
+            query = """INSERT INTO recipe (name) VALUES (%s) RETURNING id"""
+            cursor.execute(query, [name])
+            recipe = cursor.fetchone()[0]
+            for food in self.foods.values():
+                query = """INSERT INTO recipe_ingredient 
+                        (recipe, ndb_no, weight) 
+                        VALUES (%s, %s, %s)"""
+                cursor.execute(query, [recipe, food.ndb_no, food.weight])
         conn.commit()
 
     @classmethod

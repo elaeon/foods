@@ -16,12 +16,13 @@
         <div class="panel-heading list-group-item">
             <span class="badge">{{ recipe.score }}</span>
             <span class="glyphicon glyphicon-plus" aria-hidden="true" style="cursor:pointer;float:left;padding-right:5px;" onclick="change_icon(this);" id="{{ recipe.id }}"></span>
-            <h3 class="panel-title">{{ recipe.name }}</h3>
+            <p class="panel-title">{{ recipe.name|truncatechars:30 }}</p>
         </div>
         <div class="panel-body">
             <p>Energia: {{ recipe.energy.0 }}{{ recipe.energy.1 }}</p>
             <p>Radio Omega: {{ recipe.radio_omega }}</p>
             <p>Cantidad: {{ recipe.weight }}g</p>
+            <a href="{% url 'analyze_food' %}?recipe={{ recipe.id }}">ver detalles</a>
         </div>
     </div>
   </div>

@@ -22,7 +22,6 @@
 </form>
 
 <br>
-<div id="chartContainer"></div>
 <p>Principales nutrientes</p>
 <div id="barContainer"></div>
 <h3>Energia: {{ menu.energy.0 }} {{ menu.energy.1 }}</h3>
@@ -44,3 +43,24 @@
 </div>
 {% endblock %}
 
+{% block js %}
+<script type="text/javascript" src="{% static 'd3.js' %}"></script>
+<script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
+<script type="text/javascript">
+var principals = [];
+
+{% for porcentaje, nutrdesc in menu.merged_recipes.principals_nutrients %}
+principals.push({nombre: '{{ nutrdesc }}', porcentaje: {{ porcentaje }}, tipo: "principales"});
+{% endfor %}
+
+var svg = dimple.newSvg("#barContainer", 1100, 210);
+var barChart = new dimple.chart(svg, principals);
+barChart.setBounds(10, 30, 950, 130)
+barChart.addPctAxis("x", "porcentaje");
+barChart.addCategoryAxis("y", "tipo");
+var barSeries = barChart.addSeries("nombre", dimple.plot.bar);
+barSeries.stacked = true;
+barChart.addLegend(10, 10, 1100, 30, "right");
+barChart.draw();
+</script>
+{% endblock %}
