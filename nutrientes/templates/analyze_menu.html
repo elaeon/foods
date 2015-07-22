@@ -24,10 +24,19 @@
 <br>
 <p>Principales nutrientes</p>
 <div id="barContainer"></div>
-<h3>Energia: {{ menu.energy.0 }} {{ menu.energy.1 }}</h3>
-<h3>Total de alimento consumido: {{ menu.weight }}g</h3>
-<h3>Calificación: {{ menu.score }} de 100</h3>
-<h3>El radio omega es: {{ menu.radio_omega }}:1</h3>
+
+<div class="panel panel-default">
+<div class="panel-heading list-group-item">
+    <span class="badge">{{ menu.score }}</span>
+    <p class="panel-title">Menú</p>
+</div>
+<div class="panel-body">
+    <p>Energia: {{ menu.energy.0 }}{{ menu.energy.1 }}</p>
+    <p>Radio Omega: {{ menu.radio_omega }}:1</p>
+    <p>Cantidad: {{ menu.weight }}g</p>
+</div>
+</div>
+
 <h3>Resumen de nutrientes que debes de checar.</h3>
 <table class="table table-striped table-hover table-condensed">
 <thead style="font-size: 90%">
