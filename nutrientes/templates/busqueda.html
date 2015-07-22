@@ -50,6 +50,7 @@
             <ul class="dropdown-menu" aria-labelledby="drop3">
             <form action="{% url 'analyze_food' %}" method="POST">
             {% csrf_token %}
+            <div style="max-height:400px;overflow:auto;">
             {% for food_list_name, food_list in  my_food_list.items %}
                 <li><div class="my-list-margin">
                     <input type="checkbox" value="{{ food_list_name }}" name="food_list">
@@ -61,6 +62,7 @@
                 <button type="submit" class="btn btn-xs btn-primary">Analizar</button>
                 </div>
             </li>
+            </div>
             </form>
             </ul>
             </li>
@@ -72,12 +74,12 @@
                     <span class="caret"></span>
                 </a>
             <ul class="dropdown-menu" aria-labelledby="drop3">
-                <li><div style="display:block;clear: both;color: #333;font-weight: 400;line-height: 1.42857; padding: 3px 20px;white-space: nowrap;">{{ request.session.intake_perfil.genero }}</div></li>
-                <li><div style="display:block;clear: both;color: #333;font-weight: 400;line-height: 1.42857; padding: 3px 20px;white-space: nowrap;">{{ request.session.intake_perfil.edad }} 
+                <li><div class="my-list-margin">{{ request.session.intake_perfil.genero }}</div></li>
+                <li><div class="my-list-margin">{{ request.session.intake_perfil.edad }} 
                     {{ request.session.intake_perfil.unidad_edad }}</div>
                 </li>
                 <li>
-                    <div style="display:block;clear: both;color: #333;font-weight: 400;line-height: 1.42857; padding: 3px 20px;white-space: nowrap;">
+                    <div class="my-list-margin">
                     <a tabindex="0" class="btn btn-xs btn-primary" role="button" data-container="body" data-placement="right" href="#">Cambiar Perfil</a>
                     </div>
                 </li>
