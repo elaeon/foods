@@ -2,6 +2,7 @@
 import psycopg2
 import re
 import pickle
+import heapq
 
 from collections import OrderedDict
 
@@ -692,7 +693,6 @@ class Food(object):
         return sumxy / (sumxx * sumyy)**.5
 
     def min_distance(self, vector_base, vectors, top=15):
-        import heapq
         distance = lambda x, y: sum((x_i - y_i)**2 for x_i, y_i in zip(x, y))**.5
         #distance = self. cosine_similarity
         distances = ((vector[0], distance(vector_base[1], vector[1])) for vector in vectors if vector_base[0] != vector[0])
@@ -1178,14 +1178,6 @@ class NutrIntake(object):
     def all_intake(self, other_value):
         return {self.labels[label]: other_value * 100 / ref_value 
                 for label, ref_value in self.values.items() if ref_value is not None}
-
-    #def nutr_intake_value(self):
-    #    if self.values["RDA"] is not None:
-    #        return self.values["RDA"]
-    #    elif self.values["AI"] is not None:
-    #        return self.values["AI"]
-    #    else:
-    #        return self.values["UL"]
    
     def score(self, resumen):
         if len(resumen) == 0:
@@ -1360,7 +1352,6 @@ class Recipe(object):
         self.calc_weight()
         self.calc_score()
         self.calc_radio_omega()
-        self.score_by_nutr()
 
     def score_resume(self):
         resume_intake = []
@@ -1369,7 +1360,8 @@ class Recipe(object):
             resumen = nutr_intake.resumen(self.total_nutr_names.get(nutrdesc, [0])[0])
             nutr_score = nutr_intake.score(resumen)
             total_nutr_scorer += nutr_score
-            resume_intake.append((nutr_intake.nutrdesc, nutr_score))
+            if len(resumen) > 0:
+                resume_intake.append((nutr_intake.nutrdesc, nutr_score))
         score = round(total_nutr_scorer / len(self.perfil_intake), 2)
         return score, resume_intake
 
@@ -1377,9 +1369,9 @@ class Recipe(object):
         resume_intake = []
         for nutrdesc, nutr_intake in self.perfil_intake.items():
             intake = nutr_intake.all_intake(self.total_nutr_names.get(nutrdesc, [0])[0])
-            score = nutr_intake.score_by_type(intake)
-            resume_intake.append((nutrdesc, score))
-        #print(resume_intake)
+            score, type_intake = nutr_intake.score_by_type(intake)
+            resume_intake.append((nutrdesc, score, type_intake))
+        return heapq.nlargest(5, resume_intake, key=lambda x: x[1])
         
     def calc_score(self):
         if self.score is None:

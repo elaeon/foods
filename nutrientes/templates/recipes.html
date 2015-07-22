@@ -19,8 +19,15 @@
             <p class="panel-title">{{ recipe.name|truncatechars:30 }}</p>
         </div>
         <div class="panel-body">
+            <div style="float:right;">
+            <ul style="font-size:70%;">
+            {% for nutr, score, type in recipe.score_by_nutr %}
+            <li>{{ nutr|truncatechars:20 }} [{{ type }}]</li>
+            {% endfor %}
+            </ul>
+            </div>
             <p>Energia: {{ recipe.energy.0 }}{{ recipe.energy.1 }}</p>
-            <p>Radio Omega: {{ recipe.radio_omega }}</p>
+            <p>Radio Omega: {{ recipe.radio_omega }}:1</p>
             <p>Cantidad: {{ recipe.weight }}g</p>
             <a href="{% url 'analyze_food' %}?recipe={{ recipe.id }}">ver detalles</a>
         </div>
@@ -52,9 +59,11 @@ function change_icon(e) {
     if(e.className.indexOf("glyphicon-plus") > -1) {
         $("#"+id).removeClass('glyphicon-plus');
         $("#"+id).addClass('glyphicon-minus');
+        $("#"+id).parent().addClass('selected-recipe');
     } else {
         $("#"+id).removeClass('glyphicon-minus');
         $("#"+id).addClass('glyphicon-plus');
+        $("#"+id).parent().removeClass('selected-recipe');
     }
 }
 </script>

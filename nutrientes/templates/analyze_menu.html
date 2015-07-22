@@ -29,15 +29,24 @@
 <h3>Calificación: {{ menu.score }} de 100</h3>
 <h3>El radio omega es: {{ menu.radio_omega }}:1</h3>
 <h3>Resumen de nutrientes que debes de checar.</h3>
-<ul>
+<table class="table table-striped table-hover table-condensed">
+<thead style="font-size: 90%">
+<th>Nutriente</th>
+<th>Porcentaje cubierto</th>
+</thead>
+<tbody>
 {% for nutr, score in menu.resume_intake %}
+<tr>
 {% if score < 50 %}
-<li><span style="color: #a00;">{{ nutr }} [bajo]</span></li>
+<td><span style="color: #a00;">{{ nutr }}</span></td>
 {% else %}
-<li>{{ nutr }}</li>
+<td>{{ nutr }}</td>
 {% endif %}
+<td>{{ score }}</td>
+</tr>
 {% endfor %}
-</ul>
+</tbody>
+</table>
 
 </div>
 </div>

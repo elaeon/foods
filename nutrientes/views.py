@@ -44,7 +44,8 @@ def graph_all_nutr(request):
  
     for nutr_no, avg_l in group.items():
         max_value = max(avg_l, key=lambda x: x[0])
-        norm_avg_l = [(round((float(v)/float(max_value[0]))*30), category) for v, category in avg_l if max_value[0] > 0]
+        norm_avg_l = [(round((float(v)/float(max_value[0]))*30), category) 
+            for v, category in avg_l if max_value[0] > 0]
         avg_nutr.append((nutr_no, norm_avg_l))
 
     return render(request, "graph_all_nutr.html", {"avg_nutr": avg_nutr})
@@ -187,7 +188,7 @@ def food_compare(request):
                             request.session["intake_names_list"] = {}
                     except KeyError:
                         request.session["intake_names_list"] = {}
-
+                    recipe.name = intake_list_name
                     request.session["intake_names_list"][intake_list_name] = recipe.light_format()
                     request.session["food_compare"] = recipe.food2name()
             else:

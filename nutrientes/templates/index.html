@@ -4,8 +4,8 @@
 {% block contenido_base %}
 <div class="jumbotron" style="background: url(http://upload.wikimedia.org/wikipedia/commons/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg) {{ width_img_rand }}% {{ height_img_rand }}% no-repeat; background-size: auto;">
     <div class="container">
-    <h1 style="color: #fff !important; background-color:rgba(0,0,0,.4);">¡Una guia más para tu alimentación!</h1>
-    <p style="color: #fff !important; background-color:rgba(0,0,0,.4);">Este sitio te ayudará a comparar, analizar e informarte sobre los alimentos y sus nutrientes.</p>
+    <h1 class="text_image_over">¡Una guia más para tu alimentación!</h1>
+    <p class="text_image_over">Este sitio te ayudará a comparar, analizar e informarte sobre los alimentos y sus nutrientes.</p>
     <p>
     <a role="button" href="{% url 'recipes' %}" class="btn btn-primary btn-md">Recetas »</a>
     <a role="button" href="{% url 'nutrient_selection' %}" class="btn btn-primary btn-md">Nutrientes »</a>

@@ -52,20 +52,38 @@
 <div id="chartContainer"></div>
 <p>Principales nutrientes</p>
 <div id="barContainer"></div>
-<h3>Energia: {{ recipe.energy.0 }} {{ recipe.energy.1 }}</h3>
-<h3>Total de alimento consumido: {{ recipe.weight }}g</h3>
-<h3>Calificación: {{ recipe.score }} de 100</h3>
-<h3>El radio omega es: {{ recipe.radio_omega }}:1</h3>
+
+<div class="panel panel-default">
+<div class="panel-heading list-group-item">
+    <span class="badge">{{ recipe.score }}</span>
+    <p class="panel-title">{{ recipe.name|truncatechars:30 }}</p>
+</div>
+<div class="panel-body">
+    <p>Energia: {{ recipe.energy.0 }}{{ recipe.energy.1 }}</p>
+    <p>Radio Omega: {{ recipe.radio_omega }}:1</p>
+    <p>Cantidad: {{ recipe.weight }}g</p>
+</div>
+</div>
+
 <h3>Resumen de nutrientes que debes de checar.</h3>
-<ul>
+<table class="table table-striped table-hover table-condensed">
+<thead style="font-size: 90%">
+<th>Nutriente</th>
+<th>Porcentaje cubierto</th>
+</thead>
+<tbody>
 {% for nutr, score in recipe.resume_intake %}
+<tr>
 {% if score < 20 %}
-<li><span style="color: #a00;">{{ nutr }} [bajo]</span></li>
+<td><span style="color: #a00;">{{ nutr }}</span></td>
 {% else %}
-<li>{{ nutr }}</li>
+<td>{{ nutr }}</td>
 {% endif %}
+<td>{{ score }}</td>
 {% endfor %}
-</ul>
+</tr>
+</tbody>
+</table>
 
 <br>
 <p>Los valores de referencia para el consumo diario de nutrientes fueron sacados de:
