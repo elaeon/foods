@@ -181,14 +181,15 @@ def food_compare(request):
 
             if "save" in request.POST:
                 intake_list_name = request.POST["intake_list_name"]
-                try:
-                    if type(request.session["intake_names_list"]) != type({}):
+                if intake_list_name != "":
+                    try:
+                        if type(request.session["intake_names_list"]) != type({}):
+                            request.session["intake_names_list"] = {}
+                    except KeyError:
                         request.session["intake_names_list"] = {}
-                except KeyError:
-                    request.session["intake_names_list"] = {}
 
-                request.session["intake_names_list"][intake_list_name] = recipe.light_format()
-                request.session["food_compare"] = recipe.food2name()
+                    request.session["intake_names_list"][intake_list_name] = recipe.light_format()
+                    request.session["food_compare"] = recipe.food2name()
             else:
                 intake_list_name = request.POST.get("intake_list_name", "")
 
@@ -245,13 +246,17 @@ def analyze_food(request):
         except KeyError:
             pass
     else:
-        recipes_ids = [request.GET["recipe"]]
-        recipes = MenuRecipe.ids2recipes(recipes_ids, perfil)
-        intake_list_names = [recipes[0].name]
-        for recipe in recipes:
-            foods += [{"food": food, "weight": food.weight, "ndb_no": food.ndb_no}
-                        for food in recipe.foods.values()]
-            intake_list_list.append(recipe)
+        try:
+            recipes_ids = [request.GET["recipe"]]
+        except KeyError:
+            return redirect("index")
+        else:
+            recipes = MenuRecipe.ids2recipes(recipes_ids, perfil)
+            intake_list_names = [recipes[0].name]
+            for recipe in recipes:
+                foods += [{"food": food, "weight": food.weight, "ndb_no": food.ndb_no}
+                            for food in recipe.foods.values()]
+                intake_list_list.append(recipe)
 
     intake_form = PerfilIntakeForm(initial=perfil)
     formset = WeightFormSet(initial=foods)
@@ -398,7 +403,7 @@ def analyze_menu(request):
         return redirect("index")
 
 
-def save_recipe(request):
+def share_recipe(request):
     from nutrientes.utils import Recipe
     if request.is_ajax():
         intake_list_name = request.POST.get("intake_list_name", "")

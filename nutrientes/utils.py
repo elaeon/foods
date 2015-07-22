@@ -1166,38 +1166,56 @@ class NutrIntake(object):
 
     def resumen(self, other_value):
         data = {}
-        for label, nutr_value in self.values.items():
-            if (label == "AI" or label == "RDA") and nutr_value is not None:
-                if other_value < nutr_value:
-                    data[self.labels[label]] = other_value * 100 / nutr_value
-            elif label == "UL" and nutr_value is not None:
-                if nutr_value < other_value:
-                    data[self.labels[label]] = nutr_value * 100 / other_value
+        for label, ref_value in self.values.items():
+            if (label == "AI" or label == "RDA") and ref_value is not None:
+                if other_value < ref_value:
+                    data[self.labels[label]] = other_value * 100 / ref_value
+            elif label == "UL" and ref_value is not None:
+                if ref_value < other_value:
+                    data[self.labels[label]] = ref_value * 100 / other_value
         return data
     
-    def nutr_intake_value(self):
-        if self.values["RDA"] is not None:
-            return self.values["RDA"]
-        elif self.values["AI"] is not None:
-            return self.values["AI"]
-        else:
-            return self.values["UL"]
+    def all_intake(self, other_value):
+        return {self.labels[label]: other_value * 100 / ref_value 
+                for label, ref_value in self.values.items() if ref_value is not None}
+
+    #def nutr_intake_value(self):
+    #    if self.values["RDA"] is not None:
+    #        return self.values["RDA"]
+    #    elif self.values["AI"] is not None:
+    #        return self.values["AI"]
+    #    else:
+    #        return self.values["UL"]
    
     def score(self, resumen):
         if len(resumen) == 0:
             return 100
         else:
-            IA = resumen.get("Ingesta adecuada", None)
+            AI = resumen.get("Ingesta adecuada", None)
             RDA = resumen.get("Recomendada", None)
             UL = resumen.get("Máxima ingesta tolerable", None)
-            if IA is not None:
-                return IA
+            if AI is not None:
+                return AI
             elif RDA is not None:
                 return RDA
             elif UL is not None:
                 return -UL
             else:
                 return 100
+
+    def score_by_type(self, resumen):
+        AI = resumen.get(self.labels["AI"], None)
+        RDA = resumen.get(self.labels["RDA"], None)
+        UL = resumen.get(self.labels["UL"], None)
+        if UL is None or UL < 100:
+            if RDA is not None:
+                return RDA, "RDA"
+            elif AI is not None:
+                return AI, "AI"  
+        elif UL is not None:
+            return UL, "UL"
+        else:
+            return 0, ""
 
 def magnitude(number):
     try:
@@ -1342,6 +1360,7 @@ class Recipe(object):
         self.calc_weight()
         self.calc_score()
         self.calc_radio_omega()
+        self.score_by_nutr()
 
     def score_resume(self):
         resume_intake = []
@@ -1350,11 +1369,18 @@ class Recipe(object):
             resumen = nutr_intake.resumen(self.total_nutr_names.get(nutrdesc, [0])[0])
             nutr_score = nutr_intake.score(resumen)
             total_nutr_scorer += nutr_score
-            if len(resumen) > 0:
-                resume_intake.append((nutr_intake.nutrdesc, nutr_score))
+            resume_intake.append((nutr_intake.nutrdesc, nutr_score))
         score = round(total_nutr_scorer / len(self.perfil_intake), 2)
         return score, resume_intake
 
+    def score_by_nutr(self):
+        resume_intake = []
+        for nutrdesc, nutr_intake in self.perfil_intake.items():
+            intake = nutr_intake.all_intake(self.total_nutr_names.get(nutrdesc, [0])[0])
+            score = nutr_intake.score_by_type(intake)
+            resume_intake.append((nutrdesc, score))
+        #print(resume_intake)
+        
     def calc_score(self):
         if self.score is None:
             self.score, self.resume_intake = self.score_resume()
@@ -1376,6 +1402,7 @@ class Recipe(object):
         principals = sorted(totals, reverse=True, key=lambda x:x[1])
         return [(elem[1], elem[0]) for elem in principals[:9]] +\
             [(sum([elem[1] for elem in principals[9:]]), "otros")]
+
 
     def perfil_intake(self):
         return intake(
@@ -1429,22 +1456,25 @@ class Recipe(object):
 
     @classmethod
     def merge(self, *intake_list_list):
-        intake_total = Recipe('', '', '', blank=True)
-        intake_total.perfil = intake_list_list[0].perfil
-        intake_total.perfil_intake = intake_list_list[0].perfil_intake
-        foods_tmp = {}
-        for intake_list in intake_list_list:
-            for ndb_no, food in intake_list.foods.items():
-                if ndb_no in foods_tmp:
-                    foods_tmp[ndb_no].append(food)
+        if len(intake_list_list) > 1:
+            intake_total = Recipe('', '', '', blank=True)
+            intake_total.perfil = intake_list_list[0].perfil
+            intake_total.perfil_intake = intake_list_list[0].perfil_intake
+            foods_tmp = {}
+            for intake_list in intake_list_list:
+                for ndb_no, food in intake_list.foods.items():
+                    if ndb_no in foods_tmp:
+                        foods_tmp[ndb_no].append(food)
+                    else:
+                        foods_tmp[ndb_no] = [food]
+            foods = {}
+            for ndb_no, foods_ndb_no in foods_tmp.items():
+                if len(foods_ndb_no) > 1:
+                    foods[ndb_no] = Food(ndb_no, weight=sum(food.weight for food in foods_ndb_no))
                 else:
-                    foods_tmp[ndb_no] = [food]
-        foods = {}
-        for ndb_no, foods_ndb_no in foods_tmp.items():
-            if len(foods_ndb_no) > 1:
-                foods[ndb_no] = Food(ndb_no, weight=sum(food.weight for food in foods_ndb_no))
-            else:
-                foods[ndb_no] = foods_ndb_no.pop()
-        intake_total.foods = foods
-        intake_total.total_nutr_data()
-        return intake_total
+                    foods[ndb_no] = foods_ndb_no.pop()
+            intake_total.foods = foods
+            intake_total.total_nutr_data()
+            return intake_total
+        else:
+            return intake_list_list[0]

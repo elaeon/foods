@@ -41,7 +41,7 @@
             <form id="analyze" action="{% url 'food_compare' %}" method="POST">
             {% csrf_token %}
             <button name="comparar" type="submit">Comparar</button>
-            <button name="analizar" id="analizar" type="submit">Analizar lista</button>
+            <button name="analizar" id="analizar" type="submit">Editar receta</button>
             </form>
             <div id="comparationContainer">
             {% for ndb_no, name in food_compare.items %}

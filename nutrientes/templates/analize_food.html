@@ -23,11 +23,11 @@
 <button type="submit" name="save" class="btn btn-xs btn-success">Guardar en mi lista</button>
 </td>
 <td style="padding-right:5px;">
-<button type="submit" name="borrar" class="btn btn-xs btn-danger">Borrar lista</button>
+<button type="submit" name="borrar" class="btn btn-xs btn-danger">Borrar de mi lista</button>
 </td>
 <td>
 <!--nclick="javascript:agregar();">-->
-<a tabindex="0" class="btn btn-xs btn-info" role="button" data-trigger="focus" title="" onclick="javascript:save_recipe();">Exportar a la Base de Datos</a>
+<a tabindex="0" class="btn btn-xs btn-info" role="button" data-trigger="focus" title="" onclick="javascript:share_recipe();">Compartir receta</a>
 </td>
 </tr>
 </table>
@@ -80,10 +80,10 @@
 <script type="text/javascript" src="{% static 'd3.js' %}"></script>
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
 <script type="text/javascript">
-function save_recipe() {
+function share_recipe() {
     var request = $.ajax({
         type: "POST",
-        url: "{% url 'save_recipe' %}",
+        url: "{% url 'share_recipe' %}",
         data: {
             csrfmiddlewaretoken: '{{ csrf_token }}',
             intake_list_name: '{{ intake_list_name }}'
@@ -95,7 +95,7 @@ function save_recipe() {
                 alert("Los datos fueron guardados.");
             } else {
                 if(data.result == 'no key') {
-                    alert("Antes de exportar, debe apretar el botón 'Guardar en mi lista'.")
+                    alert("Antes de compartir, debe apretar el botón 'Guardar en mi lista'.")
                 }
             }
         }
