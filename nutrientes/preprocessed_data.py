@@ -11,7 +11,7 @@ def matrix_food():
     matrix.save_matrix(PREPROCESSED_DATA_DIR+'matrix.csv')
     return matrix
 
-def order_matrix():
+def ordered_matrix():
     from nutrientes.utils import create_order_matrix
     foods = create_order_matrix()
     import csv
@@ -35,7 +35,7 @@ def ranking_category(group):
     from nutrientes.utils import Rank
     rank = best_of_general_2(group)
     ranking_cat_list = rank.results
-    calc_ranking_detail(rank, "category")
+    #calc_ranking_detail(rank, "category")
     category = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_cat_list, f_index=lambda x: x[0])}
     return category
 
@@ -145,8 +145,7 @@ def recalc_preprocessed_data():
     calc_avg(force=True)
     print "Generate Matrix"
     matrix_food()
-    print "Generate Order Matrix"
-    order_matrix()
     print "Generate Ranks"
     insert_update_db_ranking()
-
+    print "Generate Ordered Matrix"
+    ordered_matrix()

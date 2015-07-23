@@ -165,7 +165,8 @@ def food_compare(request, intake_params):
                 recipe = Recipe(
                     intake_params["edad"],
                     intake_params["genero"],
-                    intake_params["unidad_edad"].encode("utf8", "replace"))
+                    intake_params["unidad_edad"].encode("utf8", "replace"),
+                    intake_params["rnv_type"])
             else:
                 intake_form = PerfilIntakeForm(request.POST)
                 formset = WeightFormSet(request.POST)
