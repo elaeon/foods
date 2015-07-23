@@ -66,6 +66,7 @@
             </form>
             </ul>
             </li>
+            {% endif %}
             <li class="dropdown">
                 <a id="drop1" class="dropdown-toggle" 
                     aria-expanded="false" aria-haspopup="true" 
@@ -86,8 +87,6 @@
                 </li>
             </ul>
             </li>
-            <ul class="dropdown-menu" aria-labelledby="drop3">
-            {% endif %}
         </ul>
         <form id="search-form" class="navbar-form navbar-right form-inline" onsubmit="return verify_search_term();" name="search-form" action="{% url 'result_long_search' %}" method="post">
             {% csrf_token %}
