@@ -10,7 +10,7 @@ import os
 
 PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
 USERNAME = 'agmartinez'
-
+RNV_TYPE = {2: "NOM-051-SCFI/SSA1-2010", 1: "USACAN"}
 
 def conection():
     conn_string = "host='/var/run/postgresql/' dbname='alimentos' user='{username}'".format(username=USERNAME)
@@ -314,17 +314,33 @@ class Rank(object):
                 "omega3": 0.05,
                 "205": 1.5, #Carbohydrate, by difference
                 "211": 5.0, #Glucose (dextrose)
-                "212": 7.0, #Fructose
-                "210": 3.0, #Sucrose
+                "212": 6.0, #Fructose
+                "210": 5.0, #Sucrose
                 "203": .5,  #Protein
                 "209": 3.0, #Starch
                 "431": .5,  #Folic acid
                 "213": 4.0, #Lactose
                 "287": 4.0, #Galactose
                 "214": 3.0, #Maltose
-                "207": 3.0,  #Ash
-                "291": .5,   #Fiber, total dietary
-                "313": 1.3,  #Fluoride, F
+                "207": 1.1, #Ash
+                "291": .5,  #Fiber, total dietary
+                "313": .9, #Fluoride, F
+                "309": .9, #Zinc
+                "430": .9, #Vitamin K
+                "323": .9, #Vitamin E
+                "401": .8, #Vitamin C
+                "415": .9, #Vitamin B6
+                "418": .9, #Vitamin B12
+                "320": .9, #Vitamin A
+                "305": .8, #Phosphorus,
+                "410": .8, #Pantothenic
+                "406": .8, #Niacin
+                "304": .8, #Magnesium,
+                "306": .8, #Potassium,
+                "317": .8, #Selenium,
+                "435": .8, #Folate,
+                "421": .8, #Choline,
+                "315": .8, #Manganese,
                 "omega6": 1.8
             }
         else:
@@ -1124,14 +1140,15 @@ def boost_food(ndb_no):
     food = Food(order.get_top(ndb_no, level=10))
     return food
 
-def intake(edad, genero, unidad_edad):
+def intake(edad, genero, unidad_edad, rnv_type):
     _, cursor = conection()
     query = """SELECT nutr_def.nutr_no, nutrdesc, units, value, type, edad_range
                 FROM nutr_def, nutr_intake 
                 WHERE nutr_def.nutr_no=nutr_intake.nutr_no
                 AND unidad_edad=%s
-                AND genero=%s"""
-    cursor.execute(query, [unidad_edad, genero])
+                AND genero=%s
+                AND rnv_type=%s"""
+    cursor.execute(query, [unidad_edad, genero, rnv_type])
     nutrs = {}
     for nutr_no, nutrdesc, units, value, label, edad_range in cursor.fetchall():
         min_year, max_year = edad_range.split("-")
@@ -1234,7 +1251,11 @@ def recipes_list(number, perfil):
         recipes["{}-{}".format(recipe_id, name)][ndb_no] = float(weight)
 
     intake_recipes = []
-    perfil_intake = intake(perfil["edad"], perfil["genero"], perfil["unidad_edad"].encode("utf8", "replace"))
+    perfil_intake = intake(
+        perfil["edad"], 
+        perfil["genero"], 
+        perfil["unidad_edad"].encode("utf8", "replace"), 
+        perfil["rnv_type"])
     for recipe_id_name, foods in recipes.items():
             recipe_id, name = recipe_id_name.split("-")
             light_format = {
@@ -1268,7 +1289,11 @@ class MenuRecipe(object):
             recipes["{}-{}".format(recipe_id, name)][ndb_no] = float(weight)
 
         intake_recipes = []
-        perfil_intake = intake(perfil["edad"], perfil["genero"], perfil["unidad_edad"].encode("utf8", "replace"))
+        perfil_intake = intake(
+            perfil["edad"], 
+            perfil["genero"], 
+            perfil["unidad_edad"].encode("utf8", "replace"),
+            perfil["rnv_type"])
         for recipe_id_name, foods in recipes.items():
             _, name = recipe_id_name.split("-")
             light_format = {
@@ -1400,7 +1425,8 @@ class Recipe(object):
         return intake(
             self.perfil["edad"], 
             self.perfil["genero"], 
-            self.perfil["unidad_edad"])
+            self.perfil["unidad_edad"],
+            self.perfil["rnv_type"])
 
     def light_format(self):
         return {"perfil": self.perfil,

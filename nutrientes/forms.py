@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from django import forms
+from nutrientes.utils import RNV_TYPE
 
 class PerfilIntakeForm(forms.Form):
     edad = forms.IntegerField()
@@ -13,6 +14,15 @@ class PerfilIntakeForm(forms.Form):
             (u"pregnancy", u"mujer-embarazo"),
             (u"lactation", u"mujer-lactancia")
         ))
+    rnv_type = forms.ChoiceField(
+        choices=(RNV_TYPE.items()))
+
+    def export_perfil(self):
+        return {
+            "edad": self.cleaned_data["edad"], 
+            "unidad_edad": self.cleaned_data["unidad_edad"], 
+            "genero": self.cleaned_data["genero"], 
+            "rnv_type": self.cleaned_data["rnv_type"]}
 
 class WeightForm(forms.Form):
     ndb_no = forms.CharField(widget=forms.HiddenInput())

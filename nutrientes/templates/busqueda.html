@@ -74,13 +74,14 @@
                     <span class="caret"></span>
                 </a>
             <ul class="dropdown-menu" aria-labelledby="drop3">
-                <li><div class="my-list-margin">{{ request.session.intake_perfil.genero }}</div></li>
-                <li><div class="my-list-margin">{{ request.session.intake_perfil.edad }} 
-                    {{ request.session.intake_perfil.unidad_edad }}</div>
+                <li><div class="my-list-margin">{{ perfil.genero_txt }}</div></li>
+                <li><div class="my-list-margin">{{ perfil.edad }} 
+                    {{ perfil.unidad_edad }}</div>
                 </li>
+                <li><div class="my-list-margin">Norma: {{ perfil.rnv_type_txt }}</div></li>
                 <li>
                     <div class="my-list-margin">
-                    <a tabindex="0" class="btn btn-xs btn-primary" role="button" data-container="body" data-placement="right" href="#">Cambiar Perfil</a>
+                    <a tabindex="0" class="btn btn-xs btn-primary" role="button" data-container="body" data-placement="right" href="{% url 'change_perfil' %}">Cambiar Perfil</a>
                     </div>
                 </li>
             </ul>

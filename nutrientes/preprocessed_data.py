@@ -24,25 +24,19 @@ def order_matrix():
 
 def ranking_global():
     from nutrientes.utils import Rank
-    #global_ = Food.get_matrix(PREPROCESSED_DATA_DIR+"ranking.p")
-    #if len(global_) == 0 or force:
     rank = best_of_general_2()
     ranking_list = rank.results
     calc_ranking_detail(rank, "global")
     global_ = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_list, f_index=lambda x: x[0])}
-    #Food.save_matrix(PREPROCESSED_DATA_DIR+"ranking.p", global_)
     return global_
 
 
 def ranking_category(group):
     from nutrientes.utils import Rank
-    #category = Food.get_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group))
-    #if len(category) == 0 or force:
     rank = best_of_general_2(group)
     ranking_cat_list = rank.results
     calc_ranking_detail(rank, "category")
     category = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_cat_list, f_index=lambda x: x[0])}
-    #Food.save_matrix("%s%s.p" % (PREPROCESSED_DATA_DIR, group), category)
     return category
 
 
@@ -104,9 +98,9 @@ def insert_update_db_ranking():
     data = ranking_global()
     ranking_by_type(data, "global")
 
-    #for group, _ in categories_foods():
-    #    data = ranking_category(group)
-    #    ranking_by_type(data, "category")
+    for group, _ in categories_foods():
+        data = ranking_category(group)
+        ranking_by_type(data, "category")
 
 
 def ranking_detail_by_type(ndb_no, data, type_position):
@@ -147,10 +141,10 @@ def calc_ranking_detail(rank, type_category):
         ranking_detail_by_type(ndb_no, data, type_category)
 
 def recalc_preprocessed_data():
-    #print "Generate AVG"
-    #calc_avg(force=True)
+    print "Generate AVG"
+    calc_avg(force=True)
     print "Generate Matrix"
     matrix_food()
-    #print "Generate Ranks"
-    #insert_update_db_ranking()
+    print "Generate Ranks"
+    insert_update_db_ranking()
 

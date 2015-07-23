@@ -152,7 +152,7 @@ def food_compare(request):
                 if "intake_perfil" in request.session:
                     intake_params = request.session["intake_perfil"]
                 else:
-                    intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H"}
+                    intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
 
                 intake_form = PerfilIntakeForm(initial=intake_params)
                 foods = [{"food": Food(ndb_no, weight=float(100)), "weight": 100, "ndb_no": ndb_no} 
@@ -233,7 +233,7 @@ def analyze_food(request):
     if "intake_perfil" in request.session:
         perfil = request.session["intake_perfil"]
     else:
-        perfil = {"edad": 35, "genero": "H", "unidad_edad": u"años"}
+        perfil = {"edad": 35, "genero": "H", "unidad_edad": u"años", "rnv_type": 1}
 
     if request.method == "POST":
         try:
@@ -374,7 +374,7 @@ def recipes(request):
     if "intake_perfil" in request.session:
         perfil = request.session["intake_perfil"]
     else:
-        perfil = {"edad": 35, "genero": "H", "unidad_edad": u"años"}
+        perfil = {"edad": 35, "genero": "H", "unidad_edad": u"años", "rnv_type": 1}
     recipes = recipes_list(10, perfil)
     return render(request, "recipes.html", {"recipes": recipes})
 
@@ -388,7 +388,7 @@ def analyze_menu(request):
     if "intake_perfil" in request.session:
         perfil = request.session["intake_perfil"]
     else:
-        perfil = {"edad": 35, "genero": "H", "unidad_edad": u"años"}
+        perfil = {"edad": 35, "genero": "H", "unidad_edad": u"años", "rnv_type": 1}
 
     if request.method == "POST":
         recipes_txt = request.POST.get("menu-recipes", "")
@@ -417,3 +417,20 @@ def share_recipe(request):
         else:
             result = "ok"
         return HttpResponse(json.dumps({"result": result}), content_type='text/json')
+
+
+def change_perfil(request):
+    from nutrientes.forms import PerfilIntakeForm
+
+    if request.method == "POST":
+        intake_form = PerfilIntakeForm(request.POST)
+        if intake_form.is_valid():
+            request.session["intake_perfil"] = intake_form.export_perfil()
+    else:
+        if "intake_perfil" in request.session:
+            intake_params = request.session["intake_perfil"]
+        else:
+            intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
+
+        intake_form = PerfilIntakeForm(initial=intake_params)
+    return render(request, "change_perfil.html", {"intake_form": intake_form})

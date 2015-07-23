@@ -37,5 +37,5 @@ urlpatterns = [
     url(r'^recipes/$', views.recipes, name="recipes"),
     url(r'^share_recipe/$', views.share_recipe, name="share_recipe"),
     url(r'^analyze_menu/$', views.analyze_menu, name="analyze_menu"),
-    #url(r'^ajax_boost_food/(?P<ndb_no>\w+)/$', views.ajax_boost_food, name="ajax_boost_food"),
+    url(r'^change_perfil/$', views.change_perfil, name="change_perfil"),
 ]
