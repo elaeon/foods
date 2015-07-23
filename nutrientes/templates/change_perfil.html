@@ -1,0 +1,31 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div class="container">
+<div class="starter-template">
+<div class="row">
+<form action="{% url 'change_perfil' %}" method="POST" id="intake_form">
+{% csrf_token %}
+<table>
+<tr>
+<th>Edad</th>
+<th>Unidad</th>
+<th>Genero</th>
+<th>Norma</th>
+</tr>
+<tr>
+<td>{{ intake_form.edad }}</td>
+<td>{{ intake_form.unidad_edad }}</td>
+<td>{{ intake_form.genero }}</td>
+<td>{{ intake_form.rnv_type }}</td>
+<td style="padding-right:5px;">
+    <button type="submit" name="analizar" class="btn btn-xs btn-primary">Cambiar</button>
+</td>
+</tr>
+</table>
+
+</div>
+</div>
+{% endblock %}
+
