@@ -12,11 +12,13 @@
 <th>Edad</th>
 <th>Unidad</th>
 <th>Genero</th>
+<th>Norma</th>
 </tr>
 <tr>
 <td>{{ intake_form.edad }}</td>
 <td>{{ intake_form.unidad_edad }}</td>
 <td>{{ intake_form.genero }}</td>
+<td>{{ intake_form.rnv_type }}</td>
 <input type="hidden" value="{{ intake_list_name }}" id="intake_list_name" name="intake_list_name">
 <td style="padding-right:5px;"><button type="submit" name="analizar" class="btn btn-xs btn-primary">Calcular</button></td>
 <td style="padding-right:5px;">

@@ -10,6 +10,14 @@ import random
 
 DB_VERSION = "9.1"
 
+def perfil(some_func):
+    def inner(request):
+        if "intake_perfil" in request.session:
+            intake_params = request.session["intake_perfil"]
+        else:
+            intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
+        return some_func(request, intake_params)
+    return inner
 
 def index(request):
     from nutrientes.utils import category_food_list
@@ -138,7 +146,8 @@ def food(request, ndb_no):
         "tabla_nutr_rank": tabla_nutr_rank_f})
 
 
-def food_compare(request):
+@perfil
+def food_compare(request, intake_params):
     from nutrientes.utils import Food, intake
     from nutrientes.utils import Recipe
     from nutrientes.forms import PerfilIntakeForm, WeightForm
@@ -149,11 +158,6 @@ def food_compare(request):
         if "analizar" in request.POST or "save" in request.POST:
             WeightFormSet = formset_factory(WeightForm, extra=0)
             if request.POST.get('edad', '') == '':
-                if "intake_perfil" in request.session:
-                    intake_params = request.session["intake_perfil"]
-                else:
-                    intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
-
                 intake_form = PerfilIntakeForm(initial=intake_params)
                 foods = [{"food": Food(ndb_no, weight=float(100)), "weight": 100, "ndb_no": ndb_no} 
                         for ndb_no in food_list.keys()]
@@ -175,7 +179,8 @@ def food_compare(request):
                     recipe = Recipe(
                         intake_form.cleaned_data["edad"],
                         intake_form.cleaned_data["genero"],
-                        intake_form.cleaned_data["unidad_edad"].encode("utf8", "replace"))
+                        intake_form.cleaned_data["unidad_edad"].encode("utf8", "replace"),
+                        int(intake_form.cleaned_data["rnv_type"]))
                 
             request.session["intake_perfil"] = recipe.perfil
             recipe.from_formset(formset)
@@ -222,7 +227,8 @@ def food_compare(request):
     else:
         return redirect("index")
 
-def analyze_food(request):
+@perfil
+def analyze_food(request, intake_params):
     from nutrientes.utils import Recipe, MenuRecipe
     from nutrientes.forms import PerfilIntakeForm, WeightForm
     from django.forms.formsets import formset_factory
@@ -230,11 +236,6 @@ def analyze_food(request):
     WeightFormSet = formset_factory(WeightForm, extra=0)
     foods = []
     intake_list_list = []
-    if "intake_perfil" in request.session:
-        perfil = request.session["intake_perfil"]
-    else:
-        perfil = {"edad": 35, "genero": "H", "unidad_edad": u"años", "rnv_type": 1}
-
     if request.method == "POST":
         try:
             intake_list_names = request.POST.getlist("food_list")
@@ -252,14 +253,14 @@ def analyze_food(request):
         except KeyError:
             return redirect("index")
         else:
-            recipes = MenuRecipe.ids2recipes(recipes_ids, perfil)
+            recipes = MenuRecipe.ids2recipes(recipes_ids, intake_params)
             intake_list_names = [recipes[0].name]
             for recipe in recipes:
                 foods += [{"food": food, "weight": food.weight, "ndb_no": food.ndb_no}
                             for food in recipe.foods.values()]
                 intake_list_list.append(recipe)
 
-    intake_form = PerfilIntakeForm(initial=perfil)
+    intake_form = PerfilIntakeForm(initial=intake_params)
     formset = WeightFormSet(initial=foods)
     recipe = Recipe.merge(*intake_list_list)
     return render(request, "analize_food.html", {
@@ -369,31 +370,23 @@ def equivalents(request, ndb_no):
     return render(request, "equivalents.html", data_result)
 
 
-def recipes(request):
+@perfil
+def recipes(request, intake_params):
     from nutrientes.utils import recipes_list
-    if "intake_perfil" in request.session:
-        perfil = request.session["intake_perfil"]
-    else:
-        perfil = {"edad": 35, "genero": "H", "unidad_edad": u"años", "rnv_type": 1}
-    recipes = recipes_list(10, perfil)
+    recipes = recipes_list(10, intake_params)
     return render(request, "recipes.html", {"recipes": recipes})
 
-
-def analyze_menu(request):
+@perfil
+def analyze_menu(request, intake_params):
     from nutrientes.utils import MenuRecipe
     from nutrientes.forms import MenuRecipeForm
     from django.forms.formsets import formset_factory
 
     MenuRecipeFormSet = formset_factory(MenuRecipeForm, extra=0)
-    if "intake_perfil" in request.session:
-        perfil = request.session["intake_perfil"]
-    else:
-        perfil = {"edad": 35, "genero": "H", "unidad_edad": u"años", "rnv_type": 1}
-
     if request.method == "POST":
         recipes_txt = request.POST.get("menu-recipes", "")
         recipes_ids = recipes_txt.split(",")
-        menu_recipe = MenuRecipe(recipes_ids, perfil)
+        menu_recipe = MenuRecipe(recipes_ids, intake_params)
         recipes = [{"weight": recipe.weight, "recipe": recipe_id, "name": recipe.name}
                         for recipe, recipe_id in zip(menu_recipe.recipes, recipes_ids)]
         formset = MenuRecipeFormSet(initial=recipes)
@@ -418,8 +411,8 @@ def share_recipe(request):
             result = "ok"
         return HttpResponse(json.dumps({"result": result}), content_type='text/json')
 
-
-def change_perfil(request):
+@perfil
+def change_perfil(request, intake_params):
     from nutrientes.forms import PerfilIntakeForm
 
     if request.method == "POST":
@@ -427,10 +420,5 @@ def change_perfil(request):
         if intake_form.is_valid():
             request.session["intake_perfil"] = intake_form.export_perfil()
     else:
-        if "intake_perfil" in request.session:
-            intake_params = request.session["intake_perfil"]
-        else:
-            intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
-
         intake_form = PerfilIntakeForm(initial=intake_params)
     return render(request, "change_perfil.html", {"intake_form": intake_form})

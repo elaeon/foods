@@ -1208,7 +1208,7 @@ class NutrIntake(object):
             elif RDA is not None:
                 return RDA
             elif UL is not None:
-                return -UL
+                return UL - 100
             else:
                 return 100
 
@@ -1320,9 +1320,9 @@ class MenuRecipe(object):
         return self.merged_recipes.radio_omega
 
 class Recipe(object):
-    def __init__(self, edad, genero, unidad_edad, blank=False, perfil_intake=None, name=None):
+    def __init__(self, edad, genero, unidad_edad, rnv_type, blank=False, perfil_intake=None, name=None):
         if not blank:
-            self.perfil = self.build_perfil(edad, genero, unidad_edad)
+            self.perfil = self.build_perfil(edad, genero, unidad_edad, rnv_type)
             if perfil_intake is None:
                 self.perfil_intake = self.perfil_intake()
             else:
@@ -1345,8 +1345,8 @@ class Recipe(object):
         self.foods = {form.food.ndb_no: form.food for form in formset}
         self.total_nutr_data()
 
-    def build_perfil(self, edad, genero, unidad_edad):
-        return {"edad": edad, "genero": genero, "unidad_edad": unidad_edad}
+    def build_perfil(self, edad, genero, unidad_edad, rnv_type):
+        return {"edad": edad, "genero": genero, "unidad_edad": unidad_edad, "rnv_type": rnv_type}
 
     def vector_features(self):
         return [food.vector_features(
@@ -1465,6 +1465,7 @@ class Recipe(object):
             perfil["edad"], 
             perfil["genero"], 
             perfil["unidad_edad"].encode("utf8", "replace"),
+            perfil.get("rnv_type", 1),
             perfil_intake=perfil_intake,
             name=intake_light_format.get("name", None))
         intake_list.foods = {ndb_no: Food(ndb_no, weight=weight, avg=False)
@@ -1475,7 +1476,7 @@ class Recipe(object):
     @classmethod
     def merge(self, *intake_list_list):
         if len(intake_list_list) > 1:
-            intake_total = Recipe('', '', '', blank=True)
+            intake_total = Recipe('', '', '', None, blank=True)
             intake_total.perfil = intake_list_list[0].perfil
             intake_total.perfil_intake = intake_list_list[0].perfil_intake
             foods_tmp = {}

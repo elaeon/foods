@@ -145,6 +145,8 @@ def recalc_preprocessed_data():
     calc_avg(force=True)
     print "Generate Matrix"
     matrix_food()
+    print "Generate Order Matrix"
+    order_matrix()
     print "Generate Ranks"
     insert_update_db_ranking()
 
