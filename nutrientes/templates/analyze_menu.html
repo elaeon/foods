@@ -22,18 +22,39 @@
 </form>
 
 <br>
-<p>Principales nutrientes</p>
-<div id="barContainer"></div>
+<!--<div id="barContainer"></div>-->
 
 <div class="panel panel-default">
 <div class="panel-heading list-group-item">
     <span class="badge">{{ menu.score }}</span>
-    <p class="panel-title">Menú</p>
+    <p class="panel-title">Resultados de Menú</p>
 </div>
 <div class="panel-body">
     <p>Energia: {{ menu.energy.0 }}{{ menu.energy.1 }}</p>
     <p>Radio Omega: {{ menu.radio_omega }}:1</p>
-    <p>Cantidad: {{ menu.weight }}g</p>
+    <p>Peso: {{ menu.weight }}g</p>
+</div>
+</div>
+
+<div class="panel panel-default">
+<div class="panel-heading list-group-item">
+<p class="panel-title">Principales nutrientes</p>
+</div>
+<div class="panel-body">
+<table class="table table-striped table-hover table-condensed">
+<thead style="font-size: 90%">
+<th>Nutriente</th>
+<th>Porcentaje</th>
+</thead>
+<tbody>
+{% for porcentaje, nutrdesc in menu.merged_recipes.principals_nutrients %}
+<tr>
+<td>{{ nutrdesc }}</td>
+<td>{{ porcentaje }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
 </div>
 </div>
 
@@ -75,10 +96,6 @@
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
 <script type="text/javascript">
 var principals = [];
-
-{% for porcentaje, nutrdesc in menu.merged_recipes.principals_nutrients %}
-principals.push({nombre: '{{ nutrdesc }}', porcentaje: {{ porcentaje }}, tipo: "principales"});
-{% endfor %}
 
 var svg = dimple.newSvg("#barContainer", 1100, 210);
 var barChart = new dimple.chart(svg, principals);
