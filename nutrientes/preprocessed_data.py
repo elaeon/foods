@@ -26,7 +26,7 @@ def ranking_global():
     from nutrientes.utils import Rank
     rank = best_of_general_2()
     ranking_list = rank.results
-    calc_ranking_detail(rank, "global")
+    calc_ranking_detail(rank)
     global_ = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_list, f_index=lambda x: x[0])}
     return global_
 
@@ -35,7 +35,6 @@ def ranking_category(group):
     from nutrientes.utils import Rank
     rank = best_of_general_2(group)
     ranking_cat_list = rank.results
-    #calc_ranking_detail(rank, "category")
     category = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_cat_list, f_index=lambda x: x[0])}
     return category
 
@@ -103,48 +102,43 @@ def insert_update_db_ranking():
         ranking_by_type(data, "category")
 
 
-def ranking_detail_by_type(ndb_no, data, type_position):
+def ranking_detail_by_type(ndb_no, data):
     conn, cursor = conection()
     for nutr_no, position in data.items():
         query = """ SELECT COUNT(*) 
                     FROM ranking_food_detail
                     WHERE ndb_no='{ndb_no}'
-                    AND type_position='{type_position}'
                     AND nutr_no='{nutr_no}'""".format(
-                ndb_no=ndb_no, 
-                type_position=type_position,
+                ndb_no=ndb_no,
                 nutr_no=nutr_no)
         cursor.execute(query)
         if cursor.fetchall()[0][0] == 1:
             query = """UPDATE ranking_food_detail 
                         SET position={position}
                         WHERE ndb_no='{ndb_no}'
-                        AND type_position='{type_position}'
                         AND nutr_no='{nutr_no}'""".format(
                 ndb_no=ndb_no,
                 position=position,
-                nutr_no=nutr_no,
-                type_position=type_position)
+                nutr_no=nutr_no)
         else:
             query = """INSERT INTO ranking_food_detail 
-                        VALUES ('{ndb_no}', '{nutr_no}', {position}, '{type_position}')""".format(
+                        VALUES ('{ndb_no}', '{nutr_no}', {position})""".format(
             ndb_no=ndb_no, 
-            position=position, 
-            type_position=type_position,
+            position=position,
             nutr_no=nutr_no)
         cursor.execute(query)
         conn.commit()
 
-def calc_ranking_detail(rank, type_category):
+def calc_ranking_detail(rank):
     for ndb_no in rank.ranks:
         data = rank.get_values_food(ndb_no)
-        ranking_detail_by_type(ndb_no, data, type_category)
+        ranking_detail_by_type(ndb_no, data)
 
 def recalc_preprocessed_data():
-    print "Generate AVG"
-    calc_avg(force=True)
-    print "Generate Matrix"
-    matrix_food()
+    #print "Generate AVG"
+    #calc_avg(force=True)
+    #print "Generate Matrix"
+    #matrix_food()
     print "Generate Ranks"
     insert_update_db_ranking()
     print "Generate Ordered Matrix"

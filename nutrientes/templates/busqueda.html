@@ -12,93 +12,103 @@
 <body>
 <nav class="navbar navbar-inverse navbar-fixed-top">
   <div class="container">
-    <div class="navbar-header">
-      <a href="{% url 'index' %}" class="navbar-brand">Alimentos y sus Nutrientes <sup>beta</sup></a>
-    </div>
-    <div class="navbar-collapse collapse" id="navbar">
-        <ul class="nav navbar-nav">
-            <li class="dropdown">
-                <a id="drop1" class="dropdown-toggle" 
-                    aria-expanded="false" aria-haspopup="true" 
-                    role="button" data-toggle="dropdown" href="#">Acerca de
-                    <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu" aria-labelledby="drop3">
-                    <li><a href="{% url 'about' %}">Datos</a></li>
-                    <li><a href="{% url 'contact' %}">Contacto</a></li>
-                </ul>
-            </li>
-            <li class="dropdown">
-                <a id="drop1" class="dropdown-toggle" 
-                    aria-expanded="false" aria-haspopup="true" 
-                    role="button" data-toggle="dropdown" href="#">Recetas
-                    <span class="caret"></span>
-                </a>
-                <ul class="dropdown-menu" aria-labelledby="drop3">
-                    <li><a href="{% url 'recipes' %}">Recetas</a></li>
-                    <li><a href="{% url 'contact' %}">Menu para un día</a></li>
-                </ul>
-            </li>
-            {% if my_food_list %}
-            <li class="dropdown">
-                <a id="drop1" class="dropdown-toggle" 
-                    aria-expanded="false" aria-haspopup="true" 
-                    role="button" data-toggle="dropdown" href="#">
-                    Mi lista
-                    <span class="caret"></span>
-                </a>
+    <div class="navbar-header navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav">
+        <li class="dropdown">
+            <a id="drop1" class="navbar-brand dropdown-toggle" 
+                aria-expanded="false" aria-haspopup="true" 
+                role="button" data-toggle="dropdown" href="#">
+                Alimentos y sus Nutrientes <sup>beta</sup>
+            </a>
             <ul class="dropdown-menu" aria-labelledby="drop3">
-            <form action="{% url 'analyze_food' %}" method="POST">
-            {% csrf_token %}
-            <div style="max-height:400px;overflow:auto;">
-            {% for food_list_name, food_list in  my_food_list.items %}
-                <li><div class="my-list-margin">
-                    <input type="checkbox" value="{{ food_list_name }}" name="food_list">
-                    {{ food_list_name }} <span class="badge" style="font-size:70%">{{ food_list.score }}</span>
-                    </div>
-                </li>
-            {% endfor %}
-            <li><div style="padding-right: 10px; text-align:right;">
-                <button type="submit" class="btn btn-xs btn-primary">Analizar</button>
+                <li><a href="{% url 'index' %}">Inicio</a></li>
+                <li><a href="{% url 'nutrient_selection' %}">Nutrientes</a></li>
+                <li><a href="{% url 'ranking_list' %}">Ranking</a></li>
+            </ul>
+        </li>
+
+        <li class="dropdown">
+            <a id="drop2" class="dropdown-toggle" 
+                aria-expanded="false" aria-haspopup="true" 
+                role="button" data-toggle="dropdown" href="#">Acerca de
+                <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="drop3">
+                <li><a href="{% url 'about' %}">Datos</a></li>
+                <li><a href="{% url 'contact' %}">Contacto</a></li>
+            </ul>
+        </li>
+        <li class="dropdown">
+            <a id="drop3" class="dropdown-toggle" 
+                aria-expanded="false" aria-haspopup="true" 
+                role="button" data-toggle="dropdown" href="#">Recetas
+                <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="drop3">
+                <li><a href="{% url 'recipes' %}">Recetas</a></li>
+                <li><a href="{% url 'contact' %}">Menu para un día</a></li>
+            </ul>
+        </li>
+        {% if my_food_list %}
+        <li class="dropdown">
+            <a id="drop4" class="dropdown-toggle" 
+                aria-expanded="false" aria-haspopup="true" 
+                role="button" data-toggle="dropdown" href="#">
+                Mi lista
+                <span class="caret"></span>
+            </a>
+        <ul class="dropdown-menu" aria-labelledby="drop3">
+        <form action="{% url 'analyze_food' %}" method="POST">
+        {% csrf_token %}
+        <div style="max-height:400px;overflow:auto;">
+        {% for food_list_name, food_list in  my_food_list.items %}
+            <li><div class="my-list-margin">
+                <input type="checkbox" value="{{ food_list_name }}" name="food_list">
+                {{ food_list_name }} <span class="badge" style="font-size:70%">{{ food_list.score }}</span>
                 </div>
             </li>
+        {% endfor %}
+        <li><div style="padding-right: 10px; text-align:right;">
+            <button type="submit" class="btn btn-xs btn-primary">Analizar</button>
             </div>
-            </form>
-            </ul>
+        </li>
+        </div>
+        </form>
+        </ul>
+        </li>
+        {% endif %}
+        <li class="dropdown">
+            <a id="drop5" class="dropdown-toggle" 
+                aria-expanded="false" aria-haspopup="true" 
+                role="button" data-toggle="dropdown" href="#">
+                <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
+                <span class="caret"></span>
+            </a>
+        <ul class="dropdown-menu" aria-labelledby="drop3">
+            <li><div class="my-list-margin">{{ perfil.genero_txt }}</div></li>
+            <li><div class="my-list-margin">{{ perfil.edad }} 
+                {{ perfil.unidad_edad }}</div>
             </li>
-            {% endif %}
-            <li class="dropdown">
-                <a id="drop1" class="dropdown-toggle" 
-                    aria-expanded="false" aria-haspopup="true" 
-                    role="button" data-toggle="dropdown" href="#">
-                    <span class="glyphicon glyphicon-user" aria-hidden="true"></span>
-                    <span class="caret"></span>
-                </a>
-            <ul class="dropdown-menu" aria-labelledby="drop3">
-                <li><div class="my-list-margin">{{ perfil.genero_txt }}</div></li>
-                <li><div class="my-list-margin">{{ perfil.edad }} 
-                    {{ perfil.unidad_edad }}</div>
-                </li>
-                <li><div class="my-list-margin">Norma: {{ perfil.rnv_type_txt }}</div></li>
-                <li>
-                    <div class="my-list-margin">
-                    <a tabindex="0" class="btn btn-xs btn-primary" role="button" data-container="body" data-placement="right" href="{% url 'change_perfil' %}">Cambiar Perfil</a>
-                    </div>
-                </li>
-            </ul>
+            <li><div class="my-list-margin">Norma: {{ perfil.rnv_type_txt }}</div></li>
+            <li>
+                <div class="my-list-margin">
+                <a tabindex="0" class="btn btn-xs btn-primary" role="button" data-container="body" data-placement="right" href="{% url 'change_perfil' %}">Cambiar Perfil</a>
+                </div>
             </li>
         </ul>
-        <form id="search-form" class="navbar-form navbar-right form-inline" onsubmit="return verify_search_term();" name="search-form" action="{% url 'result_long_search' %}" method="post">
-            {% csrf_token %}
-            <div class="form-group">
-                <label class="form-control sr-only" for="exampleInputAmount">Busqueda</label>
-                <div class="input-group">
-                    <input name="text-input" id="text-input" type="text" style="width: 400px;" 
-                        class="form-control" placeholder="Busqueda">
-                    <div class="input-group-addon"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>
-                </div>
+        </li>
+    </ul>
+    <form id="search-form" class="navbar-form navbar-right form-inline" onsubmit="return verify_search_term();" name="search-form" action="{% url 'result_long_search' %}" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label class="form-control sr-only" for="exampleInputAmount">Busqueda</label>
+            <div class="input-group">
+                <input name="text-input" id="text-input" type="text" style="width: 400px;" 
+                    class="form-control" placeholder="Busqueda">
+                <div class="input-group-addon"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>
             </div>
-        </form>
+        </div>
+    </form>
     </div><!--/.navbar-collapse -->
   </div>
 </nav>

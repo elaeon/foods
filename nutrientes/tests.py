@@ -35,7 +35,7 @@ def nearest_neighbors():
         #print dist
         #print matrix.rows[4458]
 
-def top():
+def boost():
     import os
     import csv
     PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
@@ -47,22 +47,21 @@ def top():
             data_list.append({"ndb_no": row[0], "category": row[1]})
 
     order = OrderSimilarity(data_list)
-    order.get_top("19042", level=40)
+    print(order.get_top("19042", level=40))
     #order.get_top("15184")
 
 def top_perfil():
     #select long_desc,amount,msre_desc,gm_wgt from food_des,weight where food_des.ndb_no=weight.ndb_no and food_des.ndb_no='11529';
     import heapq
-    from nutrientes.utils import IntakeList, alimentos_category
+    from nutrientes.utils import Recipe, alimentos_category
     scores = []
+    intake_light_format = {
+        "perfil": {"edad": 35, "genero": "H", "unidad_edad": u"años", "rnv_type":1}}
     for ndb_no in Food.alimentos(limit="limit 9000"):
-        intake_light_format = {
-            "perfil": {"edad": 35, "genero": "H", "unidad_edad": u"años"}, 
-            "foods": {ndb_no: 100},
-            "score": 0}
-        intake_list = IntakeList.from_light_format(intake_light_format)
-        scores.append((intake_list.score()[0], intake_list.foods.values()[0].name))
-    print(heapq.nlargest(15, scores, key=lambda x: x[0]))
+        intake_light_format["foods"] = {ndb_no:100}
+        recipe = Recipe.from_light_format(intake_light_format)
+        scores.append((recipe.score, recipe.foods.values()[0].name))
+    print(heapq.nlargest(15, scores, key=lambda x: x))
 
 def test_recipes_list():
     from nutrientes.utils import recipes_list

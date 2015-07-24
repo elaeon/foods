@@ -128,7 +128,7 @@ def food(request, ndb_no):
     from nutrientes.utils import Food, ranking_nutr_detail, category_food_count
     food = Food(ndb_no)
     food_compare = request.session.get("food_compare", {})
-    tabla_nutr_rank = food.ranking_nutr_detail_base("global")
+    tabla_nutr_rank = food.ranking_nutr_detail_base()
     tabla_nutr_rank_f = []
     global_values = [("info", 500), ("success", 2000), ("warning", 5000)]
     for nutr, val, val_fmt in tabla_nutr_rank:

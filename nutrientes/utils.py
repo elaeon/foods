@@ -134,6 +134,7 @@ def get_omegas():
     return cursor.fetchall()
 
 def mark_caution_nutr(features):
+    caution_nutr = {nutr_no: weight for nutr_no, weight in weight_nutrs.items() if weight > 1}
     return [(nutr_no, nut, v, u, int(nutr_no in caution_nutr)) for nutr_no, nut, v, u in features]
 
 def category_food():
@@ -223,9 +224,9 @@ def get_many_food(ids):
 def best_of_query(nutr_no_list, category_food):
     _, cursor = conection()
     nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
-    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
+    nutr_avg = {nutr_no: (avg, caution) 
+        for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
     querys = []
-
     for nutr_no, (avg, caution) in nutr_avg.items():
         query = query_build(nutr_no, category_food)
         cursor.execute(query)
@@ -267,27 +268,64 @@ def ranking_nutr(category_food=None):
     return cursor.fetchall()
 
 
-def ranking_nutr_detail(ndb_no, type_position):
+def ranking_nutr_detail(ndb_no):
     _, cursor = conection()
     
-    if type_position is "global":
-        query = """SELECT nutr_def.nutr_no, nutr_def.nutrdesc, position
-                FROM nutr_def, ranking_food_detail
-                WHERE ranking_food_detail.ndb_no='{ndb_no}'
-                AND nutr_def.nutr_no=ranking_food_detail.nutr_no
-                AND type_position = 'global'
-                ORDER BY nutr_def.nutrdesc""".format(ndb_no=ndb_no)
-    else:
-        query = """SELECT nutr_def.nutr_no, nutr_def.nutrdesc, position
-                FROM nutr_def, ranking_food_detail
-                WHERE ranking_food_detail.ndb_no='{ndb_no}'
-                AND nutr_def.nutr_no=ranking_food_detail.nutr_no
-                AND type_position = 'category'
-                ORDER BY nutr_def.nutrdesc""".format(ndb_no=ndb_no)
+    query = """SELECT nutr_def.nutr_no, nutr_def.nutrdesc, position
+            FROM nutr_def, ranking_food_detail
+            WHERE ranking_food_detail.ndb_no='{ndb_no}'
+            AND nutr_def.nutr_no=ranking_food_detail.nutr_no
+            ORDER BY nutr_def.nutrdesc""".format(ndb_no=ndb_no)
 
     cursor.execute(query)
     return cursor.fetchall()
  
+weight_nutrs = {
+    "255": 1.0, #Water
+    "601": 10.0, #Cholesterol
+    "269": 8.0, #Sugars, total
+    "262": 10.5, #Caffeine
+    "307": 8.0, #Sodium, Na
+    "605": 9.6, #Fatty acids, total trans
+    "606": 9.5, #Fatty acids, total saturated
+    "693": 8.0, #Fatty acids, total trans-monoenoic
+    "695": 8.0, #Fatty acids, total trans-polyenoic
+    "607": 8.5, #4:0
+    "609": 8.5, #8:0
+    "608": 8.5, #6:0
+    "204": 1.1, #Total lipid (fat)
+    "omega3": 0.05,
+    "205": 1.5, #Carbohydrate, by difference
+    "211": 5.0, #Glucose (dextrose)
+    "212": 6.0, #Fructose
+    "210": 5.0, #Sucrose
+    "203": .5,  #Protein
+    "209": 3.0, #Starch
+    "431": .5,  #Folic acid
+    "213": 4.0, #Lactose
+    "287": 4.0, #Galactose
+    "214": 3.0, #Maltose
+    "207": 1.1, #Ash
+    "291": .5,  #Fiber, total dietary
+    "313": .9, #Fluoride, F
+    "309": .9, #Zinc
+    "430": .9, #Vitamin K
+    "323": .9, #Vitamin E
+    "401": .8, #Vitamin C
+    "415": .9, #Vitamin B6
+    "418": .9, #Vitamin B12
+    "320": .9, #Vitamin A
+    "305": .8, #Phosphorus,
+    "410": .8, #Pantothenic
+    "406": .8, #Niacin
+    "304": .8, #Magnesium,
+    "306": .8, #Potassium,
+    "317": .8, #Selenium,
+    "435": .8, #Folate,
+    "421": .8, #Choline,
+    "315": .8, #Manganese,
+    "omega6": 1.8
+}
 
 class Rank(object):
     def __init__(self, base_food_querys, weights=True):
@@ -298,53 +336,7 @@ class Rank(object):
         self.category_nutr = self.get_categories_nutr()
         self.ranks = None
         self.results = None
-        if weights:
-            self.weight_nutrs = {
-                "255": 10.0, #Water
-                "601": 10.0, #Cholesterol
-                "269": 8.0, #Sugars, total
-                "262": 10.5, #Caffeine
-                "307": 7.5, #Sodium, Na
-                "605": 9.6, #Fatty acids, total trans
-                "606": 9.5, #Fatty acids, total saturated
-                "607": 8.5, #4:0
-                "609": 8.5, #8:0
-                "608": 8.5, #6:0
-                "204": 1.1, #Total lipid (fat)
-                "omega3": 0.05,
-                "205": 1.5, #Carbohydrate, by difference
-                "211": 5.0, #Glucose (dextrose)
-                "212": 6.0, #Fructose
-                "210": 5.0, #Sucrose
-                "203": .5,  #Protein
-                "209": 3.0, #Starch
-                "431": .5,  #Folic acid
-                "213": 4.0, #Lactose
-                "287": 4.0, #Galactose
-                "214": 3.0, #Maltose
-                "207": 1.1, #Ash
-                "291": .5,  #Fiber, total dietary
-                "313": .9, #Fluoride, F
-                "309": .9, #Zinc
-                "430": .9, #Vitamin K
-                "323": .9, #Vitamin E
-                "401": .8, #Vitamin C
-                "415": .9, #Vitamin B6
-                "418": .9, #Vitamin B12
-                "320": .9, #Vitamin A
-                "305": .8, #Phosphorus,
-                "410": .8, #Pantothenic
-                "406": .8, #Niacin
-                "304": .8, #Magnesium,
-                "306": .8, #Potassium,
-                "317": .8, #Selenium,
-                "435": .8, #Folate,
-                "421": .8, #Choline,
-                "315": .8, #Manganese,
-                "omega6": 1.8
-            }
-        else:
-            self.weight_nutrs = {}
+        self.weight_nutrs = weight_nutrs if weights else {}
 
     def get_categories_nutr(self):
         category_nutr = {}
@@ -474,11 +466,11 @@ def best_of_general_2(category=None, name=None):
             total[ndb_no] = {}
 
         if 0 < radio <= 4:
-            total[ndb_no]["radio"] = -normal(float(radio-1), 0, 0.3993)
+            total[ndb_no]["radio"] = -normal(float(radio - 1), 0, 0.3993)
         elif radio == 0:
-            total[ndb_no]["radio"] = 6533/150.
+            total[ndb_no]["radio"] = 1
         else:
-            total[ndb_no]["radio"] = float(radio)
+            total[ndb_no]["radio"] = 1 + (float(radio) / 8618.)
     
     results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", "")) 
         for ndb_no, v in total.items()]
@@ -490,27 +482,6 @@ def normal(x, u, s):
     import math
     return math.exp(-((x-u)**2)/(2*(s**2)))/(s*((2*math.pi)**.5))
 
-
-caution_nutr = {
-    "601": "Cholesterol",
-    "204": "Total lipid (fat)",
-    "205": "Carbohydrate, by difference",
-    "269": "Sugars, total",
-    "262": "Caffeine",
-    "605": "Fatty acids, total trans",
-    "693": "Fatty acids, total trans-monoenoic",
-    "695": "Fatty acids, total trans-polyenoic",
-    "606": "Fatty acids, total saturated",
-    "307": "Sodium, Na",
-    "208": "Energy",
-    "209": "Starch",
-    "607": "4:0",
-    "609": "8:0",
-    "608": "6:0",
-    #"313": "Fluoride, F",
-    "212": "Fructose",
-    "211": "Glucose (dextrose)",
-}
 
 exclude_nutr = {
     "268": "Energy",
@@ -779,8 +750,8 @@ class Food(object):
             "good": good,
             "bad": bad}
 
-    def ranking_nutr_detail_base(self, type_category):
-        tabla_nutr_rank = ranking_nutr_detail(self.ndb_no, type_category)
+    def ranking_nutr_detail_base(self):
+        tabla_nutr_rank = ranking_nutr_detail(self.ndb_no)
         nutr_base = set([nutr_no for nutr_no, _, _, _ in self.nutrients])
         tabla_nutr_rank = [(desc, position, "{0:04d}".format(position)) 
                 for nutr, desc , position in tabla_nutr_rank if nutr in nutr_base]
