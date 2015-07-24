@@ -362,7 +362,7 @@ class Rank(object):
             data[nutr_no].sort(reverse=reverse, key=lambda x: x[2])
         return data
     
-    def sorted_data(self, category_nutr):
+    def sorted_data(self, category_nutr, limit):
         positions = {}
         for nutr_no in category_nutr.keys():
             weight = self.weight_nutrs.get(nutr_no, 1)
@@ -376,7 +376,10 @@ class Rank(object):
                 positions[v[0]]["val"].append(
                     (v[2], diff_avg, self.category_nutr[nutr_no]["units"]))
                 self.set_rank(v[0], nutr_no, i)
-        return sorted(positions.values(), key=lambda x: x["i"])
+        if limit is None:
+            return sorted(positions.values(), key=lambda x: x["i"])
+        else:
+            return sorted(positions.values(), key=lambda x: x["i"])[:limit]
 
     def set_rank(self, ndb_no, nutr_no, position):
         if self.ranks is None:
@@ -400,8 +403,8 @@ class Rank(object):
                 index += 1
             yield index, d
     
-    def order(self):
-        return self.rank2natural(self.sorted_data(self.ids2data_sorted()), f_index=lambda x: x["i"])
+    def order(self, limit=None):
+        return self.rank2natural(self.sorted_data(self.ids2data_sorted(), limit=limit), f_index=lambda x: x["i"])
     
 
 def query_build(nutr_no, category_food, name=None, order_by=None):
@@ -1275,6 +1278,10 @@ class MenuRecipe(object):
             intake_recipes.append(Recipe.from_light_format(light_format, perfil_intake=perfil_intake))
         return intake_recipes
 
+    def best(self):
+        rank = best_of_query([nutr_no for nutr_no, nutrdesc, score in self.resume_intake()], None)
+        return rank.order(limit=5)
+
     def score(self):
         return self.merged_recipes.score
 
@@ -1357,7 +1364,7 @@ class Recipe(object):
             nutr_score = nutr_intake.score(resumen)
             total_nutr_scorer += nutr_score
             if len(resumen) > 0:
-                resume_intake.append((nutr_intake.nutrdesc, nutr_score))
+                resume_intake.append((nutr_intake.nutr_no, nutr_intake.nutrdesc, nutr_score))
         score = round(total_nutr_scorer / len(self.perfil_intake), 2)
         return score, resume_intake
 
