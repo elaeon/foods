@@ -388,7 +388,7 @@ def analyze_menu(request, intake_params):
         recipes_txt = request.POST.get("menu-recipes", "")
         recipes_ids = recipes_txt.split(",")
         menu_recipe = MenuRecipe(recipes_ids, intake_params)
-        recipes = [{"weight": recipe.weight, "recipe": recipe_id, "name": recipe.name}
+        recipes = [{"weight": recipe.calc_weight(), "recipe": recipe_id, "name": recipe.name}
                         for recipe, recipe_id in zip(menu_recipe.recipes, recipes_ids)]
         formset = MenuRecipeFormSet(initial=recipes)
         return render(request, "analyze_menu.html", {

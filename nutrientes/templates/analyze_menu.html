@@ -21,8 +21,9 @@
 </table>
 </form>
 
-<br>
-<!--<div id="barContainer"></div>-->
+<h3>Resumen de nutrientes.</h3>
+<p>Los números negativos indican un consumo excesivo del nutriente.</p>
+<div id="barContainer"></div>
 
 <div class="panel panel-default">
 <div class="panel-heading list-group-item">
@@ -44,41 +45,19 @@
 <table class="table table-striped table-hover table-condensed">
 <thead style="font-size: 90%">
 <th>Nutriente</th>
-<th>Porcentaje</th>
+<th></th>
 </thead>
 <tbody>
-{% for porcentaje, nutrdesc in menu.merged_recipes.principals_nutrients %}
+{% for porcentaje, nutrdesc in menu.merged_recipes.principals_nutrients_percentage %}
 <tr>
 <td>{{ nutrdesc }}</td>
-<td>{{ porcentaje }}</td>
+<td>{{ porcentaje }}%</td>
 </tr>
 {% endfor %}
 </tbody>
 </table>
 </div>
 </div>
-
-<h3>Resumen de nutrientes que debes de checar.</h3>
-<table class="table table-striped table-hover table-condensed">
-<thead style="font-size: 90%">
-<th>Nutriente</th>
-<th>Porcentaje cubierto</th>
-</thead>
-<tbody>
-{% for _, nutr, score in menu.resume_intake %}
-<tr>
-{% if score < 50 %}
-<td><span style="color: #a00;">{{ nutr }}</span></td>
-{% else %}
-<td>{{ nutr }}</td>
-{% endif %}
-<td>{{ score }}</td>
-<td>
-</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
 
 <h3>Recomendaciones</h3>
 <ol>
@@ -95,16 +74,24 @@
 <script type="text/javascript" src="{% static 'd3.js' %}"></script>
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
 <script type="text/javascript">
-var principals = [];
 
-var svg = dimple.newSvg("#barContainer", 1100, 210);
-var barChart = new dimple.chart(svg, principals);
-barChart.setBounds(10, 30, 950, 130)
-barChart.addPctAxis("x", "porcentaje");
-barChart.addCategoryAxis("y", "tipo");
-var barSeries = barChart.addSeries("nombre", dimple.plot.bar);
-barSeries.stacked = true;
-barChart.addLegend(10, 10, 1100, 30, "right");
+var nutrients = [];
+{% for _, nutrdesc, value in menu.resume_intake %}
+nutrients.push({nutriente: '{{ nutrdesc }}', porcentaje: {{ value }}, suficiente: {% if value < 100 %}0{% else %}1{% endif %}})
+{% endfor %}
+
+var svg = dimple.newSvg("#barContainer", 1100, 450);
+var barChart = new dimple.chart(svg, nutrients);
+barChart.setBounds(60, 50, 750, 200);
+var x = barChart.addCategoryAxis("x", "nutriente");
+x.showGridlines = true;
+var y = barChart.addMeasureAxis("y", "porcentaje");
+y.showGridlines = false;
+var l = barChart.addSeries("suficiente", dimple.plot.bar);
+x.addOrderRule("nutriente");
 barChart.draw();
+x.titleShape.text("Nutriente");
+y.tickFormat = ',.2f';
+</script>
 </script>
 {% endblock %}

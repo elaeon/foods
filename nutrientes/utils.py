@@ -1245,11 +1245,11 @@ def recipes_list(number, perfil):
 
 class MenuRecipe(object):
     def __init__(self, recipes_ids, perfil):
-        self.recipes = self.ids2recipes(recipes_ids, perfil)
+        self.recipes = self.ids2recipes(recipes_ids, perfil, data=False)
         self.merged_recipes = Recipe.merge(*self.recipes)
 
     @classmethod
-    def ids2recipes(self, recipes_ids, perfil):
+    def ids2recipes(self, recipes_ids, perfil, data=True):
         from collections import defaultdict
         _, cursor = conection()
         ids = ["%s" for e in recipes_ids]
@@ -1275,7 +1275,7 @@ class MenuRecipe(object):
                 "foods": foods,
                 "name": name   
             }
-            intake_recipes.append(Recipe.from_light_format(light_format, perfil_intake=perfil_intake))
+            intake_recipes.append(Recipe.from_light_format(light_format, perfil_intake=perfil_intake, data=data))
         return intake_recipes
 
     def best(self):
@@ -1285,8 +1285,14 @@ class MenuRecipe(object):
     def score(self):
         return self.merged_recipes.score
 
+    def insuficient_intake(self):
+        return self.merged_recipes.insuficient_intake
+
+    def suficient_intake(self):
+        return self.merged_recipes.suficient_intake
+
     def resume_intake(self):
-        return self.merged_recipes.resume_intake
+        return self.insuficient_intake() + self.suficient_intake()
 
     def energy(self):
         return self.merged_recipes.energy()
@@ -1314,7 +1320,8 @@ class Recipe(object):
         self.total_nutr_names = None
         self.name = name
         self.score = None
-        self.resume_intake = None
+        self.insuficient_intake = None
+        self.suficient_intake = None
 
     def energy(self):
         return self.total_nutr_names.get("Energy", 0)
@@ -1357,16 +1364,19 @@ class Recipe(object):
         self.calc_radio_omega()
 
     def score_resume(self):
-        resume_intake = []
-        total_nutr_scorer = 0
+        insuficient_intake = []
+        suficient_intake = []
+        total_nutr_score = 0
         for nutrdesc, nutr_intake in self.perfil_intake.items():
             resumen = nutr_intake.resumen(self.total_nutr_names.get(nutrdesc, [0])[0])
             nutr_score = nutr_intake.score(resumen)
-            total_nutr_scorer += nutr_score
+            total_nutr_score += nutr_score
             if len(resumen) > 0:
-                resume_intake.append((nutr_intake.nutr_no, nutr_intake.nutrdesc, nutr_score))
-        score = round(total_nutr_scorer / len(self.perfil_intake), 2)
-        return score, resume_intake
+                insuficient_intake.append((nutr_intake.nutr_no, nutr_intake.nutrdesc, nutr_score))
+            else:
+                suficient_intake.append((nutr_intake.nutr_no, nutr_intake.nutrdesc, nutr_score))
+        score = round(total_nutr_score / len(self.perfil_intake), 2)
+        return score, insuficient_intake, suficient_intake
 
     def score_by_nutr(self):
         resume_intake = []
@@ -1378,26 +1388,41 @@ class Recipe(object):
         
     def calc_score(self):
         if self.score is None:
-            self.score, self.resume_intake = self.score_resume()
+            self.score, self.insuficient_intake, self.suficient_intake = self.score_resume()
         return self.score
 
-    def calc_resume_intake(self):
-        if self.resume_intake is None:
-            self.score, self.resume_intake = self.score_resume()
-        return self.resume_intake
+    def calc_insuficient_intake(self):
+        if self.insuficient_intake is None:
+            self.score, self.insuficient_intake, self.suficient_intake = self.score_resume()
+        return self.insuficient_intake
 
-    def principals_nutrients(self):
+    def principals_nutrients(self, percentage=False):
         units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
         totals = []
         for nutrdesc, (total, units) in self.total_nutr_names.items():
             val = units_scale.get(units, 0)
             if val != 0:
-                totals.append((nutrdesc, float(total / val)))
+                totals.append((float(total / val), nutrdesc))
 
-        principals = sorted(totals, reverse=True, key=lambda x:x[1])
-        return [(elem[1], elem[0]) for elem in principals[:9]] +\
-            [(sum([elem[1] for elem in principals[9:]]), "otros")]
+        totals.sort(reverse=True, key=lambda x:x[0])
+        otros_total = (sum([v for v, _ in totals[9:]]), "otros")
+        base = totals[:9]
+        def bisect(a, x):
+            for i, elem in enumerate(a):
+                if elem[0] < x[0]:
+                    return i
+            else:
+                return len(a) - 1
+        index = bisect(base, otros_total)
+        base[index:index] = [otros_total]
+        if percentage:
+            maximum = sum([v for v, _ in base])
+            return [(int(round(e[0]*100/maximum, 0)), e[1]) for e in base]
+        else:
+            return base
 
+    def principals_nutrients_percentage(self):
+        return self.principals_nutrients(percentage=True)
 
     def perfil_intake(self):
         return intake(
@@ -1436,7 +1461,7 @@ class Recipe(object):
         conn.commit()
 
     @classmethod
-    def from_light_format(self, intake_light_format, perfil_intake=None):
+    def from_light_format(self, intake_light_format, perfil_intake=None, data=True):
         perfil = intake_light_format["perfil"]
         foods = intake_light_format["foods"]
         intake_list = Recipe(
@@ -1448,7 +1473,8 @@ class Recipe(object):
             name=intake_light_format.get("name", None))
         intake_list.foods = {ndb_no: Food(ndb_no, weight=weight, avg=False)
             for ndb_no, weight in foods.items()}
-        intake_list.total_nutr_data()
+        if data:
+            intake_list.total_nutr_data()
         return intake_list
 
     @classmethod
