@@ -1279,7 +1279,7 @@ class MenuRecipe(object):
         return intake_recipes
 
     def best(self):
-        rank = best_of_query([nutr_no for nutr_no, nutrdesc, score in self.resume_intake()], None)
+        rank = best_of_query([nutr_no for nutr_no, _, _ in self.insuficient_intake()], None)
         return rank.order(limit=5)
 
     def score(self):
@@ -1292,7 +1292,7 @@ class MenuRecipe(object):
         return self.merged_recipes.suficient_intake
 
     def resume_intake(self):
-        return self.insuficient_intake() + self.suficient_intake()
+        return self.merged_recipes.resume_intake()
 
     def energy(self):
         return self.merged_recipes.energy()
@@ -1423,6 +1423,14 @@ class Recipe(object):
 
     def principals_nutrients_percentage(self):
         return self.principals_nutrients(percentage=True)
+
+    def resume_intake(self):
+        return self.insuficient_intake + self.suficient_intake
+
+    def resume_intake_raw(self):
+        for nutrdesc, nutr_intake in self.perfil_intake.items():
+            value, units = self.total_nutr_names.get(nutrdesc, [0, 'g'])
+            yield (nutrdesc, value, units)
 
     def perfil_intake(self):
         return intake(

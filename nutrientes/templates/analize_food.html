@@ -51,10 +51,6 @@
 </form>
 
 <br>
-<div id="chartContainer"></div>
-<p>Principales nutrientes</p>
-<div id="barContainer"></div>
-
 <div class="panel panel-default">
 <div class="panel-heading list-group-item">
     <span class="badge">{{ recipe.score }}</span>
@@ -67,25 +63,33 @@
 </div>
 </div>
 
-<h3>Resumen de nutrientes que debes de checar.</h3>
+<div id="chartContainer"></div>
+
+<h3>Resumen de nutrientes.</h3>
+<p>Los números negativos indican un consumo excesivo del nutriente.</p>
+<div id="barContainer"></div>
+
+<div class="panel panel-default">
+<div class="panel-heading list-group-item">
+<p class="panel-title">Principales nutrientes</p>
+</div>
+<div class="panel-body">
 <table class="table table-striped table-hover table-condensed">
 <thead style="font-size: 90%">
 <th>Nutriente</th>
-<th>Porcentaje cubierto</th>
+<th>Porcentaje de la masa del producto</th>
 </thead>
 <tbody>
-{% for _, nutr, score in recipe.resume_intake %}
+{% for porcentaje, nutrdesc in recipe.principals_nutrients_percentage %}
 <tr>
-{% if score < 20 %}
-<td><span style="color: #a00;">{{ nutr }}</span></td>
-{% else %}
-<td>{{ nutr }}</td>
-{% endif %}
-<td>{{ score }}</td>
-{% endfor %}
+<td>{{ nutrdesc }}</td>
+<td>{{ porcentaje }}%</td>
 </tr>
+{% endfor %}
 </tbody>
 </table>
+</div>
+</div>
 
 <br>
 <p>Los valores de referencia para el consumo diario de nutrientes fueron sacados de:
@@ -124,8 +128,8 @@ function share_recipe() {
 
 
 var data = [];
-{% for nutrient, value in recipe.total_nutr_names.items %}
-    data.push({nombre: '{{ nutrient }}', valor: {{ value.0 }}, tipo: "total alimento", unit: '{{ value.1 }}'})
+{% for nutrient, value, units in recipe.resume_intake_raw %}
+    data.push({nombre: '{{ nutrient }}', valor: {{ value }}, tipo: "total alimento", unit: '{{ units }}'})
 {% endfor %}
 
 var intake = [];
@@ -135,20 +139,19 @@ var intake = [];
     {% endfor %}
 {% endfor %}
 
-var principals = [];
-
-{% for porcentaje, nutrdesc in recipe.principals_nutrients %}
-principals.push({nombre: '{{ nutrdesc }}', porcentaje: {{ porcentaje }}, tipo: "principales"});
+var nutrients = [];
+{% for _, nutrdesc, value in recipe.resume_intake %}
+nutrients.push({nutriente: '{{ nutrdesc }}', porcentaje: {{ value }}, suficiente: {% if value < 100 %}0{% else %}1{% endif %}})
 {% endfor %}
 
-var svg = dimple.newSvg("#chartContainer", 1100, 600);
+var svg = dimple.newSvg("#chartContainer", 1100, 450);
 var myChart = new dimple.chart(svg);
 myChart.assignColor("Recomendada", "#0066ff", null, .5);
 myChart.assignColor("Máxima ingesta tolerable", "#aa0000", null, .7);
 myChart.assignColor("total alimento", "#009900", null, .3);
 myChart.assignColor("Ingesta adecuada", "#aa66ff", null, .7);
 
-myChart.setBounds(60, 30, 950, 305);
+myChart.setBounds(60, 30, 950, 200);
 var x = myChart.addCategoryAxis("x", "nombre");
 x.showGridlines = true;
 var y = myChart.addMeasureAxis("y", "valor");
@@ -168,15 +171,20 @@ myChart.draw();
 x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';
 
-var svg = dimple.newSvg("#barContainer", 1100, 210);
-var barChart = new dimple.chart(svg, principals);
-barChart.setBounds(10, 30, 950, 130)
-barChart.addPctAxis("x", "porcentaje");
-barChart.addCategoryAxis("y", "tipo");
-var barSeries = barChart.addSeries("nombre", dimple.plot.bar);
-barSeries.stacked = true;
-barChart.addLegend(10, 10, 1100, 30, "right");
+var svg = dimple.newSvg("#barContainer", 1100, 450);
+var barChart = new dimple.chart(svg, nutrients);
+barChart.assignColor("0", "#aa0000", null, .5);
+barChart.assignColor("1", "#00aacc", null, .5);
+barChart.setBounds(60, 50, 950, 200);
+var x = barChart.addCategoryAxis("x", "nutriente");
+x.showGridlines = true;
+var y = barChart.addMeasureAxis("y", "porcentaje");
+y.showGridlines = false;
+var l = barChart.addSeries("suficiente", dimple.plot.bar);
+x.addOrderRule("nutriente");
 barChart.draw();
+x.titleShape.text("Nutriente");
+y.tickFormat = ',.2f';
 
 $(function()
 {
