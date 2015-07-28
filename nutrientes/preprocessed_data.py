@@ -98,12 +98,12 @@ def calc_avg(force=False):
 
 def insert_update_db_ranking():
     from nutrientes.utils import categories_foods
-    data = ranking_global()
-    ranking_by_type(data, "global")
+    #data = ranking_global()
+    #ranking_by_type(data, "global")
 
-    #for group, _ in categories_foods():
-    #    data = ranking_category(group)
-    #    ranking_by_type(data, "category")
+    for group, _ in categories_foods():
+        data = ranking_category(group)
+        ranking_by_type(data, "category")
 
 
 def ranking_detail_by_type(ndb_no, data):
@@ -142,11 +142,11 @@ def calc_ranking_detail(rank):
         ranking_detail_by_type(ndb_no, data)
 
 def recalc_preprocessed_data():
-    #print "Generate AVG"
-    #calc_avg(force=True)
-    #print "Generate Matrix"
-    #matrix_food()
-    #print "Generate Ranks"
-    #insert_update_db_ranking()
+    print "Generate AVG"
+    calc_avg(force=True)
+    print "Generate Matrix"
+    matrix_food()
+    print "Generate Ranks"
+    insert_update_db_ranking()
     print "Generate Ordered Matrix"
     ordered_matrix()

@@ -4,7 +4,12 @@
 {% block contenido_base %}
 <div class="container">
 <div class="starter-template">
-<div class="row">
+<h3>Descripción</h3>
+<p>
+El perfil es el conjunto de datos de referencia, que sirve para obtener el valor de una dieta con los nutrientes escenciales.
+</p>
+<br>
+<div class="row" style="padding-left:10px;">
 <form action="{% url 'change_perfil' %}" method="POST" id="intake_form">
 {% csrf_token %}
 <table>
@@ -24,7 +29,24 @@
 </td>
 </tr>
 </table>
+</form>
 
+<h3>Nutrientes escenciales</h3>
+<table class="table table-striped table-hover table-condensed">
+<thead>
+{% for _, norma in normas %}
+<th>{{ norma }}</th>
+{% endfor %}
+</thead>
+{% for normas in nutrs_intake %}
+<tr>
+{% for norma_nutr in normas %}
+<td>{{ norma_nutr }}</td>
+{% endfor %}
+</tr>
+{% endfor %}
+<tbody>
+</table>
 </div>
 </div>
 {% endblock %}

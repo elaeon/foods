@@ -422,14 +422,40 @@ def share_recipe(request):
 @perfil
 def change_perfil(request, intake_params):
     from nutrientes.forms import PerfilIntakeForm
+    from nutrientes.utils import intake, RNV_TYPE
 
     if request.method == "POST":
         intake_form = PerfilIntakeForm(request.POST)
         if intake_form.is_valid():
             request.session["intake_perfil"] = intake_form.export_perfil()
+            intake_params = intake_form.export_perfil()
     else:
         intake_form = PerfilIntakeForm(initial=intake_params)
-    return render(request, "change_perfil.html", {"intake_form": intake_form})
+
+    nutrs_intake_usacan = intake(
+        intake_params["edad"], 
+        intake_params["genero"], 
+        intake_params["unidad_edad"], 
+        1)
+
+    nutrs_intake_mx = intake(
+        intake_params["edad"], 
+        intake_params["genero"], 
+        intake_params["unidad_edad"], 
+        2)
+
+    nutrs = {}
+    for nutrdesc in nutrs_intake_usacan:
+        nutrs[nutrdesc] = [nutrdesc, "X"]
+
+    for nutrdesc in nutrs_intake_mx:
+        nutrs.setdefault(nutrdesc, ["X", nutrdesc])
+        nutrs[nutrdesc][1] = nutrdesc
+
+    return render(request, "change_perfil.html", {
+        "intake_form": intake_form, 
+        "nutrs_intake": sorted(nutrs.values(), key=lambda x: x[0] if x[0] != "X" else x[1]),
+        "normas": RNV_TYPE.items()})
 
 
 @perfil

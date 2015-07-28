@@ -1,0 +1,15 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div class="container">
+    <div class="starter-template">
+    <p>Estos son los nutrientes más dificiles de obtener para satisfacer tu <a href="{% url 'change_perfil' %}">perfil</a>.</p>
+    <ol>
+    {% for nutr_no, nutrdesc, _ in data %}
+    <li><a href="{% url 'best_of_nutrients' %}?nutr_no={{ nutr_no }}">{{ nutrdesc }}</a></li>
+    {% endfor %}
+    </ol>
+    </div>
+</div>
+{% endblock %}
