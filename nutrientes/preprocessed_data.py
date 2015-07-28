@@ -25,8 +25,9 @@ def ordered_matrix():
 def ranking_global():
     from nutrientes.utils import Rank
     rank = best_of_general_2()
+    print("Ranking calculated")
     ranking_list = rank.results
-    calc_ranking_detail(rank)
+    #calc_ranking_detail(rank)
     global_ = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_list, f_index=lambda x: x[0])}
     return global_
 
@@ -57,7 +58,10 @@ def calc_radio_omega_all():
 
 def ranking_by_type(data, type_position):
     conn, cursor = conection()
+    i = 0
     for ndb_no, position in data.items():
+        print(i)
+        i += 1
         query = """ SELECT COUNT(*) 
                     FROM ranking 
                     WHERE ndb_no='{ndb_no}'
@@ -97,14 +101,17 @@ def insert_update_db_ranking():
     data = ranking_global()
     ranking_by_type(data, "global")
 
-    for group, _ in categories_foods():
-        data = ranking_category(group)
-        ranking_by_type(data, "category")
+    #for group, _ in categories_foods():
+    #    data = ranking_category(group)
+    #    ranking_by_type(data, "category")
 
 
 def ranking_detail_by_type(ndb_no, data):
     conn, cursor = conection()
+    i = 0
     for nutr_no, position in data.items():
+        print(i)
+        i += 1
         query = """ SELECT COUNT(*) 
                     FROM ranking_food_detail
                     WHERE ndb_no='{ndb_no}'
@@ -139,7 +146,7 @@ def recalc_preprocessed_data():
     #calc_avg(force=True)
     #print "Generate Matrix"
     #matrix_food()
-    print "Generate Ranks"
-    insert_update_db_ranking()
+    #print "Generate Ranks"
+    #insert_update_db_ranking()
     print "Generate Ordered Matrix"
     ordered_matrix()

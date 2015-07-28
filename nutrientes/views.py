@@ -325,7 +325,13 @@ def best_of_nutrients(request):
         except IndexError:
             categoria = ""
     else:
-        return redirect("index")
+        if "nutr_no" in request.GET:
+            nutr_no = request.GET["nutr_no"]
+            rank = best_of_query([nutr_no], None)
+            nutrs = nutr_features_ids(rank.category_nutr.keys())
+            categoria = ""
+        else:
+            return redirect("index")
     return render(request, "food_attr_check.html", {
         "foods": rank.order(),
         "categoria": categoria, 
@@ -412,6 +418,7 @@ def share_recipe(request):
             result = "ok"
         return HttpResponse(json.dumps({"result": result}), content_type='text/json')
 
+
 @perfil
 def change_perfil(request, intake_params):
     from nutrientes.forms import PerfilIntakeForm
@@ -423,3 +430,10 @@ def change_perfil(request, intake_params):
     else:
         intake_form = PerfilIntakeForm(initial=intake_params)
     return render(request, "change_perfil.html", {"intake_form": intake_form})
+
+
+@perfil
+def complex_intake_nutrients(request, intake_params):
+    from nutrientes.utils import lower_essencial_nutrients
+    data = lower_essencial_nutrients(intake_params)
+    return render(request, "complex_intake_nutrients.html", {"data": data})

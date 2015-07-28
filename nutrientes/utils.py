@@ -473,7 +473,7 @@ def best_of_general_2(category=None, name=None):
         elif radio == 0:
             total[ndb_no]["radio"] = 1
         else:
-            total[ndb_no]["radio"] = 1 + (float(radio) / 8618.)
+            total[ndb_no]["radio"] = (float(radio)*70 / 8618.)
     
     results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", "")) 
         for ndb_no, v in total.items()]
@@ -808,6 +808,9 @@ def create_order_matrix():
     rank = Rank(querys, weights=True)
     order = [food["attr"][0] for _, food in rank.order()]
     return order
+
+def read_avg():
+    return Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
 
 def principal_nutrients(category=None):
     _, cursor = conection()
@@ -1155,6 +1158,17 @@ class NutrIntake(object):
         return [(self.nutrdesc, value, self.units, self.labels[label])
                 for label, value in self.values.items() if value != None]
 
+    def get_value(self):
+        AI = self.values.get("AI", None)
+        RDA = self.values.get("RDA", None)
+        UL = self.values.get("UL", None)
+        if AI is not None:
+            return AI
+        elif RDA is not None:
+            return RDA
+        elif UL is not None:
+            return UL
+            
     def resumen(self, other_value):
         data = {}
         for label, ref_value in self.values.items():
@@ -1509,3 +1523,20 @@ class Recipe(object):
             return intake_total
         else:
             return intake_list_list[0]
+
+def lower_essencial_nutrients(perfil):
+    nutr_avg = read_avg()
+    edad = perfil["edad"]
+    genero = perfil["genero"]
+    unidad_edad = perfil["unidad_edad"]
+    rnv_type = perfil["rnv_type"] 
+    nutrs_intake = intake(edad, genero, unidad_edad, rnv_type)
+    values = []
+    for nutr_no, nutrdesc, avg_val, _ in nutr_avg:
+        try:
+            if nutrs_intake[nutrdesc].nutr_no == nutr_no:
+                ref_value = nutrs_intake[nutrdesc].get_value()
+                values.append((nutr_no, nutrdesc, avg_val * 100 / ref_value))
+        except KeyError:
+            pass
+    return sorted(values, key=lambda x:x[2])
