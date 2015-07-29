@@ -69,29 +69,12 @@ def test_recipes_list():
     print(recipes)
 
 
-def check_perfils_nutrients():
-    from nutrientes.utils import lower_essencial_nutrients
-    rnv_type = 1
-    perfils = [{"edad": 0, "genero": "H", "unidad_edad": u"meses", "rnv_type": rnv_type},
-        {"edad": 12, "genero": "H", "unidad_edad": u"meses", "rnv_type": rnv_type},
-        {"edad": 1, "genero": "H", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 4, "genero": "H", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 9, "genero": "H", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 14, "genero": "H", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 19, "genero": "H", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 31, "genero": "H", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 51, "genero": "H", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 71, "genero": "H", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 0, "genero": "M", "unidad_edad": u"meses", "rnv_type": rnv_type},
-        {"edad": 12, "genero": "M", "unidad_edad": u"meses", "rnv_type": rnv_type},
-        {"edad": 1, "genero": "M", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 4, "genero": "M", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 9, "genero": "M", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 14, "genero": "M", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 19, "genero": "M", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 31, "genero": "M", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 51, "genero": "M", "unidad_edad": u"años", "rnv_type": rnv_type},
-        {"edad": 71, "genero": "M", "unidad_edad": u"años", "rnv_type": rnv_type}]
-    for perfil in perfils:
-        data = "-".join([nutr_no for nutr_no, _, _ in lower_basic_nutrients(perfil)])
-        print data
+def test_back():
+    from itertools import combinations_with_replacement
+    rows = [['a', [0.5, 0.3, 0.4]], ['b', [0.4, 0.1, 0.8]], ['c', [0.1, 0.3, 0.4]], ['d', [0.4, 0.1, 0.9]]]
+    base = [10.8, 11.2, 11.6]
+    for i in range(2, 10):
+        for row in combinations_with_replacement(rows, i):
+            total = [sum(ab) for ab in zip(*[elem[1] for elem in row])]
+            if all([t >= b for t, b in zip(total, base)]):
+                print row

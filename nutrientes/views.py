@@ -259,11 +259,11 @@ def analyze_food(request, intake_params):
             for recipe in recipes:
                 foods += [{"food": food, "weight": food.weight, "ndb_no": food.ndb_no}
                             for food in recipe.foods.values()]
-                intake_list_list.append(recipe)
+            intake_list_list = recipes
 
     intake_form = PerfilIntakeForm(initial=intake_params)
     formset = WeightFormSet(initial=foods)
-    recipe = Recipe.merge(*intake_list_list)
+    recipe = Recipe.merge(intake_list_list)
     return render(request, "analize_food.html", {
         "recipe": recipe,
         "intake_form": intake_form,

@@ -608,6 +608,25 @@ class Food(object):
                 self.save_matrix(PREPROCESSED_DATA_DIR + "nutavg.p", nutavg_vector)
             self.nutr_avg = {k: (name, v, u) for k, name, v, u in self.exclude_features(nutavg_vector)}
 
+    def __add__(self, other):
+        if isinstance(other, Food):
+            if self.ndb_no == other.ndb_no:
+                nutrients = [(x[0], x[1], x[2]+y[2], x[3]) for x, y in zip(self.nutrients, other.nutrients)]
+                omegas = [(x[0], x[1], x[2]+y[2], x[3]) for x, y in zip(self.omegas, other.omegas)]
+                food = Food(ndb_no=None, avg=False, weight=self.weight+other.weight)
+                food.ndb_no = self.ndb_no
+                food.radio_omega_raw = self.radio_omega_raw
+                food.omegas = omegas
+                food.nutrients = nutrients
+                return food
+            else:
+                raise Exception("Only I can add food with the same ndb_no")
+        else:
+            return self
+        
+    def __radd__(self, other):
+        return self.__add__(other)
+
     @classmethod
     def subs_omegas(self, features):
         """ sustituye los terminos X:X por el nombre omega Y"""
@@ -1260,7 +1279,7 @@ def recipes_list(number, perfil):
 class MenuRecipe(object):
     def __init__(self, recipes_ids, perfil):
         self.recipes = self.ids2recipes(recipes_ids, perfil, data=False)
-        self.merged_recipes = Recipe.merge(*self.recipes)
+        self.merged_recipes = Recipe.merge(self.recipes)
 
     @classmethod
     def ids2recipes(self, recipes_ids, perfil, data=True):
@@ -1272,9 +1291,13 @@ class MenuRecipe(object):
                     WHERE recipe.id=recipe_ingredient.recipe
                     AND recipe.id IN ({ids})""".format(ids=",".join(ids))
         cursor.execute(query, recipes_ids)
+        duplicates = {}
+        for recipe_id in recipes_ids:
+            duplicates.setdefault(int(recipe_id), 0)
+            duplicates[int(recipe_id)] += 1
         recipes = defaultdict(dict)
         for recipe_id, name, ndb_no, weight in cursor.fetchall():
-            recipes["{}-{}".format(recipe_id, name)][ndb_no] = float(weight)
+            recipes["{}-{}".format(recipe_id, name)][ndb_no] = duplicates[recipe_id] * float(weight)
 
         intake_recipes = []
         perfil_intake = intake(
@@ -1336,9 +1359,14 @@ class Recipe(object):
         self.score = None
         self.insuficient_intake = None
         self.suficient_intake = None
+        self.set_nutr_id("nutrdesc")
 
     def energy(self):
-        return self.total_nutr_names.get("Energy", 0)
+        energy = "Energy" if self.nutr_id_key == "nutrdesc" else "208"
+        return self.total_nutr_names.get(energy, 0)
+
+    def set_nutr_id(self, type_id):
+        self.nutr_id_key = "nutr_no" if type_id == "id" else "nutrdesc"
 
     def from_formset(self, formset):
         self.foods = {form.food.ndb_no: form.food for form in formset}
@@ -1368,10 +1396,14 @@ class Recipe(object):
         vectors_features = self.vector_features()
         total_food = [(v[0][0], sum(e[1] for e in v)) for v in zip(*vectors_features)]
         total_food = [(nutr_no, total) for nutr_no, total in total_food if total > 0]
-        total_nutr_names = nutr_features_ids([nutr_no for nutr_no, _ in total_food])
-        total_nutr_units = nutr_units_ids([nutr_no for nutr_no, _ in total_food])
-        total_nutr_names = {name[1]: (total[1], units[1]) 
-            for name, total, units in zip(total_nutr_names, total_food, total_nutr_units)}
+        if self.nutr_id_key == "nutrdesc":
+            total_nutr_names = nutr_features_ids([nutr_no for nutr_no, _ in total_food])
+            total_nutr_units = nutr_units_ids([nutr_no for nutr_no, _ in total_food])
+            total_nutr_names = {name[1]: (total[1], units[1]) 
+                for name, total, units in zip(total_nutr_names, total_food, total_nutr_units)}
+        else:
+            total_nutr_names = {nutr_no: (total, None) for nutr_no, total in total_food}
+
         self.total_nutr_names = total_nutr_names
         self.calc_weight()
         self.calc_score()
@@ -1381,8 +1413,9 @@ class Recipe(object):
         insuficient_intake = []
         suficient_intake = []
         total_nutr_score = 0
-        for nutrdesc, nutr_intake in self.perfil_intake.items():
-            resumen = nutr_intake.resumen(self.total_nutr_names.get(nutrdesc, [0])[0])
+        for nutr_intake in self.perfil_intake.values():
+            nutr_id = getattr(nutr_intake, self.nutr_id_key)
+            resumen = nutr_intake.resumen(self.total_nutr_names.get(nutr_id, [0])[0])
             nutr_score = nutr_intake.score(resumen)
             total_nutr_score += nutr_score
             if len(resumen) > 0:
@@ -1394,10 +1427,11 @@ class Recipe(object):
 
     def score_by_nutr(self):
         resume_intake = []
-        for nutrdesc, nutr_intake in self.perfil_intake.items():
-            intake = nutr_intake.all_intake(self.total_nutr_names.get(nutrdesc, [0])[0])
+        for nutr_intake in self.perfil_intake.values():
+            nutr_id = getattr(nutr_intake, self.nutr_id_key)
+            intake = nutr_intake.all_intake(self.total_nutr_names.get(nutr_id, [0])[0])
             score, type_intake = nutr_intake.score_by_type(intake)
-            resume_intake.append((nutrdesc, score, type_intake))
+            resume_intake.append((nutr_intake.nutrdesc, score, type_intake))
         return heapq.nlargest(5, resume_intake, key=lambda x: x[1])
         
     def calc_score(self):
@@ -1500,9 +1534,10 @@ class Recipe(object):
         return intake_list
 
     @classmethod
-    def merge(self, *intake_list_list):
+    def merge(self, intake_list_list, names=True):
         if len(intake_list_list) > 1:
             intake_total = Recipe('', '', '', None, blank=True)
+            intake_total.set_nutr_id("nutrdesc" if names else "id")
             intake_total.perfil = intake_list_list[0].perfil
             intake_total.perfil_intake = intake_list_list[0].perfil_intake
             foods_tmp = {}
@@ -1515,7 +1550,8 @@ class Recipe(object):
             foods = {}
             for ndb_no, foods_ndb_no in foods_tmp.items():
                 if len(foods_ndb_no) > 1:
-                    foods[ndb_no] = Food(ndb_no, weight=sum(food.weight for food in foods_ndb_no))
+                    #foods[ndb_no] = Food(ndb_no, weight=sum(food.weight for food in foods_ndb_no))
+                    foods[ndb_no] = sum(foods_ndb_no)
                 else:
                     foods[ndb_no] = foods_ndb_no.pop()
             intake_total.foods = foods
@@ -1540,3 +1576,26 @@ def lower_essencial_nutrients(perfil):
         except KeyError:
             pass
     return sorted(values, key=lambda x:x[2])
+
+def search_menu():
+    from itertools import combinations_with_replacement
+    _, cursor = conection()
+    intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
+    query = """SELECT recipe.id FROM recipe"""
+    cursor.execute(query)
+    ids = [e[0] for e in cursor.fetchall()]
+    cache = {}
+    results = []
+    for i in range(2, 3):        
+        for row in combinations_with_replacement(ids, i):
+            for recipe_id in row:
+                if not recipe_id in cache:
+                    cache[recipe_id] = MenuRecipe.ids2recipes([recipe_id], intake_params).pop()
+            menu = Recipe.merge([cache[recipe_id] for recipe_id in row], names=False)
+            print("____", row, menu.score)
+            results.append((row, menu.score, menu.energy()))
+            #if menu.score >= 95:
+            #    print("BEST", row)
+            #if all([t >= b for t, b in zip(total, base)]):
+    #print(len(results))
+    print(heapq.nlargest(5, results, key=lambda x: x[1]))
