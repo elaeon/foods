@@ -5,7 +5,7 @@ import pickle
 import heapq
 
 from collections import OrderedDict
-
+from functools import wraps
 import os
 
 PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
@@ -713,6 +713,7 @@ class Food(object):
         if exclude_nutr_l is None:
             exclude_nutr_l = exclude_nutr.keys()
         features = nutr_features()
+        #print("CREATED OMEGAS")
         fields, omegas = self.subs_omegas([(e[0], e[1], 0, None) for e in features])
         fields = fields + [(v[0], None, 0, None) for _, v in omegas.items()]
         base = set([v[0] for v in fields])
@@ -1577,25 +1578,37 @@ def lower_essencial_nutrients(perfil):
             pass
     return sorted(values, key=lambda x:x[2])
 
+
+def memoize(f):
+    cache = {}
+    @wraps(f)
+    def inner(arg):
+        if arg not in cache:
+            cache[arg] = f(arg)
+        return cache[arg]
+    return inner
+
+@memoize
+def aux(recipe_id):
+    intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
+    return MenuRecipe.ids2recipes([recipe_id], intake_params).pop()
+
 def search_menu():
     from itertools import combinations_with_replacement
     _, cursor = conection()
-    intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
-    query = """SELECT recipe.id FROM recipe"""
+    #intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
+    query = """SELECT recipe.id FROM recipe limit 10"""
     cursor.execute(query)
     ids = [e[0] for e in cursor.fetchall()]
     cache = {}
-    results = []
-    for i in range(2, 3):        
+    results = [(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0)]
+    for i in range(2, 3):
         for row in combinations_with_replacement(ids, i):
-            for recipe_id in row:
-                if not recipe_id in cache:
-                    cache[recipe_id] = MenuRecipe.ids2recipes([recipe_id], intake_params).pop()
-            menu = Recipe.merge([cache[recipe_id] for recipe_id in row], names=False)
+            recipes = [aux(recipe_id) for recipe_id in row]
+            menu = Recipe.merge(recipes, names=False)
             print("____", row, menu.score)
-            results.append((row, menu.score, menu.energy()))
+            heapq.heappushpop(results, (menu.score, row, menu.energy()))
             #if menu.score >= 95:
             #    print("BEST", row)
             #if all([t >= b for t, b in zip(total, base)]):
-    #print(len(results))
-    print(heapq.nlargest(5, results, key=lambda x: x[1]))
+    print results
