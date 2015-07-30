@@ -713,7 +713,6 @@ class Food(object):
         if exclude_nutr_l is None:
             exclude_nutr_l = exclude_nutr.keys()
         features = nutr_features()
-        #print("CREATED OMEGAS")
         fields, omegas = self.subs_omegas([(e[0], e[1], 0, None) for e in features])
         fields = fields + [(v[0], None, 0, None) for _, v in omegas.items()]
         base = set([v[0] for v in fields])
@@ -1283,7 +1282,7 @@ class MenuRecipe(object):
         self.merged_recipes = Recipe.merge(self.recipes)
 
     @classmethod
-    def ids2recipes(self, recipes_ids, perfil, data=True):
+    def ids2recipes(self, recipes_ids, perfil, data=True, features=None):
         from collections import defaultdict
         _, cursor = conection()
         ids = ["%s" for e in recipes_ids]
@@ -1313,7 +1312,8 @@ class MenuRecipe(object):
                 "foods": foods,
                 "name": name   
             }
-            intake_recipes.append(Recipe.from_light_format(light_format, perfil_intake=perfil_intake, data=data))
+            intake_recipes.append(Recipe.from_light_format(
+                light_format, perfil_intake=perfil_intake, data=data, features=features))
         return intake_recipes
 
     def best(self):
@@ -1342,7 +1342,7 @@ class MenuRecipe(object):
         return self.merged_recipes.radio_omega
 
 class Recipe(object):
-    def __init__(self, edad, genero, unidad_edad, rnv_type, blank=False, perfil_intake=None, name=None):
+    def __init__(self, edad, genero, unidad_edad, rnv_type, blank=False, perfil_intake=None, name=None, features=None):
         if not blank:
             self.perfil = self.build_perfil(edad, genero, unidad_edad, rnv_type)
             if perfil_intake is None:
@@ -1361,6 +1361,10 @@ class Recipe(object):
         self.insuficient_intake = None
         self.suficient_intake = None
         self.set_nutr_id("nutrdesc")
+        if features is None:
+            self.features = self.create_generic_features()
+        else:
+            self.features = features
 
     def energy(self):
         energy = "Energy" if self.nutr_id_key == "nutrdesc" else "208"
@@ -1378,8 +1382,15 @@ class Recipe(object):
 
     def vector_features(self):
         return [food.vector_features(
-        food.create_vector_fields_nutr(exclude_nutr_l=set([])), 
-        food.nutrients).items() for food in self.foods.values()]
+            self.features,
+            food.nutrients).items() for food in self.foods.values()]
+
+    def set_features(self, features):
+        self.features = features
+
+    @classmethod
+    def create_generic_features(self):
+        return Food.create_vector_fields_nutr(exclude_nutr_l=set([]))
 
     def calc_weight(self, force=False):
         if self.weight is None or force:
@@ -1518,7 +1529,7 @@ class Recipe(object):
         conn.commit()
 
     @classmethod
-    def from_light_format(self, intake_light_format, perfil_intake=None, data=True):
+    def from_light_format(self, intake_light_format, perfil_intake=None, data=True, features=None):
         perfil = intake_light_format["perfil"]
         foods = intake_light_format["foods"]
         intake_list = Recipe(
@@ -1527,7 +1538,8 @@ class Recipe(object):
             perfil["unidad_edad"].encode("utf8", "replace"),
             perfil.get("rnv_type", 1),
             perfil_intake=perfil_intake,
-            name=intake_light_format.get("name", None))
+            name=intake_light_format.get("name", None),
+            features=features)
         intake_list.foods = {ndb_no: Food(ndb_no, weight=weight, avg=False)
             for ndb_no, weight in foods.items()}
         if data:
@@ -1582,29 +1594,29 @@ def lower_essencial_nutrients(perfil):
 def memoize(f):
     cache = {}
     @wraps(f)
-    def inner(arg):
+    def inner(arg, **kwargs):
         if arg not in cache:
-            cache[arg] = f(arg)
+            cache[arg] = f(arg, **kwargs)
         return cache[arg]
     return inner
 
 @memoize
-def aux(recipe_id):
-    intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
-    return MenuRecipe.ids2recipes([recipe_id], intake_params).pop()
+def aux(recipe_id, features=None, intake_params=None):
+    return MenuRecipe.ids2recipes([recipe_id], intake_params, features=features).pop()
 
 def search_menu():
     from itertools import combinations_with_replacement
     _, cursor = conection()
-    #intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
-    query = """SELECT recipe.id FROM recipe limit 10"""
+    query = """SELECT recipe.id FROM recipe"""
     cursor.execute(query)
     ids = [e[0] for e in cursor.fetchall()]
     cache = {}
     results = [(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0)]
+    features = Recipe.create_generic_features()
+    intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
     for i in range(2, 3):
         for row in combinations_with_replacement(ids, i):
-            recipes = [aux(recipe_id) for recipe_id in row]
+            recipes = [aux(recipe_id, intake_params=intake_params, features=features) for recipe_id in row]
             menu = Recipe.merge(recipes, names=False)
             print("____", row, menu.score)
             heapq.heappushpop(results, (menu.score, row, menu.energy()))
