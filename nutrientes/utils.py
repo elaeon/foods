@@ -22,10 +22,12 @@ def exclude_data(data, exclude=set([])):
     return [(nutr_no, nut, float(v), u) for nutr_no, nut, v, u in data if not nutr_no in exclude]
 
 def nutr_features(order_by="sr_order"):
-    _, cursor = conection()
+    conn, cursor = conection()
     query  = """SELECT nutr_no, nutrdesc FROM nutr_def ORDER BY {order_by}""".format(order_by=order_by)
     cursor.execute(query)
-    return cursor.fetchall()
+    data = cursor.fetchall()
+    conn.close()
+    return data
 
 def nutr_features_group(order_by="sr_order"):
     _, cursor = conection()
@@ -1549,7 +1551,7 @@ class Recipe(object):
     @classmethod
     def merge(self, intake_list_list, names=True):
         if len(intake_list_list) > 1:
-            intake_total = Recipe('', '', '', None, blank=True)
+            intake_total = Recipe('', '', '', None, blank=True, features=intake_list_list[0].features)
             intake_total.set_nutr_id("nutrdesc" if names else "id")
             intake_total.perfil = intake_list_list[0].perfil
             intake_total.perfil_intake = intake_list_list[0].perfil_intake
@@ -1606,21 +1608,26 @@ def aux(recipe_id, features=None, intake_params=None):
 
 def search_menu():
     from itertools import combinations_with_replacement
-    _, cursor = conection()
+    import gc
+    import resource
+    conn, cursor = conection()
     query = """SELECT recipe.id FROM recipe"""
     cursor.execute(query)
     ids = [e[0] for e in cursor.fetchall()]
+    conn.close()
     cache = {}
     results = [(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0)]
     features = Recipe.create_generic_features()
     intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
     for i in range(2, 3):
-        for row in combinations_with_replacement(ids, i):
+        for j, row in enumerate(combinations_with_replacement(ids, i)):
+            #print(j)
             recipes = [aux(recipe_id, intake_params=intake_params, features=features) for recipe_id in row]
             menu = Recipe.merge(recipes, names=False)
             print("____", row, menu.score)
             heapq.heappushpop(results, (menu.score, row, menu.energy()))
-            #if menu.score >= 95:
-            #    print("BEST", row)
-            #if all([t >= b for t, b in zip(total, base)]):
+            if j % 1000 == 0:
+                #print("RESOURCE", resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000)
+                #print("COLLECT")
+                gc.collect(0)
     print results
