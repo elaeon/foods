@@ -781,6 +781,14 @@ class Food(object):
                 for nutr, desc , position in tabla_nutr_rank if nutr in nutr_base]
         return tabla_nutr_rank
 
+    def score(self, perfil):
+        light_format = {
+            "perfil": perfil,
+            "foods": {self.ndb_no:self.weight},
+            "name": ""   
+        }
+        recipe = Recipe.from_light_format(light_format)
+        return recipe.score
 
 def create_common_table(dicts):
     common_keys = set(dicts[0].keys())
@@ -1609,17 +1617,16 @@ def aux(recipe_id, features=None, intake_params=None):
 def search_menu():
     from itertools import combinations_with_replacement
     import gc
-    import resource
+    #import resource
     conn, cursor = conection()
     query = """SELECT recipe.id FROM recipe"""
     cursor.execute(query)
     ids = [e[0] for e in cursor.fetchall()]
     conn.close()
-    cache = {}
     results = [(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0)]
     features = Recipe.create_generic_features()
     intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
-    for i in range(2, 3):
+    for i in range(5, 6):
         for j, row in enumerate(combinations_with_replacement(ids, i)):
             #print(j)
             recipes = [aux(recipe_id, intake_params=intake_params, features=features) for recipe_id in row]
@@ -1630,4 +1637,4 @@ def search_menu():
                 #print("RESOURCE", resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000)
                 #print("COLLECT")
                 gc.collect(0)
-    print results
+    print sorted(results, key=lambda x:x[0], reverse=True)

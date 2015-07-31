@@ -11,12 +11,14 @@ import random
 DB_VERSION = "9.1"
 
 def perfil(some_func):
-    def inner(request):
+    def inner(*args, **kwargs):
+        request = args[0]
         if "intake_perfil" in request.session:
             intake_params = request.session["intake_perfil"]
         else:
             intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
-        return some_func(request, intake_params)
+        kwargs["intake_params"] = intake_params
+        return some_func(*args, **kwargs)
     return inner
 
 def index(request):
@@ -124,26 +126,16 @@ def ajax_search(request):
         return HttpResponse(json.dumps(params), content_type='text/json')
 
 
-def food(request, ndb_no):
-    from nutrientes.utils import Food, ranking_nutr_detail, category_food_count
+@perfil
+def food(request, ndb_no, intake_params={}):
+    from nutrientes.utils import Food
     food = Food(ndb_no)
     food_compare = request.session.get("food_compare", {})
-    tabla_nutr_rank = food.ranking_nutr_detail_base()
-    tabla_nutr_rank_f = []
-    global_values = [("info", 500), ("success", 2000), ("warning", 5000)]
-    for nutr, val, val_fmt in tabla_nutr_rank:
-        for k, v in global_values:
-            if val < v:
-                type_ = k
-                break
-        else:
-            type_ = "danger"
-        tabla_nutr_rank_f.append((nutr, val_fmt, type_))
-    #category_total = category_food_count(food.group["id"])[0]
+    food_score = food.score(intake_params)
     return render(request, "food.html", {
         "food": food, 
         "food_compare": food_compare,
-        "tabla_nutr_rank": tabla_nutr_rank_f})
+        "food_score": food_score})
 
 
 @perfil
