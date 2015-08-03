@@ -782,13 +782,20 @@ class Food(object):
         return tabla_nutr_rank
 
     def score(self, perfil):
+        recipe = self.food2recipe(perfil)
+        return recipe.score
+
+    def score_by_complete(self, perfil):
+        recipe = self.food2recipe(perfil)
+        return recipe.score_by_complete()
+
+    def food2recipe(self, perfil, data=True, features=None):
         light_format = {
             "perfil": perfil,
             "foods": {self.ndb_no:self.weight},
             "name": ""   
         }
-        recipe = Recipe.from_light_format(light_format)
-        return recipe.score
+        return Recipe.from_light_format(light_format, data=data, features=features)
 
 def create_common_table(dicts):
     common_keys = set(dicts[0].keys())
@@ -1256,7 +1263,7 @@ def magnitude(number):
     else:
         return len(left) - 1
 
-def recipes_list(number, perfil):
+def recipes_list(max_number, perfil):
     from collections import defaultdict
     _, cursor = conection()
     query = """SELECT recipe.id, recipe.name, recipe_ingredient.ndb_no, recipe_ingredient.weight
@@ -1267,28 +1274,30 @@ def recipes_list(number, perfil):
     for recipe_id, name, ndb_no, weight in cursor.fetchall():
         recipes["{}-{}".format(recipe_id, name)][ndb_no] = float(weight)
 
-    intake_recipes = []
+    recipes_l = []
     perfil_intake = intake(
         perfil["edad"], 
         perfil["genero"], 
         perfil["unidad_edad"].encode("utf8", "replace"), 
         perfil["rnv_type"])
+    features = Recipe.create_generic_features()
     for recipe_id_name, foods in recipes.items():
-            recipe_id, name = recipe_id_name.split("-")
-            light_format = {
-                "perfil": perfil,
-                "foods": foods,
-                "name": name
-            }
-            
-            intake_list = Recipe.from_light_format(light_format, perfil_intake=perfil_intake)
-            intake_list.id = recipe_id
-            intake_recipes.append(intake_list)
-    return sorted(intake_recipes, key=lambda x:x.score, reverse=True)
+        recipe_id, name = recipe_id_name.split("-")
+        light_format = {
+            "perfil": perfil,
+            "foods": foods,
+            "name": name
+        }
+        
+        recipe = Recipe.from_light_format(light_format, perfil_intake=perfil_intake, features=features)
+        recipe.id = recipe_id
+        recipes_l.append(recipe)
+    #return sorted(recipes_l, key=lambda x:x.score, reverse=True)
+    return sorted(recipes_l, key=lambda x:x.score_best(), reverse=True)
 
 class MenuRecipe(object):
     def __init__(self, recipes_ids, perfil):
-        self.recipes = self.ids2recipes(recipes_ids, perfil, data=False)
+        self.recipes = self.ids2recipes(recipes_ids, perfil)
         self.merged_recipes = Recipe.merge(self.recipes)
 
     @classmethod
@@ -1456,6 +1465,20 @@ class Recipe(object):
             resume_intake.append((nutr_intake.nutrdesc, score, type_intake))
         return heapq.nlargest(5, resume_intake, key=lambda x: x[1])
         
+    def score_by_complete(self):
+        total = len(self.insuficient_intake) + len(self.suficient_intake)
+        ins_intake = [v for _, _, v in self.insuficient_intake if v > 0]
+        sf_intake = [v for _, _, v in self.suficient_intake]
+        intake = ins_intake + sf_intake
+        avg = sum(intake) / len(intake)
+        spetrum = len(intake) / float(total)
+        variance = sum(((v - avg)**2 for v in intake))/len(intake) 
+        return spetrum, variance
+
+    def score_best(self):
+        spectrum, variance = self.score_by_complete()
+        return (self.score * spectrum) - variance
+
     def calc_score(self):
         if self.score is None:
             self.score, self.insuficient_intake, self.suficient_intake = self.score_resume()
@@ -1615,7 +1638,7 @@ def aux(recipe_id, features=None, intake_params=None):
     return MenuRecipe.ids2recipes([recipe_id], intake_params, features=features).pop()
 
 def search_menu():
-    from itertools import combinations_with_replacement
+    from itertools import combinations_with_replacement, combinations
     import gc
     #import resource
     conn, cursor = conection()
@@ -1623,11 +1646,11 @@ def search_menu():
     cursor.execute(query)
     ids = [e[0] for e in cursor.fetchall()]
     conn.close()
-    results = [(0,0,0),(0,0,0),(0,0,0),(0,0,0),(0,0,0)]
+    results = [(0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)]
     features = Recipe.create_generic_features()
     intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
-    for i in range(5, 6):
-        for j, row in enumerate(combinations_with_replacement(ids, i)):
+    for i in range(6, 7):
+        for j, row in enumerate(combinations(ids, i)):
             #print(j)
             recipes = [aux(recipe_id, intake_params=intake_params, features=features) for recipe_id in row]
             menu = Recipe.merge(recipes, names=False)

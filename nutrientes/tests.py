@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from nutrientes.utils import *
+from utils import *
 
 def equivalents():
     ndb_no = "11625" #09326
@@ -68,13 +68,11 @@ def test_recipes_list():
     recipes = recipes_list(10, {"edad": 35, "genero": "H", "unidad_edad": u"años"})
     print(recipes)
 
+def test_recipe():
+    from nutrientes.utils import MenuRecipe
+    perfil = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
+    recipe = MenuRecipe.ids2recipes([26], perfil).pop()
+    recipe.score_by_complete()
 
-def test_back():
-    from itertools import combinations_with_replacement
-    rows = [['a', [0.5, 0.3, 0.4]], ['b', [0.4, 0.1, 0.8]], ['c', [0.1, 0.3, 0.4]], ['d', [0.4, 0.1, 0.9]]]
-    base = [10.8, 11.2, 11.6]
-    for i in range(2, 10):
-        for row in combinations_with_replacement(rows, i):
-            total = [sum(ab) for ab in zip(*[elem[1] for elem in row])]
-            if all([t >= b for t, b in zip(total, base)]):
-                print row
+if __name__ == '__main__':
+    search_menu()

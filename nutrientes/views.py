@@ -366,6 +366,8 @@ def equivalents(request, ndb_no):
         last_result = results.pop()
         data_result = last_result.ids2name(similar_food)
         data_result["food_base"] = food_base
+    else:
+        data_result = {}
     return render(request, "equivalents.html", data_result)
 
 
@@ -388,6 +390,7 @@ def analyze_menu(request, intake_params):
         menu_recipe = MenuRecipe(recipes_ids, intake_params)
         recipes = [{"weight": recipe.calc_weight(), "recipe": recipe_id, "name": recipe.name}
                         for recipe, recipe_id in zip(menu_recipe.recipes, recipes_ids)]
+        print(menu_recipe.energy())
         formset = MenuRecipeFormSet(initial=recipes)
         return render(request, "analyze_menu.html", {
             "menu": menu_recipe, 
