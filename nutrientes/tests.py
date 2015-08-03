@@ -50,29 +50,33 @@ def boost():
     print(order.get_top("19042", level=40))
     #order.get_top("15184")
 
-def top_perfil():
-    #select long_desc,amount,msre_desc,gm_wgt from food_des,weight where food_des.ndb_no=weight.ndb_no and food_des.ndb_no='11529';
-    import heapq
-    from nutrientes.utils import Recipe, alimentos_category
-    scores = []
-    intake_light_format = {
-        "perfil": {"edad": 35, "genero": "H", "unidad_edad": u"años", "rnv_type":1}}
-    for ndb_no in Food.alimentos(limit="limit 9000"):
-        intake_light_format["foods"] = {ndb_no:100}
-        recipe = Recipe.from_light_format(intake_light_format)
-        scores.append((recipe.score, recipe.foods.values()[0].name))
-    print(heapq.nlargest(15, scores, key=lambda x: x))
-
-def test_recipes_list():
-    from nutrientes.utils import recipes_list
-    recipes = recipes_list(10, {"edad": 35, "genero": "H", "unidad_edad": u"años"})
-    print(recipes)
-
 def test_recipe():
     from nutrientes.utils import MenuRecipe
     perfil = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
-    recipe = MenuRecipe.ids2recipes([26], perfil).pop()
-    recipe.score_by_complete()
+    #recipe = MenuRecipe.ids2recipes([26], perfil).pop()
+    #recipe.score_by_complete()
+    recipes = recipes_list(0, perfil, ordered="score")[:5]
+    menu = Recipe.merge(recipes, names=False)
+    print(menu.score)
+
+def top_perfil_complex():
+    import heapq
+    from nutrientes.utils import Recipe, alimentos_category, intake
+    scores = []
+    intake_light_format = {
+        "perfil": {"edad": 35, "genero": "H", "unidad_edad": u"años", "rnv_type":1}}
+    features = Recipe.create_generic_features()
+    perfil_intake = intake(
+        intake_light_format["perfil"]["edad"], 
+        intake_light_format["perfil"]["genero"], 
+        intake_light_format["perfil"]["unidad_edad"].encode("utf8", "replace"), 
+        intake_light_format["perfil"]["rnv_type"])
+    for ndb_no in Food.alimentos(limit="limit 9000"):
+        intake_light_format["foods"] = {ndb_no:100}
+        recipe = Recipe.from_light_format(intake_light_format, perfil_intake=perfil_intake, features=features)
+        #scores.append((recipe.score_best(), recipe.foods.values()[0].name))
+        scores.append((recipe.score, recipe.foods.values()[0].name))
+    print(heapq.nlargest(15, scores, key=lambda x: x))
 
 if __name__ == '__main__':
     search_menu()

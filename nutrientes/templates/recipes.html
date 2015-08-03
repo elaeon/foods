@@ -29,8 +29,6 @@
             <p>Energia: {{ recipe.energy.0 }}{{ recipe.energy.1 }}</p>
             <p>Radio Omega: {{ recipe.radio_omega }}:1</p>
             <p>Cantidad: {{ recipe.weight }}g</p>
-            <p>{{ recipe.score_by_complete }}</p>
-            <p>{{ recipe.score_best }}</p>
             <a href="{% url 'analyze_food' %}?recipe={{ recipe.id }}">ver detalles</a>
         </div>
     </div>

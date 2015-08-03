@@ -374,8 +374,9 @@ def equivalents(request, ndb_no):
 @perfil
 def recipes(request, intake_params):
     from nutrientes.utils import recipes_list
-    recipes = recipes_list(10, intake_params)
+    recipes = recipes_list(10, intake_params, ordered="score")
     return render(request, "recipes.html", {"recipes": recipes})
+
 
 @perfil
 def analyze_menu(request, intake_params):

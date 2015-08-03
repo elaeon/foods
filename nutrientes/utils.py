@@ -1263,7 +1263,7 @@ def magnitude(number):
     else:
         return len(left) - 1
 
-def recipes_list(max_number, perfil):
+def recipes_list(max_number, perfil, ordered="score"):
     from collections import defaultdict
     _, cursor = conection()
     query = """SELECT recipe.id, recipe.name, recipe_ingredient.ndb_no, recipe_ingredient.weight
@@ -1292,8 +1292,11 @@ def recipes_list(max_number, perfil):
         recipe = Recipe.from_light_format(light_format, perfil_intake=perfil_intake, features=features)
         recipe.id = recipe_id
         recipes_l.append(recipe)
-    #return sorted(recipes_l, key=lambda x:x.score, reverse=True)
-    return sorted(recipes_l, key=lambda x:x.score_best(), reverse=True)
+
+    if ordered == "score":
+        return sorted(recipes_l, key=lambda x:x.score, reverse=True)
+    else:
+        return sorted(recipes_l, key=lambda x:x.score_best(), reverse=True)
 
 class MenuRecipe(object):
     def __init__(self, recipes_ids, perfil):
@@ -1470,14 +1473,21 @@ class Recipe(object):
         ins_intake = [v for _, _, v in self.insuficient_intake if v > 0]
         sf_intake = [v for _, _, v in self.suficient_intake]
         intake = ins_intake + sf_intake
-        avg = sum(intake) / len(intake)
-        spetrum = len(intake) / float(total)
-        variance = sum(((v - avg)**2 for v in intake))/len(intake) 
-        return spetrum, variance
+        try:
+            avg = sum(intake) / len(intake)
+            spectrum = len(intake) / float(total)
+            variance = sum(((v - avg)**2 for v in intake)) / len(intake) 
+        except ZeroDivisionError:
+            spectrum = 0
+            variance = 0
+        
+        return spectrum, variance
 
     def score_best(self):
         spectrum, variance = self.score_by_complete()
-        return (self.score * spectrum) - variance
+        #(100, 1, 0)
+        variance = variance if variance <= 1000 else 1000
+        return round(100 - ((100 - self.score + ((1 - spectrum) * 100) + (variance / 100.)) / 3.), 2)
 
     def calc_score(self):
         if self.score is None:
