@@ -29,6 +29,17 @@ def nutr_features(order_by="sr_order"):
     conn.close()
     return data
 
+def perfiles(rnv_type=1):
+    conn, cursor = conection()
+    query = """SELECT genero, edad_range, unidad_edad 
+                FROM nutr_intake 
+                WHERE rnv_type=%s GROUP BY genero, edad_range, unidad_edad 
+                ORDER BY genero, unidad_edad, edad_range;"""
+    cursor.execute(query, [rnv_type])
+    data = cursor.fetchall()
+    conn.close()
+    return data
+
 def nutr_features_group(order_by="sr_order"):
     _, cursor = conection()
     query  = """SELECT nutr_no, nutrdesc, nutr_def.group, nutr_def.desc FROM nutr_def ORDER BY {order_by}""".format(order_by=order_by)
@@ -781,8 +792,8 @@ class Food(object):
                 for nutr, desc , position in tabla_nutr_rank if nutr in nutr_base]
         return tabla_nutr_rank
 
-    def score(self, perfil):
-        recipe = self.food2recipe(perfil)
+    def score(self, perfil, data=True, features=None):
+        recipe = self.food2recipe(perfil, data=data, features=features)
         return recipe.score
 
     def score_by_complete(self, perfil):
@@ -1263,13 +1274,14 @@ def magnitude(number):
     else:
         return len(left) - 1
 
-def recipes_list(max_number, perfil, ordered="score"):
+def recipes_list(max_number, perfil, ordered="score", visible=True):
     from collections import defaultdict
     _, cursor = conection()
     query = """SELECT recipe.id, recipe.name, recipe_ingredient.ndb_no, recipe_ingredient.weight
                 FROM recipe, recipe_ingredient 
-                WHERE recipe.id=recipe_ingredient.recipe"""
-    cursor.execute(query)
+                WHERE recipe.id=recipe_ingredient.recipe
+                AND recipe.visible=%s"""
+    cursor.execute(query, [visible])
     recipes = defaultdict(dict)
     for recipe_id, name, ndb_no, weight in cursor.fetchall():
         recipes["{}-{}".format(recipe_id, name)][ndb_no] = float(weight)
@@ -1459,14 +1471,14 @@ class Recipe(object):
         score = round(total_nutr_score / len(self.perfil_intake), 2)
         return score, insuficient_intake, suficient_intake
 
-    def score_by_nutr(self):
+    def score_by_nutr(self, limit=5):
         resume_intake = []
         for nutr_intake in self.perfil_intake.values():
             nutr_id = getattr(nutr_intake, self.nutr_id_key)
             intake = nutr_intake.all_intake(self.total_nutr_names.get(nutr_id, [0])[0])
             score, type_intake = nutr_intake.score_by_type(intake)
             resume_intake.append((nutr_intake.nutrdesc, score, type_intake))
-        return heapq.nlargest(5, resume_intake, key=lambda x: x[1])
+        return heapq.nlargest(limit, resume_intake, key=lambda x: x[1])
         
     def score_by_complete(self):
         total = len(self.insuficient_intake) + len(self.suficient_intake)
@@ -1551,25 +1563,41 @@ class Recipe(object):
     def food2name(self):
         return {food.ndb_no: food.name for food in self.foods.values()}
 
-    def save2db(self, name):
+    def save2db(self, name, autor):
         conn, cursor = conection()
-        query = """SELECT id FROM recipe WHERE name=%s"""
-        cursor.execute(query, [name])
+        query = """SELECT id FROM recipe WHERE name=%s AND autor=%s"""
+        cursor.execute(query, [name, autor])
         recipe_id = cursor.fetchone()
         if recipe_id:
             for food in self.foods.values():
                 query = """UPDATE recipe_ingredient SET weight=%s WHERE recipe=%s AND ndb_no=%s"""
                 cursor.execute(query, [food.weight, recipe_id[0], food.ndb_no])
         else:
-            query = """INSERT INTO recipe (name) VALUES (%s) RETURNING id"""
-            cursor.execute(query, [name])
-            recipe = cursor.fetchone()[0]
+            query = """INSERT INTO recipe (name, autor, visible) VALUES (%s, %s, false) RETURNING id"""
+            cursor.execute(query, [name, autor])
+            recipe_id = cursor.fetchone()[0]
             for food in self.foods.values():
                 query = """INSERT INTO recipe_ingredient 
                         (recipe, ndb_no, weight) 
                         VALUES (%s, %s, %s)"""
-                cursor.execute(query, [recipe, food.ndb_no, food.weight])
+                cursor.execute(query, [recipe_id, food.ndb_no, food.weight])
         conn.commit()
+        conn.close()
+        return recipe_id
+
+    def save2bestperfil(self, recipe_id, perfil):
+        conn, cursor = conection()
+        query = """SELECT id FROM recipe_best_perfil WHERE recipe=%s"""
+        cursor.execute(query, [recipe_id, autor])
+        recipe_best_id = cursor.fetchone()
+        if recipe_best_id:
+            pass
+        else:
+            query = """INSERT INTO recipe_best_perfil (recipe, perfil) VALUES (%s, %s) RETURNING id"""
+            cursor.execute(query, [name, autor])
+            recipe_best_id = cursor.fetchone()[0]
+        conn.commit()
+        conn.close()
 
     @classmethod
     def from_light_format(self, intake_light_format, perfil_intake=None, data=True, features=None):

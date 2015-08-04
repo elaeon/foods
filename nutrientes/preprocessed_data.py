@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from nutrientes.utils import Food, conection, best_of_general_2
 from django.core.exceptions import ImproperlyConfigured
 
@@ -31,6 +32,37 @@ def ranking_global():
     global_ = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_list, f_index=lambda x: x[0])}
     return global_
 
+def ranking_global_perfil():    
+    from nutrientes.utils import Food, Recipe, perfiles
+    import csv
+
+    features = Recipe.create_generic_features()
+    rnv_type = 2
+    perfiles = perfiles(rnv_type=rnv_type)
+    perfiles_dict = {}
+    for genero, edad, unidad_edad in perfiles:
+        edad_range = edad.split("-")
+        if edad_range[1] != '':
+            edad = int(edad_range[1])
+        else:
+            edad = int(edad_range[0])
+        unidad_edad = unidad_edad if unidad_edad == "meses" else u"años"
+        key = u"{}{}{}".format(edad, genero, unidad_edad)
+        if key not in perfiles_dict:
+            perfiles_dict[key] = {"edad": edad, "genero": genero, "unidad_edad": unidad_edad, "rnv_type": rnv_type}
+        
+    with open(PREPROCESSED_DATA_DIR+'order_matrix.csv', 'rb') as csvfile:
+        rows = list(csv.reader(csvfile, delimiter=',', quotechar='"'))
+        for perfil in perfiles_dict.values():
+            foods = []
+            for row in rows:
+                food = Food(row[0])
+                score = food.score(perfil, features=features)
+                foods.append((food.ndb_no, score))
+                print foods, perfil
+                break
+        #foods_order = sorted(foods, key=lambda x:x[1], reverse=True)
+        #print foods_order[:10]
 
 def ranking_category(group):
     from nutrientes.utils import Rank
@@ -98,48 +130,51 @@ def calc_avg(force=False):
 
 def insert_update_db_ranking():
     from nutrientes.utils import categories_foods
-    #data = ranking_global()
-    #ranking_by_type(data, "global")
+    data = ranking_global()
+    ranking_by_type(data, "global")
 
     for group, _ in categories_foods():
         data = ranking_category(group)
         ranking_by_type(data, "category")
 
+    data = ranking_global_perfil()
+    ranking_by_type(data, "global")
 
-def ranking_detail_by_type(ndb_no, data):
-    conn, cursor = conection()
-    i = 0
-    for nutr_no, position in data.items():
-        print(i)
-        i += 1
-        query = """ SELECT COUNT(*) 
-                    FROM ranking_food_detail
-                    WHERE ndb_no='{ndb_no}'
-                    AND nutr_no='{nutr_no}'""".format(
-                ndb_no=ndb_no,
-                nutr_no=nutr_no)
-        cursor.execute(query)
-        if cursor.fetchall()[0][0] == 1:
-            query = """UPDATE ranking_food_detail 
-                        SET position={position}
-                        WHERE ndb_no='{ndb_no}'
-                        AND nutr_no='{nutr_no}'""".format(
-                ndb_no=ndb_no,
-                position=position,
-                nutr_no=nutr_no)
-        else:
-            query = """INSERT INTO ranking_food_detail 
-                        VALUES ('{ndb_no}', '{nutr_no}', {position})""".format(
-            ndb_no=ndb_no, 
-            position=position,
-            nutr_no=nutr_no)
-        cursor.execute(query)
-        conn.commit()
 
-def calc_ranking_detail(rank):
-    for ndb_no in rank.ranks:
-        data = rank.get_values_food(ndb_no)
-        ranking_detail_by_type(ndb_no, data)
+#def ranking_detail_by_type(ndb_no, data):
+#    conn, cursor = conection()
+#    i = 0
+#    for nutr_no, position in data.items():
+#        print(i)
+#        i += 1
+#        query = """ SELECT COUNT(*) 
+#                    FROM ranking_food_detail
+#                    WHERE ndb_no='{ndb_no}'
+#                    AND nutr_no='{nutr_no}'""".format(
+#                ndb_no=ndb_no,
+#                nutr_no=nutr_no)
+#        cursor.execute(query)
+#        if cursor.fetchall()[0][0] == 1:
+#            query = """UPDATE ranking_food_detail 
+#                        SET position={position}
+#                        WHERE ndb_no='{ndb_no}'
+#                        AND nutr_no='{nutr_no}'""".format(
+#                ndb_no=ndb_no,
+#                position=position,
+#                nutr_no=nutr_no)
+#        else:
+#            query = """INSERT INTO ranking_food_detail 
+#                        VALUES ('{ndb_no}', '{nutr_no}', {position})""".format(
+#            ndb_no=ndb_no, 
+#            position=position,
+#            nutr_no=nutr_no)
+#        cursor.execute(query)
+#        conn.commit()
+
+#def calc_ranking_detail(rank):
+#    for ndb_no in rank.ranks:
+#        data = rank.get_values_food(ndb_no)
+#        ranking_detail_by_type(ndb_no, data)
 
 def recalc_preprocessed_data():
     print "Generate AVG"

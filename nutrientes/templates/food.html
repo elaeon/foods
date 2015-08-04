@@ -65,6 +65,7 @@
 </div>
 {% endwith %}
 <div id="chartContainer"></div>
+<div id="barContainer"></div>
 
 </div>
 </div>
@@ -207,5 +208,33 @@ svg.append("text")
    .style("font-family", "sans-serif")
    .style("font-weight", "bold")
    .text("Gráfica de nutrientes")
+
+var nutrients = [];
+{% for _, nutrdesc, value in resume_intake %}
+nutrients.push({nutriente: '{{ nutrdesc }}', porcentaje: {{ value }}, suficiente: {% if value < 100 %}0{% else %}1{% endif %}})
+{% endfor %}
+
+var svg = dimple.newSvg("#barContainer", 1100, 450);
+var barChart = new dimple.chart(svg, nutrients);
+barChart.assignColor("0", "#aa0000", null, .5);
+barChart.assignColor("1", "#00aacc", null, .5);
+barChart.setBounds(60, 50, 950, 200);
+var x = barChart.addCategoryAxis("x", "nutriente");
+x.showGridlines = true;
+var y = barChart.addMeasureAxis("y", "porcentaje");
+y.overrideMax = 100;
+y.showGridlines = false;
+var l = barChart.addSeries("suficiente", dimple.plot.bar);
+x.addOrderRule("nutriente");
+barChart.draw();
+x.titleShape.text("Nutriente");
+y.tickFormat = ',.2f';
+svg.append("text")
+   .attr("x", barChart._xPixels() + barChart._widthPixels() / 2)
+   .attr("y", barChart._yPixels() - 20)
+   .style("text-anchor", "middle")
+   .style("font-family", "sans-serif")
+   .style("font-weight", "bold")
+   .text("Gráfica de nutrientes, porcentaje cubierto en base al perfil")
 </script>
 {% endblock %}

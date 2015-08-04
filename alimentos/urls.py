@@ -39,4 +39,5 @@ urlpatterns = [
     url(r'^analyze_menu/$', views.analyze_menu, name="analyze_menu"),
     url(r'^change_perfil/$', views.change_perfil, name="change_perfil"),
     url(r'^complex_intake_nutrients/$', views.complex_intake_nutrients, name="complex_intake_nutrients"),
+    url(r'^best_menu/$', views.best_menu, name="best_menu"),
 ]

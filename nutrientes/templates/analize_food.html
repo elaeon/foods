@@ -105,25 +105,29 @@
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
 <script type="text/javascript">
 function share_recipe() {
-    var request = $.ajax({
-        type: "POST",
-        url: "{% url 'share_recipe' %}",
-        data: {
-            csrfmiddlewaretoken: '{{ csrf_token }}',
-            intake_list_name: '{{ intake_list_name }}'
-        }
-    });
-    request.done(function(data) {
-        if(data) {
-            if(data.result == 'ok') {
-                alert("Los datos fueron guardados.");
-            } else {
-                if(data.result == 'no key') {
-                    alert("Antes de compartir, debe apretar el botón 'Guardar en mi lista'.")
+    var autor = prompt("Ponga su identidad.")
+    if(autor) {
+        var request = $.ajax({
+            type: "POST",
+            url: "{% url 'share_recipe' %}",
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                intake_list_name: '{{ intake_list_name }}',
+                autor: autor
+            }
+        });
+        request.done(function(data) {
+            if(data) {
+                if(data.result == 'ok') {
+                    alert("Los datos fueron guardados.");
+                } else {
+                    if(data.result == 'no key') {
+                        alert("Antes de compartir, debe apretar el botón 'Guardar en mi lista'.")
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 }
 
 

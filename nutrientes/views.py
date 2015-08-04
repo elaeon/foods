@@ -131,11 +131,14 @@ def food(request, ndb_no, intake_params={}):
     from nutrientes.utils import Food
     food = Food(ndb_no)
     food_compare = request.session.get("food_compare", {})
-    food_score = food.score(intake_params)
+    recipe = food.food2recipe(intake_params)
+    food_score = recipe.score
+    resume_intake = recipe.resume_intake()
     return render(request, "food.html", {
         "food": food, 
         "food_compare": food_compare,
-        "food_score": food_score})
+        "food_score": food_score,
+        "resume_intake": resume_intake})
 
 
 @perfil
@@ -378,6 +381,12 @@ def recipes(request, intake_params):
     return render(request, "recipes.html", {"recipes": recipes})
 
 
+def best_menu(request):
+    from nutrientes.utils import recipes_list
+    recipes_list(10, {}, ordered="score", visible=False)
+    return render(request, "recipes.html", {"recipes": recipes})
+
+
 @perfil
 def analyze_menu(request, intake_params):
     from nutrientes.utils import MenuRecipe
@@ -404,10 +413,13 @@ def share_recipe(request):
     from nutrientes.utils import Recipe
     if request.is_ajax():
         intake_list_name = request.POST.get("intake_list_name", "")
+        autor = request.POST.get("autor", "")
+        perfil = request.POST.get("perfil", "")
         try:
             intake_light_format = request.session["intake_names_list"][intake_list_name]
             intake_list = Recipe.from_light_format(intake_light_format)
-            intake_list.save2db(intake_list_name)
+            recipe_id = intake_list.save2db(intake_list_name, autor)
+            intake_list.save2bestperfil(recipe_id, perfil)
         except KeyError:
             result = "no key"
         else:

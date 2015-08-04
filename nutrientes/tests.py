@@ -60,6 +60,21 @@ def test_recipe():
     #menu = Recipe.merge(recipes, names=False)
     #print(menu.score)
 
+def test_best():
+    from nutrientes.utils import intake, best_of_query
+    perfil = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
+    perfil_intake = intake(
+        perfil["edad"], 
+        perfil["genero"], 
+        perfil["unidad_edad"].encode("utf8", "replace"),
+        perfil["rnv_type"])
+    #nutrients = [n.nutr_no for n in perfil_intake.values()]
+    nutrients = ['313', '431']
+    rank = best_of_query(nutrients, None)
+    for e in rank.order(limit=15):
+        print(e[1]["attr"][1])
+        print("*******")
+
 def top_perfil_complex():
     import heapq
     from nutrientes.utils import Recipe, alimentos_category, intake
