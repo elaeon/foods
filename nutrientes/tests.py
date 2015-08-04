@@ -53,11 +53,12 @@ def boost():
 def test_recipe():
     from nutrientes.utils import MenuRecipe
     perfil = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
-    #recipe = MenuRecipe.ids2recipes([26], perfil).pop()
+    recipe = MenuRecipe.ids2recipes([26], perfil).pop()
+    food = recipe.recipe2food()
     #recipe.score_by_complete()
-    recipes = recipes_list(0, perfil, ordered="score")[:5]
-    menu = Recipe.merge(recipes, names=False)
-    print(menu.score)
+    #recipes = recipes_list(0, perfil, ordered="score")[:5]
+    #menu = Recipe.merge(recipes, names=False)
+    #print(menu.score)
 
 def top_perfil_complex():
     import heapq

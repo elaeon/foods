@@ -1616,6 +1616,15 @@ class Recipe(object):
         else:
             return intake_list_list[0]
 
+    def recipe2food(self):
+        food = Food(weight=self.weight, avg=False)
+        food.radio_omega_raw = self.radio_omega
+        omegas_names = ["omega 3", "omega 6", "omega 7"]
+        food.omegas = [(omega, self.total_nutr_names.get(omega, [0, ''])[0]) for omega in omegas_names]
+        nutrients = [(vector[0][0], sum(v for _, v in vector)) for vector in zip(*self.vector_features())]
+        food.nutrients = [(nutr_no, v) for nutr_no, v in nutrients if v > 0]
+        return food
+
 def lower_essencial_nutrients(perfil):
     nutr_avg = read_avg()
     edad = perfil["edad"]
@@ -1659,7 +1668,7 @@ def search_menu():
     results = [(0,0,0), (0,0,0), (0,0,0), (0,0,0), (0,0,0)]
     features = Recipe.create_generic_features()
     intake_params = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
-    for i in range(6, 7):
+    for i in range(7, 8):
         for j, row in enumerate(combinations(ids, i)):
             #print(j)
             recipes = [aux(recipe_id, intake_params=intake_params, features=features) for recipe_id in row]

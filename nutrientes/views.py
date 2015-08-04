@@ -349,7 +349,7 @@ def result_long_search(request):
     if request.method == "POST":
         conn, cursor = conection()
         term = request.POST.get("text-input", "").strip()
-        query = fuzzy_query(DB_VERSION, term, headline=True)
+        query = fuzzy_query(DB_VERSION, term.encode("utf8", "replace"), headline=True)
         cursor.execute(query)
         foods = cursor.fetchall()
         conn.close()
