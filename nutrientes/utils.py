@@ -1311,7 +1311,7 @@ def recipes_list(max_number, perfil, ordered="score", visible=True):
         return sorted(recipes_l, key=lambda x:x.score_best(), reverse=True)
 
 
-def recipes_list_users(max_number, ordered="score"):
+def recipes_list_users(max_number):
     from collections import defaultdict
     _, cursor = conection()
     query = """SELECT recipe.id, recipe.name, recipe_ingredient.ndb_no,
@@ -1321,41 +1321,44 @@ def recipes_list_users(max_number, ordered="score"):
                 AND recipe.visible=%s
                 AND recipe_best_perfil.recipe=recipe.id"""
     cursor.execute(query, [False])
-    recipes = defaultdict(dict)
+    authors_recipes = defaultdict(dict)
+    recipes_l = {}
     for recipe_id, name, ndb_no, weight, perfil, author in cursor.fetchall():
-        recipes["{}_{}_{}_{}".format(recipe_id, name, perfil, author)][ndb_no] = float(weight)
+        try:
+            authors_recipes[author]["{}_{}_{}".format(recipe_id, name, perfil)][ndb_no] = float(weight)
+        except KeyError:
+            authors_recipes[author]["{}_{}_{}".format(recipe_id, name, perfil)] = {ndb_no:float(weight)}
+            recipes_l[author] = {"total": {"score": 0, "kcal": 0, "weight": 0}, "recipes": []}
 
     cache = {}
     features = Recipe.create_generic_features()
-    recipes_l = []
-    for k, foods_ndb_no in recipes.items():
-        reciple_id, name, recipe_txt, author = k.split("_")
-        if k not in cache:
-            edad, genero, unidad_edad, rnv_type = recipe_txt.split("-")
-            perfil_intake = intake(
-                int(edad), 
-                genero, 
-                unidad_edad, 
-                rnv_type)
-            cache[k] = perfil_intake
-        else:
-            perfil_intake = cache[k]
-    
-        light_format = {
-           "perfil": {"edad": None, "unidad_edad": "", "genero": None, "rnv_type": None},
-            "foods": foods_ndb_no,
-            "name": name
-        }
+    for author, recipes in authors_recipes.items():
+        for k, foods_ndb_no in recipes.items():
+            reciple_id, name, recipe_txt = k.split("_")
+            if k not in cache:
+                edad, genero, unidad_edad, rnv_type = recipe_txt.split("-")
+                perfil_intake = intake(
+                    int(edad), 
+                    genero, 
+                    unidad_edad, 
+                    rnv_type)
+                cache[k] = perfil_intake
+            else:
+                perfil_intake = cache[k]
         
-        recipe = Recipe.from_light_format(light_format, perfil_intake=perfil_intake, features=features)
-        recipe.id = recipe_id
-        recipe.author = author
-        recipes_l.append(recipe)
-
-    if ordered == "score":
-        return sorted(recipes_l, key=lambda x:x.score, reverse=True)
-    else:
-        return sorted(recipes_l, key=lambda x:x.score_best(), reverse=True)
+            light_format = {
+               "perfil": {"edad": None, "unidad_edad": "", "genero": None, "rnv_type": None},
+                "foods": foods_ndb_no,
+                "name": name
+            }
+            
+            recipe = Recipe.from_light_format(light_format, perfil_intake=perfil_intake, features=features)
+            recipe.id = recipe_id
+            recipes_l[author]["total"]["score"] = recipes_l[author]["total"]["score"] + recipe.score
+            recipes_l[author]["total"]["kcal"] = recipes_l[author]["total"]["kcal"] + recipe.energy()[0]
+            recipes_l[author]["total"]["weight"] = recipes_l[author]["total"]["weight"] + recipe.weight
+            recipes_l[author]["recipes"].append(recipe)
+    return sorted(recipes_l.items(), key=lambda x:x[1]["total"], reverse=True)
 
 
 class MenuRecipe(object):

@@ -383,8 +383,8 @@ def recipes(request, intake_params):
 
 def best_menu(request):
     from nutrientes.utils import recipes_list_users
-    recipes = recipes_list_users(10, ordered="score")
-    return render(request, "recipes_test.html", {"recipes": recipes})
+    recipes = recipes_list_users(10)
+    return render(request, "recipes_test.html", {"author_recipes": recipes})
 
 
 @perfil

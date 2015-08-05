@@ -4,21 +4,27 @@
 {% block contenido_base %}
 <div class="container">
 <div class="starter-template">
-<h2 style="display:inline-block;">Recetas</h2><span> / individuales</span>
+<h2 style="display:inline-block;">Menú</h2><span> / recetas</span>
 <div class="row">
-{% for recipe in recipes %}
-  <div class="col-sm-6 col-md-4">
+{% for author, recipes in author_recipes %}
+<div class="col-sm-6 col-md-4">
     <div class="panel panel-default">
-        <div class="panel-heading list-group-item">
+        <div class="panel-heading list-group-item" style="height: 60px;">
+        <p class="panel-title">Autor: {{ author }}</p>
+        <span class="badge">Total: {{ recipes.total.score }}</span>
+        <span class="badge">Energia: {{ recipes.total.kcal }}kcal</span>
+        <span class="badge">Peso: {{ recipes.total.weight }}g</span>
+        </div>
+        <ol style="margin: 10px;">
+        {% for recipe in recipes.recipes %}
+            <li>
+            <span>{{ recipe.name|truncatechars:30 }}</span>
             <span class="badge">{{ recipe.score }}</span>
-            <p class="panel-title">{{ recipe.name|truncatechars:30 }}</p>
-            <span aria-hidden="true" style="cursor:pointer;float:left;padding-right:5px;font-size:70%;" id="{{ recipe.id }}">Autor: {{ recipe.author }}</span>
-        </div>
-        <div class="panel-body">
             <p>Energia: {{ recipe.energy.0 }}{{ recipe.energy.1 }}</p>
-            <p>Radio Omega: {{ recipe.radio_omega }}:1</p>
             <p>Cantidad: {{ recipe.weight }}g</p>
-        </div>
+            </li>
+        {% endfor %}
+        </ol>
     </div>
   </div>
 {% endfor %}
