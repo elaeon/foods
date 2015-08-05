@@ -1310,6 +1310,54 @@ def recipes_list(max_number, perfil, ordered="score", visible=True):
     else:
         return sorted(recipes_l, key=lambda x:x.score_best(), reverse=True)
 
+
+def recipes_list_users(max_number, ordered="score"):
+    from collections import defaultdict
+    _, cursor = conection()
+    query = """SELECT recipe.id, recipe.name, recipe_ingredient.ndb_no,
+                    recipe_ingredient.weight, recipe_best_perfil.perfil, recipe.author
+                FROM recipe, recipe_ingredient, recipe_best_perfil
+                WHERE recipe.id=recipe_ingredient.recipe
+                AND recipe.visible=%s
+                AND recipe_best_perfil.recipe=recipe.id"""
+    cursor.execute(query, [False])
+    recipes = defaultdict(dict)
+    for recipe_id, name, ndb_no, weight, perfil, author in cursor.fetchall():
+        recipes["{}_{}_{}_{}".format(recipe_id, name, perfil, author)][ndb_no] = float(weight)
+
+    cache = {}
+    features = Recipe.create_generic_features()
+    recipes_l = []
+    for k, foods_ndb_no in recipes.items():
+        reciple_id, name, recipe_txt, author = k.split("_")
+        if k not in cache:
+            edad, genero, unidad_edad, rnv_type = recipe_txt.split("-")
+            perfil_intake = intake(
+                int(edad), 
+                genero, 
+                unidad_edad, 
+                rnv_type)
+            cache[k] = perfil_intake
+        else:
+            perfil_intake = cache[k]
+    
+        light_format = {
+           "perfil": {"edad": None, "unidad_edad": "", "genero": None, "rnv_type": None},
+            "foods": foods_ndb_no,
+            "name": name
+        }
+        
+        recipe = Recipe.from_light_format(light_format, perfil_intake=perfil_intake, features=features)
+        recipe.id = recipe_id
+        recipe.author = author
+        recipes_l.append(recipe)
+
+    if ordered == "score":
+        return sorted(recipes_l, key=lambda x:x.score, reverse=True)
+    else:
+        return sorted(recipes_l, key=lambda x:x.score_best(), reverse=True)
+
+
 class MenuRecipe(object):
     def __init__(self, recipes_ids, perfil):
         self.recipes = self.ids2recipes(recipes_ids, perfil)
@@ -1563,18 +1611,18 @@ class Recipe(object):
     def food2name(self):
         return {food.ndb_no: food.name for food in self.foods.values()}
 
-    def save2db(self, name, autor):
+    def save2db(self, name, author):
         conn, cursor = conection()
-        query = """SELECT id FROM recipe WHERE name=%s AND autor=%s"""
-        cursor.execute(query, [name, autor])
+        query = """SELECT id FROM recipe WHERE name=%s AND author=%s"""
+        cursor.execute(query, [name, author])
         recipe_id = cursor.fetchone()
         if recipe_id:
             for food in self.foods.values():
                 query = """UPDATE recipe_ingredient SET weight=%s WHERE recipe=%s AND ndb_no=%s"""
                 cursor.execute(query, [food.weight, recipe_id[0], food.ndb_no])
         else:
-            query = """INSERT INTO recipe (name, autor, visible) VALUES (%s, %s, false) RETURNING id"""
-            cursor.execute(query, [name, autor])
+            query = """INSERT INTO recipe (name, author, visible) VALUES (%s, %s, false) RETURNING id"""
+            cursor.execute(query, [name, author])
             recipe_id = cursor.fetchone()[0]
             for food in self.foods.values():
                 query = """INSERT INTO recipe_ingredient 
@@ -1585,19 +1633,25 @@ class Recipe(object):
         conn.close()
         return recipe_id
 
-    def save2bestperfil(self, recipe_id, perfil):
+    def save2bestperfil(self, recipe_id, perfil, author):
         conn, cursor = conection()
-        query = """SELECT id FROM recipe_best_perfil WHERE recipe=%s"""
-        cursor.execute(query, [recipe_id, autor])
+        query = """SELECT recipe_best_perfil.id 
+            FROM recipe, recipe_best_perfil 
+            WHERE recipe.id=recipe_best_perfil.recipe
+            AND recipe=%s 
+            AND author=%s"""
+        cursor.execute(query, [recipe_id, author])
         recipe_best_id = cursor.fetchone()
+        perfil_str = u"{edad}-{genero}-{unidad_edad}-{rnv_type}".format(**perfil)
         if recipe_best_id:
             pass
         else:
             query = """INSERT INTO recipe_best_perfil (recipe, perfil) VALUES (%s, %s) RETURNING id"""
-            cursor.execute(query, [name, autor])
+            cursor.execute(query, [recipe_id, perfil_str])
             recipe_best_id = cursor.fetchone()[0]
         conn.commit()
         conn.close()
+        return recipe_best_id
 
     @classmethod
     def from_light_format(self, intake_light_format, perfil_intake=None, data=True, features=None):

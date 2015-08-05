@@ -1,0 +1,28 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div class="container">
+<div class="starter-template">
+<h2 style="display:inline-block;">Recetas</h2><span> / individuales</span>
+<div class="row">
+{% for recipe in recipes %}
+  <div class="col-sm-6 col-md-4">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+            <span class="badge">{{ recipe.score }}</span>
+            <p class="panel-title">{{ recipe.name|truncatechars:30 }}</p>
+            <span aria-hidden="true" style="cursor:pointer;float:left;padding-right:5px;font-size:70%;" id="{{ recipe.id }}">Autor: {{ recipe.author }}</span>
+        </div>
+        <div class="panel-body">
+            <p>Energia: {{ recipe.energy.0 }}{{ recipe.energy.1 }}</p>
+            <p>Radio Omega: {{ recipe.radio_omega }}:1</p>
+            <p>Cantidad: {{ recipe.weight }}g</p>
+        </div>
+    </div>
+  </div>
+{% endfor %}
+</div>
+</div>
+{% endblock %}
+

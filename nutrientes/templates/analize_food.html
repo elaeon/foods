@@ -105,15 +105,15 @@
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
 <script type="text/javascript">
 function share_recipe() {
-    var autor = prompt("Ponga su identidad.")
-    if(autor) {
+    var author = prompt("Ponga su identidad.")
+    if(author) {
         var request = $.ajax({
             type: "POST",
             url: "{% url 'share_recipe' %}",
             data: {
                 csrfmiddlewaretoken: '{{ csrf_token }}',
                 intake_list_name: '{{ intake_list_name }}',
-                autor: autor
+                author: author
             }
         });
         request.done(function(data) {
@@ -126,6 +126,9 @@ function share_recipe() {
                     }
                 }
             }
+        });
+        request.error(function(data) {
+            alert("Ha ocurrido un error.");
         });
     }
 }

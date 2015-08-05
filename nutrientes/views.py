@@ -382,9 +382,9 @@ def recipes(request, intake_params):
 
 
 def best_menu(request):
-    from nutrientes.utils import recipes_list
-    recipes_list(10, {}, ordered="score", visible=False)
-    return render(request, "recipes.html", {"recipes": recipes})
+    from nutrientes.utils import recipes_list_users
+    recipes = recipes_list_users(10, ordered="score")
+    return render(request, "recipes_test.html", {"recipes": recipes})
 
 
 @perfil
@@ -413,13 +413,13 @@ def share_recipe(request):
     from nutrientes.utils import Recipe
     if request.is_ajax():
         intake_list_name = request.POST.get("intake_list_name", "")
-        autor = request.POST.get("autor", "")
-        perfil = request.POST.get("perfil", "")
+        author = request.POST.get("author", "").strip()
         try:
             intake_light_format = request.session["intake_names_list"][intake_list_name]
+            perfil = intake_light_format["perfil"]
             intake_list = Recipe.from_light_format(intake_light_format)
-            recipe_id = intake_list.save2db(intake_list_name, autor)
-            intake_list.save2bestperfil(recipe_id, perfil)
+            recipe_id = intake_list.save2db(intake_list_name, author)
+            intake_list.save2bestperfil(recipe_id, perfil, author)
         except KeyError:
             result = "no key"
         else:
