@@ -4,11 +4,13 @@
 {% block contenido_base %}
 <div class="container">
 <div class="starter-template">
-<h2 style="display:inline-block;">Recetas</h2><span> / individuales</span>
+<h2 style="display:inline-block;">Recetas</h2><span> / porción para una persona.</span>
 <form style="display:inline;" action="{% url 'analyze_menu' %}" method="POST">
 {% csrf_token %}
 <button type="submit" id="menu-recipes" name="menu-recipes" class="btn btn-xs btn-info" onclick="set_recipes();">Analizar menú</button>
 </form>
+<p>La calificación de cada receta esta generada en base al perfil del usuario.</p>
+<p>Para analizar una o varias recetas, haga click sobre el ícono <span class="glyphicon glyphicon-plus" aria-hidden="true"></span> que se encuentra al lado del nombre de la receta. Luego apriete el botón Analizar menú.</p>
 <div class="row">
 {% for recipe in recipes %}
   <div class="col-sm-6 col-md-4">
@@ -34,6 +36,7 @@
     </div>
   </div>
 {% endfor %}
+</div>
 </div>
 </div>
 {% endblock %}
