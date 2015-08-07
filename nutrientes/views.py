@@ -400,7 +400,6 @@ def analyze_menu(request, intake_params):
         menu_recipe = MenuRecipe(recipes_ids, intake_params)
         recipes = [{"weight": recipe.calc_weight(), "recipe": recipe_id, "name": recipe.name}
                         for recipe, recipe_id in zip(menu_recipe.recipes, recipes_ids)]
-        print(menu_recipe.energy())
         formset = MenuRecipeFormSet(initial=recipes)
         return render(request, "analyze_menu.html", {
             "menu": menu_recipe, 

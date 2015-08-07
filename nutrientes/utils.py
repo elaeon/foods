@@ -1571,19 +1571,20 @@ class Recipe(object):
                 totals.append((float(total / val), nutrdesc))
 
         totals.sort(reverse=True, key=lambda x:x[0])
-        otros_total = (sum([v for v, _ in totals[9:]]), "otros")
+        otros_total = (sum([v for v, _ in totals[9:]]), "Vitaminas, Minerales, Aminoacidos, Acidos grasos, etc.")
         base = totals[:9]
-        def bisect(a, x):
-            for i, elem in enumerate(a):
-                if elem[0] < x[0]:
-                    return i
-            else:
-                return len(a) - 1
-        index = bisect(base, otros_total)
-        base[index:index] = [otros_total]
+        #def bisect(a, x):
+        #    for i, elem in enumerate(a):
+        #        if elem[0] < x[0]:
+        #            return i
+        #    else:
+        #        return len(a) - 1
+        #index = bisect(base, otros_total)
+        #base[index:index] = [otros_total]
+        base.append(otros_total)
         if percentage:
             maximum = sum([v for v, _ in base])
-            return [(int(round(e[0]*100/maximum, 0)), e[1]) for e in base]
+            return [(round(e[0] * 100 / maximum, 2), e[1]) for e in base]
         else:
             return base
 
