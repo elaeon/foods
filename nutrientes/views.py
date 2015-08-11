@@ -237,10 +237,10 @@ def analyze_food(request, intake_params):
             intake_list_names = request.POST.getlist("food_list")
             for intake_name in intake_list_names:
                 intake_light_format = request.session["intake_names_list"][intake_name]
-                intake_list = Recipe.from_light_format(intake_light_format)
+                recipe = Recipe.from_light_format(intake_light_format)
                 foods += [{"food": food, "weight": food.weight, "ndb_no": food.ndb_no}
-                            for food in intake_list.foods.values()]
-                intake_list_list.append(intake_list)
+                            for food in recipe.foods.values()]
+                intake_list_list.append(recipe)
         except KeyError:
             pass
     else:
@@ -368,9 +368,9 @@ def equivalents(request, ndb_no):
     if results is not None and len(results) > 0:
         last_result = results.pop()
         data_result = last_result.ids2name(similar_food)
-        data_result["food_base"] = food_base
     else:
         data_result = {}
+    data_result["food_base"] = food_base
     return render(request, "equivalents.html", data_result)
 
 

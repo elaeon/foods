@@ -1506,6 +1506,9 @@ class Recipe(object):
         self.calc_score()
         self.calc_radio_omega()
 
+    def foods_intake(self):
+        pass
+
     def score_resume(self):
         insuficient_intake = []
         suficient_intake = []

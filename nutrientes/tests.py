@@ -3,7 +3,7 @@
 from utils import *
 
 def equivalents():
-    ndb_no = "11625" #09326
+    ndb_no = "35055"#"11625" #09326
     similar_food = MostSimilarFood(ndb_no, "1100")
     food_base = similar_food.food_base
     for x in range(10):

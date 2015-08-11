@@ -38,6 +38,7 @@
 <p>Los números negativos indican un consumo excesivo del nutriente.</p>
 <div id="barContainer"></div>
 
+<div id="barAcumContainer"></div>
 
 <div class="panel panel-default">
 <div class="panel-heading list-group-item">
@@ -82,6 +83,13 @@ var nutrients = [];
 nutrients.push({nutriente: '{{ nutrdesc }}', porcentaje: {{ value }}, suficiente: {% if value < 100 %}0{% else %}1{% endif %}})
 {% endfor %}
 
+var recipes = [];
+{% for recipe in menu.recipes %}
+    {% for _, nutrdesc, value in recipe.resume_intake %}
+        recipes.push({nutriente: '{{ nutrdesc }}', porcentaje: {{ value }}, name: '{{ recipe.name }}'});
+    {% endfor %}
+{% endfor %}
+
 var svg = dimple.newSvg("#barContainer", 1100, 450);
 var barChart = new dimple.chart(svg, nutrients);
 barChart.assignColor("0", "#aa0000", null, .5);
@@ -96,6 +104,27 @@ x.addOrderRule("nutriente");
 barChart.draw();
 x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';
+
+var svg = dimple.newSvg("#barAcumContainer", 1100, 450);
+var myChart3 = new dimple.chart(svg, recipes);
+myChart3.setBounds(60, 50, 950, 200);
+var x = myChart3.addCategoryAxis("x", "nutriente");
+x.showGridlines = true;
+var y = myChart3.addMeasureAxis("y", "porcentaje");
+y.showGridlines = false;
+var l = myChart3.addSeries("name", dimple.plot.bar);
+x.addOrderRule("nutriente");
+//myChart3.addLegend(810, 10, 10, 600);
+myChart3.draw();
+//x.titleShape.text("Porcentaje que contribuye la receta al consumo.");
+y.tickFormat = ',.2f';
+svg.append("text")
+   .attr("x", myChart3._xPixels() + myChart3._widthPixels() / 2)
+   .attr("y", myChart3._yPixels() - 20)
+   .style("text-anchor", "middle")
+   .style("font-family", "sans-serif")
+   .style("font-weight", "bold")
+   .text("Porcentaje que contribuye la receta al consumo.")
 </script>
 </script>
 {% endblock %}
