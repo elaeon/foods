@@ -61,7 +61,7 @@
         <form action="{% url 'analyze_food' %}" method="POST">
         {% csrf_token %}
         <div style="max-height:400px;overflow:auto;">
-        {% for food_list_name, food_list in  my_food_list.items %}
+        {% for food_list_name, food_list in  my_food_list %}
             <li><div class="my-list-margin">
                 <input type="checkbox" value="{{ food_list_name }}" name="food_list">
                 {{ food_list_name }} <span class="badge" style="font-size:70%">{{ food_list.score }}</span>

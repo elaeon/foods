@@ -7,6 +7,6 @@ def my_food_list(request):
     perfil["rnv_type_txt"] = RNV_TYPE[int(perfil.get("rnv_type", "1"))]
     perfil["genero_txt"] = genero[perfil.get("genero", "H")]
     return {
-        'my_food_list': request.session.get("intake_names_list", {}),
+        'my_food_list': sorted(request.session.get("intake_names_list", {}).items()),
         'perfil': perfil
     }

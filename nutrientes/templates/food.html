@@ -172,14 +172,14 @@ data.push({nombre: '{{ nutrient }}', valor: {{ value }}, unidad: '{{ unit }}', t
 data.push({nombre: '{{ v.0 }}', valor: {{ v.1 }}, unidad: '', tipo: 'promedio', caution: "-", good: "-"})
 {% endfor %}
 
-var svg = dimple.newSvg("#chartContainer", 900, 600);
+var svg = dimple.newSvg("#chartContainer", 1100, 600);
 var myChart = new dimple.chart(svg, data);
 myChart.assignColor("{{ food.name_limit }}", "#0066ff", null, .5);
 myChart.assignColor("promedio", "#aa0000", null, .5);
 myChart.assignColor("cuidado", "#aa0000", null, .7);
 myChart.assignColor("ok", "#00ff00", null, .7);
 myChart.assignColor("-", "#000000", null, .1);
-myChart.setBounds(60, 30, 750, 305);
+myChart.setBounds(60, 30, 950, 305);
 var x = myChart.addCategoryAxis("x", ["nombre", "unidad"]);
 x.showGridlines = true;
 var y = myChart.addMeasureAxis("y", "valor");
@@ -193,7 +193,8 @@ x.addOrderRule("nombre");
 
 l.interpolation = "step";
 //l.interpolation = "cardinal";
-myChart.addLegend(900, 100, 60, 300, "right");
+//myChart.addLegend(900, 100, 60, 300, "right");
+myChart.addLegend(10, 10, 350, 45, "right");
 //myChart.setStoryboard("nutr");
 y.useLog = true;
 y.logBase = 10;
