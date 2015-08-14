@@ -451,7 +451,7 @@ def change_perfil(request, intake_params):
         intake_params["unidad_edad"], 
         2)
 
-    nutrs = {}
+    nutrs = {"Folic acid": ["Folate, DFE [Folate food, Folic acid]", "X"]}
     for nutrdesc in nutrs_intake_usacan:
         nutrs[nutrdesc] = [nutrdesc, "X"]
 
