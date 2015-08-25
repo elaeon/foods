@@ -4,7 +4,7 @@
 {% block contenido_base %}
 <div>
 <div class="starter-template">
-<div>Nota: En esta gráfica se muestran los 10 principales nutrientes de cada categoria de alimentos</div>
+<div>Nota: En esta gráfica se muestran los {{ limit }} principales nutrientes de cada categoria de alimentos</div>
 <div id="graph"></div>
 </div>
 </div>
@@ -13,19 +13,20 @@
 <script type="text/javascript">
     data = [];
     {% for category_des, value, nutr in data %}
-        data.push({cat: '{{ category_des }}', porcentaje: {{ value }}, nutr: '{{ nutr }}'});
+        data.push({categoria: '{{ category_des }}', porcentaje: {{ value }}, nutr: '{{ nutr }}'});
     {% endfor %}
     var svg = dimple.newSvg("#graph", 1000, 700);
     var myChart = new dimple.chart(svg, data);
-    myChart.setBounds(40, 20, 800, 500)
-    var x = myChart.addCategoryAxis("x", "cat");
+    myChart.setBounds(40, 20, 800, 300)
+    var x = myChart.addCategoryAxis("x", "categoria");
     var y = myChart.addMeasureAxis("y", "porcentaje");
     y.tickFormat = '1f';
-    var s = myChart.addSeries("nutr", dimple.plot.bar);
-    x.addOrderRule("cat");
-    y.addOrderRule("porcentaje");
-    s.stacked = false;
-    myChart.addLegend(850, 10, 10, 600);
+    var s = myChart.addSeries("nutr", dimple.plot.scatter);
+    s.addOrderRule("-porcentaje");
+    x.addOrderRule("categoria");
+    //y.addOrderRule("porcentaje");
+    //s.stacked = true;
+    //myChart.addLegend(850, 10, 10, 600);
     myChart.draw();
 </script>
 {% endblock %}
