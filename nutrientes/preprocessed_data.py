@@ -199,7 +199,6 @@ def insert_update_db_ranking():
         ranking_by_type(data, "category")
 
     data = ranking_global_perfil()
-    ranking_by_type(data, "global")
 
 
 def recalc_preprocessed_data():
