@@ -54,9 +54,9 @@ def ranking_global_perfil():
     with open(PREPROCESSED_DATA_DIR+'order_matrix.csv', 'rb') as csvfile:
         rows = list(csv.reader(csvfile, delimiter=',', quotechar='"'))
         for perfil in perfiles_dict.values():
-            print(perfil)
-            foods = []
             edad_range = get_range(perfil["edad"], perfil["unidad_edad"])
+            print(perfil, edad_range)
+            foods = []
             for row in rows:
                 food = Food(row[0])
                 score = food.score(perfil, features=features)
