@@ -33,7 +33,7 @@ def ranking_global():
     return global_
 
 def ranking_global_perfil():    
-    from nutrientes.utils import Food, Recipe, perfiles
+    from nutrientes.utils import Food, Recipe, perfiles, get_range
     import csv
 
     features = Recipe.create_generic_features()
@@ -50,33 +50,23 @@ def ranking_global_perfil():
         key = u"{}{}{}".format(edad, genero, unidad_edad)
         if key not in perfiles_dict:
             perfiles_dict[key] = {"edad": edad, "genero": genero, "unidad_edad": unidad_edad, "rnv_type": rnv_type}
-        
-    edad_range_meses = ["0-6", "7-12"]
-    edad_range_years = ["1-3", "4-8", "9-13", "14-18", "19-30", "31-50", "51-70", "71-150"]
-    def get_range(edad, edad_range_list):
-        for edad_range in edad_range_list:
-            min_year, max_year = edad_range.split("-")
-            min_year = int(min_year)
-            if max_year == '':            
-                max_year = 200
-            else:
-                max_year = int(max_year)
-            if min_year <= perfil["edad"] <= max_year:
-                return edad_range
 
     with open(PREPROCESSED_DATA_DIR+'order_matrix.csv', 'rb') as csvfile:
         rows = list(csv.reader(csvfile, delimiter=',', quotechar='"'))
         for perfil in perfiles_dict.values():
             print(perfil)
             foods = []
-            if perfil["unidad_edad"] == u"meses":
-                edad_range = get_range(perfil["edad"], edad_range_meses)
-            else:
-                edad_range = get_range(perfil["edad"], edad_range_years)
+            edad_range = get_range(perfil["edad"], perfil["unidad_edad"])
             for row in rows:
                 food = Food(row[0])
                 score = food.score(perfil, features=features)
-                foods.append((food.ndb_no, score, edad_range, perfil["genero"], perfil["unidad_edad"].encode("utf8", "replace"), perfil["rnv_type"]))
+                foods.append((
+                    food.ndb_no, 
+                    score, 
+                    edad_range, 
+                    perfil["genero"], 
+                    perfil["unidad_edad"].encode("utf8", "replace"), 
+                    perfil["rnv_type"]))
             ranking_by_perfil(foods)
             #break
 

@@ -289,13 +289,15 @@ def set_comparation(request, ndb_no, operation):
     return HttpResponse(name, content_type='text/plain')
 
 
-def list_food_category(request, category_id, order):
-    from nutrientes.utils import alimentos_category, alimentos_category_name
-    from nutrientes.utils import ranking_nutr
+@perfil
+def list_food_category(request, category_id, order, intake_params={}):
+    from nutrientes.utils import alimentos_category_name, get_range
+    from nutrientes.utils import ranking_nutr, ranking_nutr_perfil
 
     categoria = alimentos_category_name(category_id)[0][0]
-    if order == u"alfanumeric":
-        foods = alimentos_category(category=category_id, limit="limit 9000")        
+    if order == u"perfil":
+        edad_range = get_range(intake_params["edad"], intake_params["unidad_edad"])
+        foods = ranking_nutr_perfil(intake_params, edad_range, category_food=category_id)
     else:
         foods = ranking_nutr(category_food=category_id)
 
@@ -342,11 +344,17 @@ def contact(request):
     return render(request, "contact.html", {})
 
 
-def ranking_list(request):
-    from utils import ranking_nutr
-    foods = ranking_nutr()
+@perfil
+def ranking_list(request, order, intake_params={}):
+    from nutrientes.utils import ranking_nutr, get_range, ranking_nutr_perfil
+    if order == u"perfil":
+        edad_range = get_range(intake_params["edad"], intake_params["unidad_edad"])
+        foods = ranking_nutr_perfil(intake_params, edad_range)
+    else:
+        foods = ranking_nutr()
     return render(request, "ranking_list.html", {
-        "foods": foods})
+        "foods": foods,
+        "order": order})
 
 
 def result_long_search(request):

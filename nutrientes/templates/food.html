@@ -9,7 +9,7 @@
 {{ food.name }}
 <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ food.name_en }}" alt=" {{ food.name_en }}">En</a>
 <a tabindex="0" class="btn btn-xs btn-{% if ranking.global < 500%}info{% else %}success{% endif %}" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Ranking" data-content="Posición del total">#{{ ranking.global }}</a>
-<a href="{% url 'ranking_list' %}">Ranking</a>
+<a href="{% url 'ranking_list' 'best' %}">Ranking</a>
 </h2>
 <h4>
 <a href="{% url 'list_food_category' food.group.id 'best' %}">{{ food.group.name }}</a> 
