@@ -22,15 +22,25 @@ def perfil(some_func):
     return inner
 
 def index(request):
-    from nutrientes.utils import category_food_list
     
     width_img_rand = random.uniform(0, 100) #0 to 100%
     height_img_rand = random.uniform(0, 100) #0 to 100%
-    
+        
+    if request.method == "GET" and "table_type" in request.GET:
+        if request.GET["table_type"] == "perfil":
+            from nutrientes.utils import category_food_list_perfil
+            category_food_list = category_food_list_perfil()
+            table_type = "perfil"
+    else:
+        from nutrientes.utils import category_food_list
+        category_food_list = category_food_list()
+        table_type = "avg"
+
     return render(request, "index.html", {
-        "category_food": category_food_list(), 
+        "category_food": category_food_list, 
         "width_img_rand": width_img_rand,
-        "height_img_rand": height_img_rand})
+        "height_img_rand": height_img_rand,
+        "table_type": table_type})
 
 
 def graph_all_nutr(request):

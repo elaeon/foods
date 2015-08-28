@@ -126,6 +126,16 @@ def avg_nutrients_group_nutr(nutr_no, order_by="avg"):
     cursor.execute(query)
     return cursor.fetchall()
 
+def avg_calification_group_perfil(order_by="avg"):
+    _, cursor = conection()
+    query = """SELECT fd_group.fdgrp_desc_es, AVG(score) as avg
+            FROM ranking_perfil, food_des, fd_group
+            WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+            AND ranking_perfil.ndb_no=food_des.ndb_no
+            GROUP BY fd_group.fdgrp_desc_es ORDER BY {order} DESC;""".format(order=order_by)
+    cursor.execute(query)
+    return cursor.fetchall()
+
 def avg_nutrients_group_omega():
     _, cursor = conection()
     query = """SELECT fd_group.fdgrp_desc_es, AVG(omega3), AVG(omega6), AVG(omega7), AVG(omega9), AVG(radio)
@@ -204,6 +214,18 @@ def category_food_list():
         omega_calif = 0 if omegas[category_food_e] > 4 else 1
         calif = int(((nutr_calif + omega_calif) / (float(len(category_results[category_food_e]) + 1)))*100)
         yield category_food_e, cat_id, count, category_results[category_food_e], omegas[category_food_e], calif
+
+def category_food_list_perfil():
+    category_results = {}
+    category_food_l = category_food()
+    cat_score = avg_calification_group_perfil(order_by="avg")#"fd_group.fdgrp_desc_es")
+    
+    for category_food_e, cat_id, count in category_food_l:
+        category_results[category_food_e] = (cat_id, count)
+
+    for category_food_e, score in cat_score:
+        cat_id, count = category_results[category_food_e]
+        yield category_food_e, cat_id, count, score
 
 def alimentos_category(category=None, limit="limit 10"):
     _, cursor = conection()
@@ -1204,8 +1226,8 @@ def boost_food(ndb_no):
     return food
 
 def intake(edad, genero, unidad_edad, rnv_type):
-    _, cursor = conection()
-    edad_range = get_range(edad, unidad_edad)
+    conn, cursor = conection()
+    edad_range = get_range(edad, unidad_edad, rnv_type)
     query = """SELECT nutr_def.nutr_no, nutrdesc, units, value, type, edad_range
                 FROM nutr_def, nutr_intake 
                 WHERE nutr_def.nutr_no=nutr_intake.nutr_no
@@ -1220,13 +1242,17 @@ def intake(edad, genero, unidad_edad, rnv_type):
             nutrs[nutrdesc] = NutrIntake(nutr_no, nutrdesc)
             nutrs[nutrdesc].units = units
         nutrs[nutrdesc].add_value(float(value), label)
+    conn.close()
     return nutrs
 
-def get_range(edad, unidad_edad):
+def get_range(edad, unidad_edad, rnv_type=1):
     if unidad_edad == "meses":
         edad_range_list = ["0-6", "7-12"]
     else:
-        edad_range_list = ["1-3", "4-8", "9-13", "14-18", "19-30", "31-50", "51-70", "71-150"]
+        if rnv_type == 1:
+            edad_range_list = ["1-3", "4-8", "9-13", "14-18", "19-30", "31-50", "51-70", "71-150"]
+        else:
+            edad_range_list = ["1-150"]
 
     for edad_range in edad_range_list:
         min_year, max_year = edad_range.split("-")

@@ -21,8 +21,14 @@
     <div class="color-swatch bg-danger" style="padding: 5px; text-align: center;">Cuidado</div>
     <a role="button" class="btn btn-sm btn-default" href="{% url 'complex_intake_nutrients' %}">Nutrientes...</a>
     <a role="button" class="btn btn-sm btn-default" href="{% url 'graph_all_nutr' %}">Quiero ver más...</a>
+    {% if table_type == "perfil" %}
+    <a role="button" class="btn btn-sm btn-default" href="{% url 'index' %}">Ver tabla por promedio</a>
+    {% else %}
+    <a role="button" class="btn btn-sm btn-default" href="{% url 'index' %}?table_type=perfil">Ver tabla por el perfil</a>
+    {% endif %}
 </div>
 
+{% if table_type == "avg" %}
 <div class="table-responsive">
 <table class="table table-striped table-hover table-condensed">
 <thead style="font-size: 90%">
@@ -79,4 +85,24 @@
 </tbody>
 </table>
 </div>
+{% else %}
+<div class="table-responsive">
+<table class="table table-striped table-hover table-condensed">
+<thead style="font-size: 90%">
+<th>Categoria</th>
+<th>#Alimentos</th>
+<th>Calificación</th>
+</thead>
+<tbody>
+{% for category, cat_id, total, calification in category_food %}
+<tr>
+<td><a href="{% url 'list_food_category' cat_id 'best' %}">{{ category }}</a></td>
+<td style="text-align: right;">{{ total }}</td>
+<td>{{ calification }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
 {% endblock %}
