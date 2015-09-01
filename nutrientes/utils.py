@@ -1227,7 +1227,7 @@ def boost_food(ndb_no):
 
 def intake(edad, genero, unidad_edad, rnv_type):
     conn, cursor = conection()
-    edad_range = get_range(edad, unidad_edad, rnv_type)
+    edad_range = get_range(int(edad), unidad_edad, int(rnv_type))
     query = """SELECT nutr_def.nutr_no, nutrdesc, units, value, type, edad_range
                 FROM nutr_def, nutr_intake 
                 WHERE nutr_def.nutr_no=nutr_intake.nutr_no
@@ -1414,7 +1414,7 @@ def recipes_list_users(max_number):
             if k not in cache:
                 edad, genero, unidad_edad, rnv_type = recipe_txt.split("-")
                 perfil_intake = intake(
-                    int(edad), 
+                    edad, 
                     genero, 
                     unidad_edad, 
                     rnv_type)
@@ -1844,5 +1844,5 @@ def search_menu():
                 #print("RESOURCE", resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000)
                 #print("COLLECT")
                 gc.collect(0)
-    print sorted(results, key=lambda x:x[0], reverse=True)
+    print(sorted(results, key=lambda x:x[0], reverse=True))
 
