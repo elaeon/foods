@@ -1555,7 +1555,8 @@ class Recipe(object):
 
     def calc_weight(self, force=False):
         if self.weight is None or force:
-            self.weight = sum(food.weight for food in self.foods.values())
+            if self.foods is not None:
+                self.weight = sum(food.weight for food in self.foods.values())
         return self.weight
 
     def calc_radio_omega(self):
@@ -1565,8 +1566,12 @@ class Recipe(object):
         except ZeroDivisionError:
             self.radio_omega = 0
 
-    def total_nutr_data(self):
-        vectors_features = self.vector_features()
+    def total_nutr_data(self, vector_features_opt=None):
+        if vector_features_opt is None:
+            vectors_features = self.vector_features()
+        else:
+            vectors_features = vector_features_opt
+
         total_food = [(v[0][0], sum(e[1] for e in v)) for v in zip(*vectors_features)]
         total_food = [(nutr_no, total) for nutr_no, total in total_food if total > 0]
         if self.nutr_id_key == "nutrdesc":
@@ -1740,7 +1745,7 @@ class Recipe(object):
     def from_light_format(self, intake_light_format, perfil_intake=None, data=True, features=None):
         perfil = intake_light_format["perfil"]
         foods = intake_light_format["foods"]
-        intake_list = Recipe(
+        recipe = Recipe(
             perfil["edad"], 
             perfil["genero"], 
             perfil["unidad_edad"].encode("utf8", "replace"),
@@ -1748,19 +1753,33 @@ class Recipe(object):
             perfil_intake=perfil_intake,
             name=intake_light_format.get("name", None),
             features=features)
-        intake_list.foods = {ndb_no: Food(ndb_no, weight=weight, avg=False)
+        recipe.foods = {ndb_no: Food(ndb_no, weight=weight, avg=False)
             for ndb_no, weight in foods.items()}
         if data:
-            intake_list.total_nutr_data()
-        return intake_list
+            recipe.total_nutr_data()
+        return recipe
+
+    @classmethod
+    def from_vector_format(self, intake_light_format, perfil_intake, features, vector_features):
+        perfil = intake_light_format["perfil"]
+        recipe = Recipe(
+            perfil["edad"], 
+            perfil["genero"], 
+            perfil["unidad_edad"].encode("utf8", "replace"),
+            perfil.get("rnv_type", 1),
+            perfil_intake=perfil_intake,
+            name=intake_light_format.get("name", None),
+            features=features)
+        recipe.total_nutr_data(vector_features_opt=[vector_features])
+        return recipe
 
     @classmethod
     def merge(self, intake_list_list, names=True):
         if len(intake_list_list) > 1:
-            intake_total = Recipe('', '', '', None, blank=True, features=intake_list_list[0].features)
-            intake_total.set_nutr_id("nutrdesc" if names else "id")
-            intake_total.perfil = intake_list_list[0].perfil
-            intake_total.perfil_intake = intake_list_list[0].perfil_intake
+            recipe_merge = Recipe('', '', '', None, blank=True, features=intake_list_list[0].features)
+            recipe_merge.set_nutr_id("nutrdesc" if names else "id")
+            recipe_merge.perfil = intake_list_list[0].perfil
+            recipe_merge.perfil_intake = intake_list_list[0].perfil_intake
             foods_tmp = {}
             for intake_list in intake_list_list:
                 for ndb_no, food in intake_list.foods.items():
@@ -1771,15 +1790,21 @@ class Recipe(object):
             foods = {}
             for ndb_no, foods_ndb_no in foods_tmp.items():
                 if len(foods_ndb_no) > 1:
-                    #foods[ndb_no] = Food(ndb_no, weight=sum(food.weight for food in foods_ndb_no))
                     foods[ndb_no] = sum(foods_ndb_no)
                 else:
                     foods[ndb_no] = foods_ndb_no.pop()
-            intake_total.foods = foods
-            intake_total.total_nutr_data()
+            recipe_merge.foods = foods
+            recipe_merge.total_nutr_data()
             return intake_total
         else:
             return intake_list_list[0]
+
+    @classmethod
+    def merge_with_vector_features(self, perfil_intake, features, vector_features):
+        recipe_merge = Recipe('', '', '', None, blank=True, features=features)
+        recipe_merge.perfil_intake = perfil_intake
+        recipe_merge.total_nutr_data(vector_features_opt=vector_features)
+        return recipe_merge
 
     def recipe2food(self):
         food = Food(weight=self.weight, avg=False)
@@ -1846,3 +1871,48 @@ def search_menu():
                 gc.collect(0)
     print(sorted(results, key=lambda x:x[0], reverse=True))
 
+
+def categories_calif():
+    conn, cursor = conection()
+    categories = {"Pollo": "0500", 
+        "Legumbres": "1600",
+        "Res": "1300",
+        "Salchichas": "0700",
+        "lacteos": "0100",
+        "vegetales": "1100",
+        "frutas": "0900",
+        "bebidas": "1400",
+        "pescados": "1500",
+        "nueces": "1200",
+        "cereales": "0800",
+        "cerdo": "1000",
+        "dulces": "1900"}
+    features = Recipe.create_generic_features()
+    perfil = {"edad": 26, "genero": "H", "unidad_edad": u"años", "rnv_type": 1}
+    perfil_intake = intake(
+        perfil["edad"], 
+        perfil["genero"], 
+        perfil["unidad_edad"].encode("utf8", "replace"), 
+        perfil["rnv_type"])
+    intake_light_format = {
+        "perfil": perfil,
+        "foods": [],
+        "name": "test"}
+    vector_features_list = []
+    for category in categories.values():
+        query = """SELECT nut_data.nutr_no, nutrdesc, AVG(nutr_val) as avg
+            FROM nut_data, nutr_def, food_des, fd_group 
+            WHERE nut_data.nutr_no=nutr_def.nutr_no 
+            AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
+            AND food_des.ndb_no=nut_data.ndb_no 
+            AND food_des.fdgrp_cd=%s
+            AND nutr_val > 0
+            GROUP BY nutrdesc, nut_data.nutr_no"""
+        cursor.execute(query, [category])
+        nutrs = cursor.fetchall()
+        nutrs, _ = Food.subs_omegas([(nutr_no, nut, v, "") 
+                            for nutr_no, nut, v in nutrs])
+        vector_features = Food.vector_features(features, nutrs).items()
+        vector_features_list.append(vector_features)
+        #Recipe.from_vector_format(intake_light_format, perfil_intake, features, vector_features))
+    print(Recipe.merge_with_vector_features(perfil_intake, features, vector_features_list).score)
