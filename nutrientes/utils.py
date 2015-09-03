@@ -1872,23 +1872,27 @@ def search_menu():
     print(sorted(results, key=lambda x:x[0], reverse=True))
 
 
-def categories_calif():
+def categories_calif(data):
+    import random
     conn, cursor = conection()
-    categories = {"Pollo": "0500", 
-        "Legumbres": "1600",
-        "Res": "1300",
-        "Salchichas": "0700",
-        "lacteos": "0100",
-        "vegetales": "1100",
-        "frutas": "0900",
-        "bebidas": "1400",
-        "pescados": "1500",
-        "nueces": "1200",
-        "cereales": "0800",
-        "cerdo": "1000",
-        "dulces": "1900"}
+    categories = {"Carne de pollo": [{"id": "0500", "search": None}], 
+        "Legumbres": [{"id": "1600", "search": None}],
+        "Carne de res": [{"id": "1300", "search": None}],
+        "Salchichas o carnes frias": [{"id": "0700", "search": None}],
+        "Huevo o l\xc3\xa1cteos": [{"id": "0100", "search": "leche"}, {"id": "0100", "search": "huevo"}],
+        "Verduras": [{"id": "1100", "search": None}],
+        "Frutas": [{"id": "0900", "search": None}],
+        "Caf\xc3\xa9 o t\xc3\xa9 descafeinados": [{"id": "1400", "search": "te"}, {"id": "1400", "search": "cafe"}],
+        "Caf\xc3\xa9 o t\xc3\xa9 con cafeina": [{"id": "1400", "search": "te"}, {"id": "1400", "search": "cafe"}],
+        "Refrescos o bebidas endulzadas": [{"id": "1400", "search": "coca"}],
+        "Refrescos bajos en calorias": [{"id": "1400", "search": "coca"}],
+        "Pescados o mariscos": [{"id": "1500", "search": None}],
+        "Nueces y semillas": [{"id": "1200", "search": None}],
+        "Cereales o pastas": [{"id": "0800", "search": None}],
+        "Carne de cerdo": [{"id": "1000", "search": None}],
+        "Dulces": [{"id": "1900", "search": None}]}
     features = Recipe.create_generic_features()
-    perfil = {"edad": 26, "genero": "H", "unidad_edad": u"años", "rnv_type": 1}
+    perfil = {"edad": 26, "genero": "H", "unidad_edad": u"años", "rnv_type": 2}
     perfil_intake = intake(
         perfil["edad"], 
         perfil["genero"], 
@@ -1899,20 +1903,57 @@ def categories_calif():
         "foods": [],
         "name": "test"}
     vector_features_list = []
-    for category in categories.values():
-        query = """SELECT nut_data.nutr_no, nutrdesc, AVG(nutr_val) as avg
-            FROM nut_data, nutr_def, food_des, fd_group 
-            WHERE nut_data.nutr_no=nutr_def.nutr_no 
-            AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
-            AND food_des.ndb_no=nut_data.ndb_no 
-            AND food_des.fdgrp_cd=%s
-            AND nutr_val > 0
-            GROUP BY nutrdesc, nut_data.nutr_no"""
-        cursor.execute(query, [category])
-        nutrs = cursor.fetchall()
-        nutrs, _ = Food.subs_omegas([(nutr_no, nut, v, "") 
-                            for nutr_no, nut, v in nutrs])
-        vector_features = Food.vector_features(features, nutrs).items()
-        vector_features_list.append(vector_features)
-        #Recipe.from_vector_format(intake_light_format, perfil_intake, features, vector_features))
-    print(Recipe.merge_with_vector_features(perfil_intake, features, vector_features_list).score)
+    data_dict = dict(data)
+    count = 0
+    totals = []
+    while count < 7:
+        for category_name, category in categories.items():
+            value = data_dict[category_name]
+            rand = random.uniform(0, 1)
+            if rand <= value:
+                for type_category in category:
+                    if type_category["search"] is not None:
+                        query = """SELECT nut_data.nutr_no, nutrdesc, AVG(nutr_val) as avg
+                        FROM nut_data, nutr_def, food_des, fd_group 
+                        WHERE nut_data.nutr_no=nutr_def.nutr_no 
+                        AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
+                        AND food_des.ndb_no=nut_data.ndb_no 
+                        AND food_des.fdgrp_cd='{category}'
+                        AND nutr_val > 0
+                        AND long_desc_es ilike '%{search}%'
+                        GROUP BY nutrdesc, nut_data.nutr_no""".format(
+                            category=type_category["id"], 
+                            search=type_category["search"])
+                        cursor.execute(query)
+                    else:
+                        query = """SELECT nut_data.nutr_no, nutrdesc, AVG(nutr_val) as avg
+                            FROM nut_data, nutr_def, food_des, fd_group 
+                            WHERE nut_data.nutr_no=nutr_def.nutr_no 
+                            AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
+                            AND food_des.ndb_no=nut_data.ndb_no 
+                            AND food_des.fdgrp_cd=%s
+                            AND nutr_val > 0
+                            GROUP BY nutrdesc, nut_data.nutr_no"""
+                        cursor.execute(query, [type_category["id"]])
+                nutrs = cursor.fetchall()
+                nutrs, _ = Food.subs_omegas([(nutr_no, nut, v, "") 
+                                    for nutr_no, nut, v in nutrs])
+                vector_features = Food.vector_features(features, nutrs).items()
+                vector_features_list.append(vector_features)
+        totals.append(Recipe.merge_with_vector_features(perfil_intake, features, vector_features_list).score)
+        count += 1
+    return sum(totals)/len(totals)
+
+def read_vector_food():
+    import csv
+    with open("/home/agmartinez/Programas/alimentos/encuesta_data/encuesta_alimentos_alumnos_vector.csv", 'rb') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',', quotechar='"')
+        for row in reader:
+            header = row
+            break
+        results = []
+        for i, row in enumerate(reader):
+            results.append(categories_calif(zip(header, map(float, row))))
+            #if i == 5:
+            #    break
+        print(results)
