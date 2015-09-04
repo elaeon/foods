@@ -65,5 +65,5 @@ def transform():
     matrix.to_csv(path_or_buf="encuesta_alimentos_alumnos_vector.csv", index=False)
 
 if __name__ == '__main__':
-    #print(resume())
-    transform()
+    print(resume())
+    #transform()

@@ -489,3 +489,7 @@ def complex_intake_nutrients(request, intake_params):
     from nutrientes.utils import lower_essencial_nutrients
     data = lower_essencial_nutrients(intake_params)
     return render(request, "complex_intake_nutrients.html", {"data": data})
+
+
+def news(request):
+    return render(request, "news.html", {})

@@ -1360,13 +1360,13 @@ def recipes_list(max_number, perfil, ordered="score", visible=True):
     cursor.execute(query, [visible])
     recipes = defaultdict(dict)
     for recipe_id, name, ndb_no, weight in cursor.fetchall():
-        recipes["{}-{}".format(recipe_id, name)][ndb_no] = float(weight)
+        recipes[u"{}-{}".format(recipe_id, name)][ndb_no] = float(weight)
 
     recipes_l = []
     perfil_intake = intake(
         perfil["edad"], 
         perfil["genero"], 
-        perfil["unidad_edad"].encode("utf8", "replace"), 
+        perfil["unidad_edad"],#.encode("utf8", "replace"), 
         perfil["rnv_type"])
     features = Recipe.create_generic_features()
     for recipe_id_name, foods in recipes.items():
@@ -1872,7 +1872,7 @@ def search_menu():
     print(sorted(results, key=lambda x:x[0], reverse=True))
 
 
-def categories_calif(data):
+def categories_calif(data, cache):
     import random
     conn, cursor = conection()
     categories = {"Carne de pollo": [{"id": "0500", "search": None}], 
@@ -1892,7 +1892,7 @@ def categories_calif(data):
         "Carne de cerdo": [{"id": "1000", "search": None}],
         "Dulces": [{"id": "1900", "search": None}]}
     features = Recipe.create_generic_features()
-    perfil = {"edad": 26, "genero": "H", "unidad_edad": u"años", "rnv_type": 2}
+    perfil = {"edad": 26, "genero": "H", "unidad_edad": u"años", "rnv_type": 1}
     perfil_intake = intake(
         perfil["edad"], 
         perfil["genero"], 
@@ -1912,48 +1912,53 @@ def categories_calif(data):
             rand = random.uniform(0, 1)
             if rand <= value:
                 for type_category in category:
-                    if type_category["search"] is not None:
-                        query = """SELECT nut_data.nutr_no, nutrdesc, AVG(nutr_val) as avg
-                        FROM nut_data, nutr_def, food_des, fd_group 
-                        WHERE nut_data.nutr_no=nutr_def.nutr_no 
-                        AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
-                        AND food_des.ndb_no=nut_data.ndb_no 
-                        AND food_des.fdgrp_cd='{category}'
-                        AND nutr_val > 0
-                        AND long_desc_es ilike '%{search}%'
-                        GROUP BY nutrdesc, nut_data.nutr_no""".format(
-                            category=type_category["id"], 
-                            search=type_category["search"])
-                        cursor.execute(query)
-                    else:
-                        query = """SELECT nut_data.nutr_no, nutrdesc, AVG(nutr_val) as avg
+                    key = category_name+type_category["id"]+str(type_category["search"])
+                    if not key in cache:
+                        if type_category["search"] is not None:
+                            query = """SELECT nut_data.nutr_no, nutrdesc, AVG(nutr_val) as avg
                             FROM nut_data, nutr_def, food_des, fd_group 
                             WHERE nut_data.nutr_no=nutr_def.nutr_no 
                             AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
                             AND food_des.ndb_no=nut_data.ndb_no 
-                            AND food_des.fdgrp_cd=%s
+                            AND food_des.fdgrp_cd='{category}'
                             AND nutr_val > 0
-                            GROUP BY nutrdesc, nut_data.nutr_no"""
-                        cursor.execute(query, [type_category["id"]])
-                nutrs = cursor.fetchall()
-                nutrs, _ = Food.subs_omegas([(nutr_no, nut, v, "") 
-                                    for nutr_no, nut, v in nutrs])
-                vector_features = Food.vector_features(features, nutrs).items()
-                vector_features_list.append(vector_features)
+                            AND long_desc_es ilike '%{search}%'
+                            GROUP BY nutrdesc, nut_data.nutr_no""".format(
+                                category=type_category["id"], 
+                                search=type_category["search"])
+                            cursor.execute(query)
+                        else:
+                            query = """SELECT nut_data.nutr_no, nutrdesc, AVG(nutr_val) as avg
+                                FROM nut_data, nutr_def, food_des, fd_group 
+                                WHERE nut_data.nutr_no=nutr_def.nutr_no 
+                                AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
+                                AND food_des.ndb_no=nut_data.ndb_no 
+                                AND food_des.fdgrp_cd=%s
+                                AND nutr_val > 0
+                                GROUP BY nutrdesc, nut_data.nutr_no"""
+                            cursor.execute(query, [type_category["id"]])
+                        cache[key] = cursor.fetchall()
+                    nutrs, _ = Food.subs_omegas([(nutr_no, nut, v, "") 
+                                        for nutr_no, nut, v in cache[key]])
+                    vector_features = Food.vector_features(features, nutrs).items()
+                    vector_features_list.append(vector_features)
         totals.append(Recipe.merge_with_vector_features(perfil_intake, features, vector_features_list).score)
         count += 1
+    conn.close()
     return sum(totals)/len(totals)
 
 def read_vector_food():
     import csv
-    with open("/home/agmartinez/Programas/alimentos/encuesta_data/encuesta_alimentos_alumnos_vector.csv", 'rb') as csvfile:
+    with open("/home/agmartinez/Programas/alimentos/data_survey/students/encuesta_alimentos_alumnos_vector.csv", 'rb') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='"')
         for row in reader:
             header = row
             break
         results = []
+        cache = {}
         for i, row in enumerate(reader):
-            results.append(categories_calif(zip(header, map(float, row))))
-            #if i == 5:
+            results.append(categories_calif(zip(header, map(float, row)), cache))
+            #if i == 10:
             #    break
+        print("****AVG", sum(results)/len(results))
         print(results)
