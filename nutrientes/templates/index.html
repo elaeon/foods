@@ -2,7 +2,7 @@
 {% load staticfiles %}
 
 {% block contenido_base %}
-<div class="jumbotron" style="background: url(http://upload.wikimedia.org/wikipedia/commons/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg) {{ width_img_rand }}% {{ height_img_rand }}% no-repeat; background-size: auto;">
+<div class="jumbotron" style="background: url(http://upload.wikimedia.org/wikipedia/commons/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg) {{ width_img_rand }}% {{ height_img_rand }}% no-repeat; background-size: auto; margin-bottom:0px;">
     <div class="container">
     <h1 class="text_image_over">¡Una guia más para tu alimentación!</h1>
     <p class="text_image_over">Este sitio te ayudará a comparar, analizar e informarte sobre los alimentos y sus nutrientes.</p>
@@ -11,8 +11,11 @@
     <a role="button" href="{% url 'nutrient_selection' %}" class="btn btn-primary btn-md">Nutrientes »</a>
     <a role="button" href="{% url 'ranking_list' 'best' %}" class="btn btn-primary btn-md">Ranking »</a>
     </p>
-    </div>
+    </div> 
 </div>
+<canvas id="displayCanvas" height="25px">
+    Your browser does not support HTML5 canvas.
+</canvas>
 <p class="text-muted" style="margin-left: 10px;">En esta tabla se muestran las categorias de los alimentos, junto con los nutrientes más comunes causantes de enfermedades.</p>
 
 <div class="color-swatches">
@@ -105,4 +108,8 @@
 </table>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{% static 'cellular.js' %}"></script>
 {% endblock %}
