@@ -16,6 +16,7 @@ Including another URLconf
 from django.conf.urls import include, url
 from nutrientes import views as nutr_views
 from news import views as news_views
+from news.api import router
 
 urlpatterns = [
     url(r'^$', nutr_views.index, name="index"),
@@ -44,6 +45,8 @@ urlpatterns = [
     url(r'^news/$', nutr_views.news, name="nutr_news")
 ]
 
-#urlpatterns += [
-#    url(r'^noticias/$', news_views.index, name="news_index")
-#]
+urlpatterns += [
+    url(r'^api/news/', include(router.urls)),
+]
+
+

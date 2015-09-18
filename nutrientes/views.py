@@ -492,4 +492,6 @@ def complex_intake_nutrients(request, intake_params):
 
 
 def news(request):
-    return render(request, "news.html", {})
+    from news.models import News
+    latest_news = News.objects.latest("date_pub")
+    return render(request, "news.html", {"latest_news": latest_news})

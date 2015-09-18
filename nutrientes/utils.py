@@ -1938,7 +1938,7 @@ def categories_calif(data, cache):
                                 GROUP BY nutrdesc, nut_data.nutr_no"""
                             cursor.execute(query, [type_category["id"]])
                         cache[key] = cursor.fetchall()
-                    nutrs, _ = Food.subs_omegas([(nutr_no, nut, v, "") 
+                    nutrs, _ = Food.subs_omegas([(nutr_no, nut, (float(v) * 50) / 100.0, "") 
                                         for nutr_no, nut, v in cache[key]])
                     vector_features = Food.vector_features(features, nutrs).items()
                     vector_features_list.append(vector_features)
@@ -1949,7 +1949,7 @@ def categories_calif(data, cache):
 
 def read_vector_food():
     import csv
-    with open("/home/agmartinez/Programas/alimentos/data_survey/students/encuesta_alimentos_alumnos_vector.csv", 'rb') as csvfile:
+    with open("/home/agmartinez/Programas/alimentos/data_survey/students/encuesta_alimentos_alumnos_vector.csv", 'r') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='"')
         for row in reader:
             header = row
