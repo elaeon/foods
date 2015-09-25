@@ -1,5 +1,13 @@
 from django.db import models
 
+class SatietyIndex(models.Model):
+    ndb_no_t = models.TextField(unique=True)
+    percent = models.FloatField()
+    base = models.BooleanField()
+
+    def __unicode__(self):
+        return self.ndb_no_t
+
 # Create your models here.
 #class Recipe(models.Model):
 #    name = models.TextField()

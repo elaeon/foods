@@ -16,6 +16,7 @@ Including another URLconf
 from django.conf.urls import include, url
 from nutrientes import views as nutr_views
 from news import views as news_views
+from disease import views as disease_views
 from news.api import router
 
 urlpatterns = [
@@ -42,7 +43,8 @@ urlpatterns = [
     url(r'^change_perfil/$', nutr_views.change_perfil, name="change_perfil"),
     url(r'^complex_intake_nutrients/$', nutr_views.complex_intake_nutrients, name="complex_intake_nutrients"),
     url(r'^best_menu/$', nutr_views.best_menu, name="best_menu"),
-    url(r'^news/$', nutr_views.news, name="nutr_news")
+    url(r'^news/$', nutr_views.news, name="nutr_news"),
+    url(r'^diabetes/$', disease_views.diabetes, name="diabetes")
 ]
 
 urlpatterns += [

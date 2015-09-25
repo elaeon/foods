@@ -1,0 +1,43 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+
+{% block contenido_base %}
+<div class="jumbotron" style="background: url(http://upload.wikimedia.org/wikipedia/commons/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg) {{ width_img_rand }}% {{ height_img_rand }}% no-repeat; background-size: auto; margin-bottom:0px;">
+    <div class="container">
+    <h1 class="text_image_over">¡Diabetes!</h1>
+    <p class="text_image_over">Este sitio te ayudará a comparar, analizar e informarte las causas de la Diabetes mellitus.</p>
+    <!--<p>
+    <a role="button" href="{% url 'recipes' %}" class="btn btn-primary btn-md">Recetas »</a>
+    <a role="button" href="{% url 'nutrient_selection' %}" class="btn btn-primary btn-md">Nutrientes »</a>
+    <a role="button" href="{% url 'ranking_list' 'best' %}" class="btn btn-primary btn-md">Ranking »</a>
+    </p>-->
+    </div> 
+</div>
+En México, la Diabetes mellitus es la primera causa de muerte (que se tenga registro) desde año 2000, y se calcula que para finales de 2015 llegue a más de 100,000 muertes.
+
+En edades de 30 en adelante se muestra como la primera causa de <a href="http://www.conapo.gob.mx/es/CONAPO/Mortalidad">mortalidad</a>. Ademas <a href="http://dx.doi.org/10.1590/S0036-36342006000600001">la espectativa de vida</a> de un paciente con diabetes ronda los 10 años.
+La diabetes puede ocacionar, complicaciones como enfermedades del corazón, ataques cardiacos, derrame cerebral, hipertensión, Ceguera y problemas en los ojos, enfermedades renales.
+<div class="table-responsive">
+<table class="table table-striped table-hover table-condensed">
+<thead style="font-size: 90%">
+</thead>
+<tbody>
+<tr><td>1.- <b>Diabetes mellitus<b></td><td>84,445</td></tr>
+<tr><td>2.- Enfermedades isquémicas del corazón</td><td>73,611</td></tr>
+<tr><td>3.- Enfermedad cerebrovascular</td><td>31,131</td></tr>
+<tr><td>4.- Cirrosis y otras enfermedades crónicas del hígado</td><td>28,251</td></tr>
+<tr><td>5.- Enfermedad pulmonar obstructiva crónica</td><td>21,057</td></tr>
+<tr><td>6.- Infecciones respiratorias agudas bajas</td><td>16,965</td></tr>
+<tr><td>7.- Enfermedades hipertensivas</td><td> 16,071</td></tr>
+<tr><td>8.- Nefritis y nefrosis</td><td>14,083</td></tr>
+<tr><td>9.- Asfixia y trauma al nacimiento</td><td>76,07</td></tr>
+<tr><td>10.- Desnutrición calórico protéica</td><td>6,815</td></tr>
+<tr><td>11.- Tumor maligno de la próstata</td><td>5,582</td></tr>
+<tr><td>12.- VIH/SIDA</td><td>4578</td></tr>
+<tr><td>13.- Malformaciones congénitas del corazón</td><td>3,528</td></tr>
+<tr><td>14.- Tumor maligno de la mama</td><td>3,047</td></tr>
+<tr><td>15.- Leucemia</td><td>1,603</td></tr>
+</tbody>
+</table>
+{% endblock %}
+

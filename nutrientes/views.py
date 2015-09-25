@@ -22,7 +22,6 @@ def perfil(some_func):
     return inner
 
 def index(request):
-    
     width_img_rand = random.uniform(0, 100) #0 to 100%
     height_img_rand = random.uniform(0, 100) #0 to 100%
         
@@ -125,7 +124,7 @@ def ajax_search(request):
         suggestions = []    
         for ndb_no, long_desc_es, _ in records:
             suggestions.append({
-                "value": long_desc_es.decode("utf8", "replace") ,
+                "value": long_desc_es,
                 "data": {
                     "id": ndb_no,
                     "category": ""}})
@@ -495,3 +494,4 @@ def news(request):
     from news.models import News
     latest_news = News.objects.latest("date_pub")
     return render(request, "news.html", {"latest_news": latest_news})
+
