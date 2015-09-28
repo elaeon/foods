@@ -1,5 +1,6 @@
 {% extends "busqueda.html" %}
 {% load staticfiles %}
+{% load humanize %}
 
 {% block contenido_base %}
 <div class="jumbotron" style="background: url(http://upload.wikimedia.org/wikipedia/commons/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg) {{ width_img_rand }}% {{ height_img_rand }}% no-repeat; background-size: auto; margin-bottom:0px;">
@@ -13,31 +14,197 @@
     </p>-->
     </div> 
 </div>
-En México, la Diabetes mellitus es la primera causa de muerte (que se tenga registro) desde año 2000, y se calcula que para finales de 2015 llegue a más de 100,000 muertes.
 
-En edades de 30 en adelante se muestra como la primera causa de <a href="http://www.conapo.gob.mx/es/CONAPO/Mortalidad">mortalidad</a>. Ademas <a href="http://dx.doi.org/10.1590/S0036-36342006000600001">la espectativa de vida</a> de un paciente con diabetes ronda los 10 años.
-La diabetes puede ocacionar, complicaciones como enfermedades del corazón, ataques cardiacos, derrame cerebral, hipertensión, Ceguera y problemas en los ojos, enfermedades renales.
+<div class="container">
+    <div class="starter-template">
+        <div style="-moz-column-count: 3; -webkit-column-count: 3; -moz-column-gap: 40px;-webkit-column-gap: 40px; text-align: justify;">
+        La Diabetes mellitus esta caracterizada por hacer que la sangre tenga niveles abnormamente altos de azucar, esto es debido a que la insulina producida por el cuerpo no es producida o no se tiene en suficientes niveles o no es efectiva. Las formas más comunes de diabetes que existen son: la diabetes tipo 1 (5% a 10% de las personas la padecen) que es debido a un desorden autoinmune que ataca al páncreas. Diabetes tipo 2 (90% a 95% la padecen) esta asociada con la obesidad, debido a la deficiencia de insulina o resistencia del cuerpo a la insulina. La diabetes gestacional es una forma de diabetes que ocurre en el embarazo, y otras formas de diabetes son muy raras y son causadas por una mutación en un gen.
+
+        Es conocido que un <b>estilo de vida inactivo</b> y un <b>consumo excesivo de alimentos</b> son factores determinates para desarrollar diabetes. La diabetes es una <b>enfermedad genética</b> como también una <b>enfermedad del estilo de vida</b>. Raras formas de diabetes son causadas por una sola mutación de un gen, en la mayoria de los casos de diabetes, muchos genes están involucrados. El gen HNF4A es sospechoso de juegar un papel en el desarrollo de la diabetes tipo 2, ya que una mitación en este gen causa raras formas de diabetes. Los genes CAPN10, PIK3R1, PPARG, KCNJ11, SLC2A2, GCK, ABCC8 dependiendo la raza, pueden afectar el desarrollo de la diabetes.
+        
+        Los niveles de glucosa en la sangre no son constantes, se elevan y descienden de acuerdo a las necesidades del cuerpo y es regulada por las hormonas. Los niveles normales de glucosa van de <b>70 a 110 mg/dl</b>.
+        Eating produces a rise in blood glucose, the extent of which depends on a number of factors such as the amount and the type of carbohydrate eaten (i.e., the glycemic index)
+        Any glucose that is not used immediately is taken up by the liver and muscle where it can be converted into glycogen
+        When glycogen stores are fully replenished, excess glucose is converted into fat in a process called lipogenesis.Glucose is converted into fatty acids that are stored as triglycerides
+
+        En México, la diabetes se convirtió en la primera causa de muerte (que se tiene registro) desde año 2000, y se calcula que para finales de 2015 llegará a más de 100,000 muertes por año.
+
+        En edades de 30 en adelante se muestra como la primera causa de <a href="http://www.conapo.gob.mx/es/CONAPO/Mortalidad">mortalidad</a>. Ademas <a href="http://dx.doi.org/10.1590/S0036-36342006000600001">la espectativa de vida</a> de un paciente con diabetes ronda los 10 años.
+        La diabetes puede ocacionar, complicaciones como enfermedades del corazón, ataques cardiacos, derrame cerebral, hipertensión, ceguera, problemas en los ojos y enfermedades renales.
+        </div>
+    </div>
+</div>
 <div class="table-responsive">
 <table class="table table-striped table-hover table-condensed">
 <thead style="font-size: 90%">
+<th></th>
+{% for year in years %}
+<th>{{ year }}</th>
+{% endfor %}
 </thead>
 <tbody>
-<tr><td>1.- <b>Diabetes mellitus<b></td><td>84,445</td></tr>
-<tr><td>2.- Enfermedades isquémicas del corazón</td><td>73,611</td></tr>
-<tr><td>3.- Enfermedad cerebrovascular</td><td>31,131</td></tr>
-<tr><td>4.- Cirrosis y otras enfermedades crónicas del hígado</td><td>28,251</td></tr>
-<tr><td>5.- Enfermedad pulmonar obstructiva crónica</td><td>21,057</td></tr>
-<tr><td>6.- Infecciones respiratorias agudas bajas</td><td>16,965</td></tr>
-<tr><td>7.- Enfermedades hipertensivas</td><td> 16,071</td></tr>
-<tr><td>8.- Nefritis y nefrosis</td><td>14,083</td></tr>
-<tr><td>9.- Asfixia y trauma al nacimiento</td><td>76,07</td></tr>
-<tr><td>10.- Desnutrición calórico protéica</td><td>6,815</td></tr>
-<tr><td>11.- Tumor maligno de la próstata</td><td>5,582</td></tr>
-<tr><td>12.- VIH/SIDA</td><td>4578</td></tr>
-<tr><td>13.- Malformaciones congénitas del corazón</td><td>3,528</td></tr>
-<tr><td>14.- Tumor maligno de la mama</td><td>3,047</td></tr>
-<tr><td>15.- Leucemia</td><td>1,603</td></tr>
-</tbody>
+{% for mortality_name, amounts in mortality_list.items %}
+<tr>
+<td>{{ mortality_name }}</td>
+{% for amount in amounts %}
+<td style="text-align:right;">{{ amount|intcomma }}</td>
+{% endfor %}
+</tr>
+{% endfor %}
 </table>
+<div id="graphContainer"></div>
+
+<p>
+Fuente: <a href="http://www.inegi.org.mx/est/contenidos/Proyectos/registros/vitales/mortalidad/">Inegi</a>
+</p>
+<p>Para más información sobre la diabetes consulta <a href="http://www.ncbi.nlm.nih.gov/books/NBK1667/toc/?report=reader">The Genetic Landscape of Diabetes</a>.</p>    
 {% endblock %}
 
+{% block js %}
+<script type="text/javascript" src="{% static 'd3.js' %}"></script>
+<script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
+
+<script type="text/javascript">
+imc = [{edad: 0, imc: 17.7096117495605},
+    {edad:1, imc: 17.0927302163569},
+    {edad:2, imc: 16.7775555590165},
+    {edad:3, imc: 16.3702624392972},
+    {edad:4, imc: 16.1864208548382},
+    {edad:5, imc: 16.3760316479998},
+    {edad:6, imc: 16.6643234496744},
+    {edad:7, imc: 16.9811050592691},
+    {edad:8, imc: 17.6823223467558},
+    {edad:9, imc: 18.3139977019769},
+   {edad:10, imc: 19.1369429426026},
+   {edad:11, imc: 19.9146699272852},
+   {edad:12, imc: 20.8985182200711},
+   {edad:13, imc: 21.4314356775643},
+   {edad:14, imc: 22.2857454981188},
+   {edad:15, imc: 22.7056215256075},
+   {edad:16, imc: 23.0121993180911},
+   {edad:17, imc: 23.5619284113944},
+   {edad:18, imc: 24.5200605368207},
+   {edad:19, imc: 24.8785392739359},
+   {edad:20, imc: 25.2999659553488},
+   {edad:21, imc: 25.4342246502761},
+   {edad:22, imc: 26.1569240242953},
+   {edad:23, imc: 26.4457608682814},
+   {edad:24, imc:  26.941076594867},
+   {edad:25, imc: 27.2455310564008},
+   {edad:26, imc:  27.081969895284},
+   {edad:27, imc: 27.4954158353346},
+   {edad:28, imc: 27.2198642801875},
+   {edad:29, imc: 27.8440335599142},
+   {edad:30, imc: 28.1608306077619},
+   {edad:31, imc: 28.4784680440075},
+   {edad:32, imc: 28.4954672713752},
+   {edad:33, imc: 28.4312801175713},
+   {edad:34, imc: 28.9757940502674},
+   {edad:35, imc: 28.9604461309367},
+   {edad:36, imc: 29.1626706099924},
+   {edad:37, imc: 29.2557760360328},
+   {edad:38, imc: 29.7883978593939},
+   {edad:39, imc: 29.2187045179144},
+   {edad:40, imc: 29.5410719865432},
+   {edad:41, imc: 29.2434717217068},
+   {edad:42, imc: 29.27515441341},
+   {edad:43, imc: 29.5211412431569},
+   {edad:44, imc: 29.4771796450053},
+   {edad:45, imc: 29.6139308584477},
+   {edad:46, imc: 29.7484972497187},
+   {edad:47, imc: 29.5720216545361},
+   {edad:48, imc: 29.7436535220127},
+   {edad:49, imc: 29.5343156476831},
+   {edad:50, imc:  29.650233035725},
+   {edad:51, imc: 30.1712135137769},
+   {edad:52, imc: 29.6582347493711},
+   {edad:53, imc: 29.5690645967953},
+   {edad:54, imc:  29.930803855959},
+   {edad:55, imc:  29.483472833228},
+   {edad:56, imc: 29.4647622672047},
+   {edad:57, imc: 29.4117862977139},
+   {edad:58, imc: 29.2379315064134},
+   {edad:59, imc: 29.0030218919086},
+   {edad:60, imc: 29.2925446596084},
+   {edad:61, imc:  29.048092099337},
+   {edad:62, imc: 29.5718627167852},
+   {edad:63, imc: 28.9054027162663},
+   {edad:64, imc:  28.497915906767},
+   {edad:65, imc: 28.7149574112772},
+   {edad:66, imc: 28.9399812692625},
+   {edad:67, imc: 28.7872293162371},
+   {edad:68, imc: 28.0208243255618},
+   {edad:69, imc: 27.8579803817977},
+   {edad:70, imc:   27.99761148892},
+   {edad:71, imc: 27.8292675850553},
+   {edad:72, imc: 28.2035667481509},
+   {edad:73, imc:  27.431757655083},
+   {edad:74, imc: 27.1958416605414},
+   {edad:75, imc: 27.5726605981681},
+   {edad:76, imc: 26.8233860903645},
+   {edad:77, imc: 26.2283597442173},
+   {edad:78, imc: 25.9094709021209},
+   {edad:79, imc:   26.54880299165},
+   {edad:80, imc: 26.0928636059854},
+   {edad:81, imc: 25.7011167577149},
+   {edad:82, imc: 26.6150232044626},
+   {edad:83, imc: 26.4960846250148},
+   {edad:84, imc: 25.6493521980267},
+   {edad:85, imc: 24.9068918661674},
+   {edad:86, imc: 25.7476265656766},
+   {edad:87, imc:  24.916614966615},
+   {edad:88, imc: 23.6748632900593},
+   {edad:89, imc: 25.3179139646407},
+   {edad:90, imc: 25.2122391703589},
+   {edad:91, imc: 23.0719232442005},
+   {edad:92, imc: 22.6578352919666},
+   {edad:93, imc: 24.0045253717212},
+   {edad:94, imc: 21.9666043948161},
+   {edad:95, imc: 19.6488313140481},
+   {edad:96, imc: 20.5974284217539},
+   {edad:97, imc: 22.3493673239597},
+   {edad:98, imc: 24.3614516907126},
+   {edad:99, imc: 23.2540999016524},
+  {edad:100, imc: 23.0020503847673},
+  {edad:101, imc: 21.5436216856666},
+  {edad:102, imc: 23.4097996497074},
+  {edad:104, imc: 21.5207590170432},
+  {edad:109, imc: 19.6086308584372}]
+
+var svg = dimple.newSvg("#graphContainer", 1100, 450);
+var barChart = new dimple.chart(svg, imc);
+//barChart.assignColor("0", "#aa0000", null, .5);
+//barChart.assignColor("obesidad", "#00aacc", null, .5);
+barChart.setBounds(60, 50, 1000, 200);
+var x = barChart.addCategoryAxis("x", "edad");
+x.showGridlines = true;
+var y = barChart.addMeasureAxis("y", "imc");
+y.showGridlines = true;
+var l = barChart.addSeries(null, dimple.plot.scatter);
+l.interpolation = "cardinal";
+var s3 = barChart.addSeries("tipo", dimple.plot.line);
+s3.data = [
+    { "tipo": "sobrepeso", edad : 0, imc:25}, 
+    { "tipo" : "sobrepeso", edad : 109, imc:25},
+];
+var s4 = barChart.addSeries("tipo", dimple.plot.line);
+s4.data = [
+    { "tipo" : "obesidad", edad : 0, imc:30 }, 
+    { "tipo" : "obesidad", edad : 109, imc:30 }
+];
+barChart.assignColor("obesidad", "#aa0000", null, .5);
+barChart.assignColor("sobrepeso", "#aaaa00", null, .5);
+
+x.addOrderRule("edad");
+barChart.draw();
+x.titleShape.text("edad");
+y.tickFormat = ',.2f';
+svg.append("text")
+   .attr("x", barChart._xPixels() + barChart._widthPixels() / 2)
+   .attr("y", barChart._yPixels() - 20)
+   .style("text-anchor", "middle")
+   .style("font-family", "sans-serif")
+   .style("font-weight", "bold")
+   .text("Gráfica de nutrientes, porcentaje cubierto en base al perfil");
+</script>
+{% endblock %}
