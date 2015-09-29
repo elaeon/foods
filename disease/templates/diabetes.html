@@ -3,10 +3,10 @@
 {% load humanize %}
 
 {% block contenido_base %}
-<div class="jumbotron" style="background: url(http://upload.wikimedia.org/wikipedia/commons/6/6d/Good_Food_Display_-_NCI_Visuals_Online.jpg) {{ width_img_rand }}% {{ height_img_rand }}% no-repeat; background-size: auto; margin-bottom:0px;">
+<div class="jumbotron" style="background: url(/static/3050319-poster-p-1-how-giving-up-refined-sugar.jpg) no-repeat; background-size: auto; margin-bottom:0px;">
     <div class="container">
     <h1 class="text_image_over">¡Diabetes!</h1>
-    <p class="text_image_over">Este sitio te ayudará a comparar, analizar e informarte las causas de la Diabetes mellitus.</p>
+    <p class="text_image_over">Este sitio te ayudará a analizar e informarte de las causas de la Diabetes mellitus.</p>
     <!--<p>
     <a role="button" href="{% url 'recipes' %}" class="btn btn-primary btn-md">Recetas »</a>
     <a role="button" href="{% url 'nutrient_selection' %}" class="btn btn-primary btn-md">Nutrientes »</a>
@@ -16,24 +16,24 @@
 </div>
 
 <div class="container">
-    <div class="starter-template">
+    <div class="starter-template2">
         <div style="-moz-column-count: 3; -webkit-column-count: 3; -moz-column-gap: 40px;-webkit-column-gap: 40px; text-align: justify;">
-        La Diabetes mellitus esta caracterizada, por hacer que la sangre tenga niveles abnormamente altos de azucar, esto es debido a que el cuerpo carece de producción de insulina o no se tiene en suficientes niveles o no es efectiva. 
+        La Diabetes mellitus esta caracterizada, por hacer que la sangre tenga niveles abnormalmente altos de azucar, esto es debido a que el cuerpo carece de la producción de insulina o no se tiene en suficientes niveles o no es efectiva. 
         <br>
         Las formas más comunes de diabetes que existen son: la diabetes tipo 1 (5% a 10% de las personas la padecen) que es debido a un desorden autoinmune que ataca al páncreas. Diabetes tipo 2 (90% a 95% la padecen) esta asociada con la obesidad, que produce una deficiencia de insulina o resistencia del cuerpo a la insulina. La diabetes gestacional es una forma de diabetes que ocurre en el embarazo, y otras formas de diabetes son muy raras y son causadas por una mutación en un gen.
         <br>
         Es conocido que un <b>estilo de vida inactivo</b> y un <b>consumo excesivo de alimentos</b> son factores determinates para desarrollar diabetes. La diabetes es una <b>enfermedad genética</b> como también una <b>enfermedad del estilo de vida</b>. Raras formas de diabetes son causadas por una sola mutación de un gen, en la mayoria de los casos de diabetes, muchos genes están involucrados. El gen HNF4A es sospechoso de juegar un papel en el desarrollo de la diabetes tipo 2, ya que una mutación en este gen causa raras formas de diabetes. Dependiendo de la raza los genes CAPN10, PIK3R1, PPARG, KCNJ11, SLC2A2, GCK, ABCC8, pueden afectar el desarrollo de la diabetes.
-        
-        Los niveles de glucosa en la sangre no son constantes, se elevan y descienden de acuerdo a las necesidades del cuerpo y es regulada por las hormonas. Los niveles normales de glucosa van de <b>70 a 110 mg/dl</b>. Comer produce la elevación de glucosa en la sangre, ese incremento depende de varios factores tal como la cantidad y el tipo de carbohidratos que se consumen. Toda la glucosa que no es usada inmediatamente es tomada por el hígado y musculos donde puede ser convertida en glycogeno. Cuando los depositos de glycogeno estan llenos, el exceso de glucosa es convertido a grada en un proceso llamado lipogenesis. La glucosa es convertida en ácidos grasos que son guardado como trigliceridos.
-
+        <br>
+        Los niveles de glucosa en la sangre no son constantes, se elevan y descienden de acuerdo a las necesidades del cuerpo y es regulada por las hormonas. Los niveles normales de glucosa van de <b>70 a 110 mg/dl</b>. Comer produce la elevación de glucosa en la sangre, ese incremento depende de varios factores tal como la cantidad y el tipo de carbohidratos que se consumen. Toda la glucosa que no es usada inmediatamente es tomada por el hígado y musculos donde puede ser convertida en glycogeno. Cuando los depositos de glycogeno estan llenos, el exceso de glucosa es convertido a grasa en un proceso llamado lipogénesis. La glucosa es convertida en ácidos grasos que son guardado como triglicéridos.
+        <br>
         En México, la diabetes se convirtió en la primera causa de muerte (que se tiene registro) desde año 2000, y se calcula que para finales de 2015 llegará a más de 100,000 muertes por año.
-
         En edades de 30 en adelante se muestra como la primera causa de <a href="http://www.conapo.gob.mx/es/CONAPO/Mortalidad">mortalidad</a>. Ademas <a href="http://dx.doi.org/10.1590/S0036-36342006000600001">la espectativa de vida</a> de un paciente con diabetes ronda los 10 años.
         La diabetes puede ocacionar, complicaciones como enfermedades del corazón, ataques cardiacos, derrame cerebral, hipertensión, ceguera, problemas en los ojos y enfermedades renales.
         </div>
     </div>
 </div>
 <div class="table-responsive">
+<div style="width: 400px;margin:auto;"><h3>Principales causas de muerte</h3></div>
 <table class="table table-striped table-hover table-condensed">
 <thead style="font-size: 90%">
 <th></th>
@@ -53,31 +53,21 @@
 </table>
 <div>
 Fuente: <a href="http://www.inegi.org.mx/est/contenidos/Proyectos/registros/vitales/mortalidad/">Inegi</a></div>
-<div id="graphContainer"></div>
+<div class="starter-template2">
+    <div id="graphContainer" style="width:auto;"></div>
+</div>
 <div>Fuente: encuesta nacional de nutrición 2012</div>
-<div id="heatmap" style="height: 450px"></div>
 <p>Para más información sobre la diabetes consulta <a href="http://www.ncbi.nlm.nih.gov/books/NBK1667/toc/?report=reader">The Genetic Landscape of Diabetes</a>.</p>    
 {% endblock %}
 
 {% block js %}
 <script type="text/javascript" src="{% static 'd3.js' %}"></script>
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'heatmap.min.js' %}"></script>
 
 <script type="text/javascript"> 
-var heatmapInstance = h337.create({
-container: document.getElementById('heatmap')
-});
-
-  var testData = {
-        min: 0,
-        max: 100,
-        data: [{x: 107, y: 303, value: 50}]};
-heatmapInstance.setData(testData);  
-
 d3.json("/static/imc_all.json", function (error, imc) {
 console.log(error)
-var svg = dimple.newSvg("#graphContainer", 1100, 450);
+var svg = dimple.newSvg("#graphContainer", 1000, 450);
 var barChart = new dimple.chart(svg, imc);
 barChart.setBounds(60, 50, 1000, 350);
 var x = barChart.addCategoryAxis("x", ["edad", "sexo"]);
