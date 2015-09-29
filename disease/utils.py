@@ -18,6 +18,25 @@ def load_csv_mortality():
 
     return data
 
+def csv2json(path, items):
+    import csv
+    import json
+    with open(path, 'r') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',', quotechar='"')
+        data = []
+        for row in reader:
+            data.append(dict(zip(items, row)))
+        data_json = json.dumps(data)
+
+    n_path = path.split("/")
+    filename = n_path.pop()
+    nfilename = filename.split(".")
+    nfilename.pop()
+    json_filename = ".".join(nfilename) + ".json"
+    with open("/".join(n_path)+"/"+json_filename, 'w') as jsonfile:
+        jsonfile.write(data_json)
+
+
 def save_mortality():
     from disease.models import CausaMortality, MortalityYears
 
