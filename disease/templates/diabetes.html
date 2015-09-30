@@ -20,43 +20,144 @@
         <div style="-moz-column-count: 3; -webkit-column-count: 3; -moz-column-gap: 40px;-webkit-column-gap: 40px; text-align: justify;">
         La Diabetes mellitus esta caracterizada, por hacer que la sangre tenga niveles abnormalmente altos de azucar, esto es debido a que el cuerpo carece de la producción de insulina o no se tiene en suficientes niveles o no es efectiva. 
         <br>
-        Las formas más comunes de diabetes que existen son: la diabetes tipo 1 (5% a 10% de las personas la padecen) que es debido a un desorden autoinmune que ataca al páncreas. Diabetes tipo 2 (90% a 95% la padecen) esta asociada con la obesidad, que produce una deficiencia de insulina o resistencia del cuerpo a la insulina. La diabetes gestacional es una forma de diabetes que ocurre en el embarazo, y otras formas de diabetes son muy raras y son causadas por una mutación en un gen.
+        Las formas más comunes de diabetes que existen son: <b>la diabetes tipo 1</b> (5% a 10% de las personas la padecen) que es debido a un desorden autoinmune que ataca al páncreas. <b>Diabetes tipo 2</b> (90% a 95% la padecen) esta asociada con la obesidad, que produce una deficiencia de insulina o resistencia del cuerpo a la insulina. La diabetes gestacional es una forma de diabetes que ocurre en el embarazo, y otras formas de diabetes son muy raras y son causadas por una mutación en un gen.
         <br>
-        Es conocido que un <b>estilo de vida inactivo</b> y un <b>consumo excesivo de alimentos</b> son factores determinates para desarrollar diabetes. La diabetes es una <b>enfermedad genética</b> como también una <b>enfermedad del estilo de vida</b>. Raras formas de diabetes son causadas por una sola mutación de un gen, en la mayoria de los casos de diabetes, muchos genes están involucrados. El gen HNF4A es sospechoso de juegar un papel en el desarrollo de la diabetes tipo 2, ya que una mutación en este gen causa raras formas de diabetes. Dependiendo de la raza los genes CAPN10, PIK3R1, PPARG, KCNJ11, SLC2A2, GCK, ABCC8, pueden afectar el desarrollo de la diabetes.
+        Es conocido que un <b>estilo de vida inactivo</b> y un <b>consumo excesivo de alimentos</b> son factores determinates para desarrollar diabetes. La diabetes es una <b>enfermedad genética</b> como también una <b>enfermedad del estilo de vida</b>. Raras formas de diabetes son causadas por una sola mutación de un gen, en la mayoria de los casos de diabetes, muchos genes están involucrados. El gen HNF4A es sospechoso de jugar un papel en el desarrollo de la diabetes tipo 2, ya que una mutación en este gen causa raras formas de diabetes. Dependiendo de la raza los genes CAPN10, PIK3R1, PPARG, KCNJ11, SLC2A2, GCK, ABCC8, pueden afectar el desarrollo de la diabetes.
         <br>
         Los niveles de glucosa en la sangre no son constantes, se elevan y descienden de acuerdo a las necesidades del cuerpo y es regulada por las hormonas. Los niveles normales de glucosa van de <b>70 a 110 mg/dl</b>. Comer produce la elevación de glucosa en la sangre, ese incremento depende de varios factores tal como la cantidad y el tipo de carbohidratos que se consumen. Toda la glucosa que no es usada inmediatamente es tomada por el hígado y musculos donde puede ser convertida en glycogeno. Cuando los depositos de glycogeno estan llenos, el exceso de glucosa es convertido a grasa en un proceso llamado lipogénesis. La glucosa es convertida en ácidos grasos que son guardado como triglicéridos.
         <br>
         En México, la diabetes se convirtió en la primera causa de muerte (que se tiene registro) desde año 2000, y se calcula que para finales de 2015 llegará a más de 100,000 muertes por año.
-        En edades de 30 en adelante se muestra como la primera causa de <a href="http://www.conapo.gob.mx/es/CONAPO/Mortalidad">mortalidad</a>. Ademas <a href="http://dx.doi.org/10.1590/S0036-36342006000600001">la espectativa de vida</a> de un paciente con diabetes ronda los 10 años.
+        En edades de 30 en adelante se muestra como la primera causa de <a href="http://www.conapo.gob.mx/es/CONAPO/Mortalidad">mortalidad</a>. Ademas <b><a href="http://dx.doi.org/10.1590/S0036-36342006000600001">la espectativa de vida</a> de un paciente con diabetes ronda los 10 años</b>.
         La diabetes puede ocacionar, complicaciones como enfermedades del corazón, ataques cardiacos, derrame cerebral, hipertensión, ceguera, problemas en los ojos y enfermedades renales.
         </div>
     </div>
 </div>
 <div class="table-responsive">
-<div style="width: 400px;margin:auto;"><h3>Principales causas de muerte</h3></div>
+<div style="width: 450px;margin:auto;"><h3>Principales causas de muerte en México.</h3></div>
 <table class="table table-striped table-hover table-condensed">
 <thead style="font-size: 90%">
 <th></th>
 {% for year in years %}
 <th>{{ year }}</th>
 {% endfor %}
+<th>tasa de crecimiento %</th>
 </thead>
 <tbody>
 {% for mortality_name, amounts in mortality_list.items %}
 <tr>
-<td>{{ mortality_name }}</td>
+<td>{% if mortality_name == "Diabetes mellitus" %}
+    <b>{{ mortality_name }}</b>
+    {% else %}
+    {% if mortality_name in disease_relate %}
+    <u>{{ mortality_name }}</u><b>*</b>
+    {% else %}
+    {{ mortality_name }}
+    {% endif %}
+    {% endif %}
+</td>
 {% for amount in amounts %}
 <td style="text-align:right;">{{ amount|intcomma }}</td>
 {% endfor %}
 </tr>
 {% endfor %}
+<tfoot>
+<tr>
+<td>* Enfermedades asociadas con la diabetes.</td>
+</tr>
+<tr>
+<td>Fuente: <a href="http://www.inegi.org.mx/est/contenidos/Proyectos/registros/vitales/mortalidad/">Inegi</a></td>
+</tr>
+</tfoot>
 </table>
-<div>
-Fuente: <a href="http://www.inegi.org.mx/est/contenidos/Proyectos/registros/vitales/mortalidad/">Inegi</a></div>
+</div>
+
+<div class="col-sm-6 col-md-4">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+            <h4>Principal causa de muerte en personas de 30 a 59 años</h4>
+            <table class="table table-striped table-hover table-condensed">
+            <tr>
+            <td><b>Diabetes mellitus</b></td><td>21,558</td>
+            </tr>
+            <tr>
+            <td>Cirrosis y otras enfermedades crónicas del hígado</td><td>13,960</td>
+            </tr>
+            <tr>
+            <td>Agresiones (homicidios)</td><td>12,173</td>
+            </tr>
+            <tr>
+            <td>Enfermedades isquémicas del corazón</td><td>11,744</td>
+            </tr>
+            <tr>
+            <td>Accidentes de vehículo de motor (tránsito)</td><td>5,030</td>
+            </tr>
+            <tr>
+            <td>Enfermedad cerebrovascular</td><td>4,951</td>
+            </tr>
+            <tr>
+            <td>VIH/SIDA</td><td>3,601</td>
+            </tr>
+            <tr>
+            <td>Nefritis y nefrosis</td><td>3,404</td>
+            </tr>
+            <tr>
+            <td>Tumor maligno de la mama</td><td>3,047</td>
+            </tr>
+            <tr>
+            <td>Infecciones respiratorias agudas bajas</td><td>2,863</td>
+            </tr>
+            </table>
+        Fuente: <a href="http://www.conapo.gob.mx/es/CONAPO/Mortalidad">CONAPO</a>
+        </div>
+    </div>
+</div>
+
+<div class="col-sm-6 col-md-4">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+            <h4>Principal causa de muerte en personas de 60 años y más</h4>
+            <table class="table table-striped table-hover table-condensed">
+            <tr>
+            <td><b>Diabetes mellitus</b></td><td>62,887</td>
+            </tr>
+            <tr>
+            <td>Enfermedades isquémicas del corazón</td><td>61,225</td>
+            </tr>
+            <tr>
+            <td>Enfermedad cerebrovascular</td><td>26,180</td>
+            </tr>
+            <tr>
+            <td>Enfermedad pulmonar obstructiva crónica</td><td>21,057</td>
+            </tr>
+            <tr>
+            <td>Enfermedades hipertensivas</td><td>16,071</td>
+            </tr>
+            <tr>
+            <td>Cirrosis y otras enfermedades crónicas del hígado</td><td>14,291</td>
+            </tr>
+            <tr>
+            <td>Infecciones respiratorias agudas bajas</td><td>11,505</td>
+            </tr>
+            <tr>
+            <td>Nefritis y nefrosis</td><td>9,528</td>
+            </tr>
+            <tr>
+            <td>Desnutrición calórico protéica</td><td>6,217</td>
+            </tr>
+            <tr>
+            <td>Tumor maligno de la próstata</td><td>5,582</td>
+            </tr>
+            </table>
+        Fuente: <a href="http://www.conapo.gob.mx/es/CONAPO/Mortalidad">CONAPO</a>
+        </div>
+    </div>
+</div>
+
+
 <div class="starter-template2">
     <div id="graphContainer" style="width:auto;"></div>
 </div>
-<div>Fuente: encuesta nacional de nutrición 2012</div>
+<div>Fuente: <a href="http://ensanut.insp.mx/">encuesta nacional de salud y nutrición 2012</a></div>
 <p>Para más información sobre la diabetes consulta <a href="http://www.ncbi.nlm.nih.gov/books/NBK1667/toc/?report=reader">The Genetic Landscape of Diabetes</a>.</p>    
 {% endblock %}
 
@@ -67,7 +168,7 @@ Fuente: <a href="http://www.inegi.org.mx/est/contenidos/Proyectos/registros/vita
 <script type="text/javascript"> 
 d3.json("/static/imc_all.json", function (error, imc) {
 console.log(error)
-var svg = dimple.newSvg("#graphContainer", 1000, 450);
+var svg = dimple.newSvg("#graphContainer", 1100, 450);
 var barChart = new dimple.chart(svg, imc);
 barChart.setBounds(60, 50, 1000, 350);
 var x = barChart.addCategoryAxis("x", ["edad", "sexo"]);
@@ -116,6 +217,23 @@ svg.append("line")
     .attr("y2", barChart._yPixels() + barChart._heightPixels())
     .style("stroke", "red")
     .style("stroke-dasharray", "3");
+
+svg.insert("rect", "g")
+    .attr("x", x._scale(0))
+    .attr("y", y._scale(25))
+    .attr("width", barChart._widthPixels())
+    .attr("height", y._scale(35-1.5))
+    .attr("fill", "#00ff00")
+    .attr("opacity", 0.07);
+
+svg.append("text", "g")
+   .attr("x", barChart._xPixels() + barChart._widthPixels() / 2)
+   .attr("y", y._scale(20))
+   .style("text-anchor", "middle")
+   .style("font-family", "sans-serif")
+   .style("font-weight", "bold")
+   .text("imc normal");
 });
+
 </script>
 {% endblock %}
