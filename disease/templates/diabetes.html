@@ -156,6 +156,8 @@
 
 <div class="starter-template2">
     <div id="graphContainer" style="width:auto;"></div>
+    <div style="margin:auto;width:500px;"><h3>Árbol de posibles causas de la enfermedad.</h3></div>
+    <div id="sigma_container" style="height:400px;"></div>
 </div>
 <div>Fuente: <a href="http://ensanut.insp.mx/">encuesta nacional de salud y nutrición 2012</a></div>
 <p>Para más información sobre la diabetes consulta <a href="http://www.ncbi.nlm.nih.gov/books/NBK1667/toc/?report=reader">The Genetic Landscape of Diabetes</a>.</p>    
@@ -164,10 +166,27 @@
 {% block js %}
 <script type="text/javascript" src="{% static 'd3.js' %}"></script>
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'sigma.min.1.0.3.js' %}"></script>
+<script type="text/javascript" src="{% static 'sigma.parsers.json.min.js' %}"></script>
 
 <script type="text/javascript"> 
+sigma.parsers.json('/static/red.json', {
+    container: 'sigma_container',
+    settings: {
+        defaultNodeColor: 'grey',
+        minArrowSize: 5,
+        labelThreshold: 1,
+        touchEnabled: false,
+        mouseEnabled: false,
+        mouseWheelEnabled: false,
+        doubleClickEnabled: false,
+        enableCamera: false,
+        maxNodeSize: 30
+    }
+});
+
+
 d3.json("/static/imc_all.json", function (error, imc) {
-console.log(error)
 var svg = dimple.newSvg("#graphContainer", 1100, 450);
 var barChart = new dimple.chart(svg, imc);
 barChart.setBounds(60, 50, 1000, 350);

@@ -1,0 +1,97 @@
+{
+  "nodes": [
+    {
+      "id": "sedentarismo",
+      "label": "Sedentarismo",
+      "x": 2,
+      "y": 4,
+      "size": 10
+    },
+    {
+      "id": "gen",
+      "label": "Causas genéticas",
+      "x": 6,
+      "y": 4,
+      "size": 10
+    },
+    {
+      "id": "obesidad",
+      "label": "Obesidad",
+      "x": 2,
+      "y": 6,
+      "size": 10
+    },
+    {
+      "id": "diabetes",
+      "label": "Diabetes",
+      "x": 2,
+      "y": 8,
+      "size": 30
+    },
+    {
+      "id": "corazon",
+      "label": "Enfermedades isquémicas del corazón",
+      "x": 0,
+      "y": 12,
+      "size": 8
+    },
+    {
+      "id": "cerebrovascular",
+      "label": "Enfermedad cerebrovascular",
+      "x": -6,
+      "y": 12,
+      "size": 7
+    },
+    {
+      "id": "hipertension",
+      "label": "Enfermedades hipertensivas",
+      "x": 4,
+      "y": 10,
+      "size": 5
+    },
+    {
+      "id": "nefritis",
+      "label": "Nefritis y nefrosis",
+      "x": 10,
+      "y": 12,
+      "size": 3
+    } 
+  ],
+  "edges": [
+    {
+      "id": "e0",
+      "source": "sedentarismo",
+      "target": "obesidad"
+    },    
+    {
+      "id": "e1",
+      "source": "gen",
+      "target": "diabetes"
+    },
+    {
+      "id": "e2",
+      "source": "obesidad",
+      "target": "diabetes"
+    },
+    {
+      "id": "e5",
+      "source": "diabetes",
+      "target": "corazon"
+    },
+    {
+      "id": "e6",
+      "source": "diabetes",
+      "target": "cerebrovascular"
+    },
+    {
+      "id": "e7",
+      "source": "diabetes",
+      "target": "hipertension"
+    },
+    {
+      "id": "e8",
+      "source": "diabetes",
+      "target": "nefritis"
+    }
+  ]
+}   
