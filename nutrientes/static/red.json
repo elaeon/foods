@@ -1,6 +1,13 @@
 {
   "nodes": [
     {
+      "id": "mala-alimentacion",
+      "label": "Mala Alimentación",
+      "x": -2,
+      "y": 4,
+      "size": 10
+    },
+    {
       "id": "sedentarismo",
       "label": "Sedentarismo",
       "x": 2,
@@ -26,7 +33,8 @@
       "label": "Diabetes",
       "x": 2,
       "y": 8,
-      "size": 30
+      "size": 30,
+      "color": "red"
     },
     {
       "id": "corazon",
@@ -61,37 +69,50 @@
     {
       "id": "e0",
       "source": "sedentarismo",
-      "target": "obesidad"
+      "target": "obesidad",
+      "type": "arrow"
     },    
     {
       "id": "e1",
       "source": "gen",
-      "target": "diabetes"
+      "target": "diabetes",
+      "type": "arrow"
     },
     {
       "id": "e2",
       "source": "obesidad",
-      "target": "diabetes"
+      "target": "diabetes",
+      "type": "arrow"
     },
     {
       "id": "e5",
       "source": "diabetes",
-      "target": "corazon"
+      "target": "corazon",
+      "type": "arrow"
     },
     {
       "id": "e6",
       "source": "diabetes",
-      "target": "cerebrovascular"
+      "target": "cerebrovascular",
+      "type": "arrow"
     },
     {
       "id": "e7",
       "source": "diabetes",
-      "target": "hipertension"
+      "target": "hipertension",
+      "type": "arrow"
     },
     {
       "id": "e8",
       "source": "diabetes",
-      "target": "nefritis"
+      "target": "nefritis",
+      "type": "arrow"
+    },
+    {
+      "id": "e9",
+      "source": "mala-alimentacion",
+      "target": "obesidad",
+      "type": "arrow"
     }
   ]
 }   

@@ -174,14 +174,15 @@ sigma.parsers.json('/static/red.json', {
     container: 'sigma_container',
     settings: {
         defaultNodeColor: 'grey',
-        minArrowSize: 5,
+        minArrowSize: 10,
         labelThreshold: 1,
         touchEnabled: false,
         mouseEnabled: false,
         mouseWheelEnabled: false,
         doubleClickEnabled: false,
         enableCamera: false,
-        maxNodeSize: 30
+        maxNodeSize: 30,
+        maxEdgeSize: 20,
     }
 });
 
