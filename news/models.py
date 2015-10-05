@@ -6,6 +6,10 @@ class News(models.Model):
     title = models.CharField(max_length=255)
     body = models.TextField()
 
+    def get_absolute_url(self):
+        from django.core.urlresolvers import reverse
+        return reverse('nutr_news')
+
     def __unicode__(self):
         return self.title
     

@@ -14,10 +14,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include(blog_urls))
 """
 from django.conf.urls import include, url
+from django.contrib.sitemaps.views import sitemap
+
 from nutrientes import views as nutr_views
 from news import views as news_views
 from disease import views as disease_views
 from news.api import router
+from news.sitemap import NewsSitemap
 
 urlpatterns = [
     url(r'^$', nutr_views.index, name="index"),
@@ -45,6 +48,11 @@ urlpatterns = [
     url(r'^best_menu/$', nutr_views.best_menu, name="best_menu"),
     url(r'^news/$', nutr_views.news, name="nutr_news"),
     url(r'^diabetes/$', disease_views.diabetes, name="diabetes")
+]
+
+urlpatterns += [
+    url(r'^sitemap\.xml$', sitemap, {'sitemaps': {"news": NewsSitemap}},
+        name='django.contrib.sitemaps.views.sitemap'),
 ]
 
 urlpatterns += [
