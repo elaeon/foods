@@ -1227,7 +1227,7 @@ def boost_food(ndb_no):
 
 def intake(edad, genero, unidad_edad, rnv_type):
     conn, cursor = conection()
-    edad_range = get_range(int(edad), unidad_edad, int(rnv_type))
+    edad_range_c = get_range(int(edad), unidad_edad, int(rnv_type))
     query = """SELECT nutr_def.nutr_no, nutrdesc, units, value, type, edad_range
                 FROM nutr_def, nutr_intake 
                 WHERE nutr_def.nutr_no=nutr_intake.nutr_no
@@ -1235,13 +1235,15 @@ def intake(edad, genero, unidad_edad, rnv_type):
                 AND genero=%s
                 AND rnv_type=%s
                 AND edad_range=%s"""
-    cursor.execute(query, [unidad_edad, genero, rnv_type, edad_range])
+
     nutrs = {}
-    for nutr_no, nutrdesc, units, value, label, edad_range in cursor.fetchall():
-        if not nutrdesc in nutrs:
-            nutrs[nutrdesc] = NutrIntake(nutr_no, nutrdesc)
-            nutrs[nutrdesc].units = units
-        nutrs[nutrdesc].add_value(float(value), label)
+    for edad_range in edad_range_c:
+        cursor.execute(query, [unidad_edad, genero, rnv_type, edad_range])
+        for nutr_no, nutrdesc, units, value, label, edad_range in cursor.fetchall():
+            if not nutrdesc in nutrs:
+                nutrs[nutrdesc] = NutrIntake(nutr_no, nutrdesc)
+                nutrs[nutrdesc].units = units
+            nutrs[nutrdesc].add_value(float(value), label)
     conn.close()
     return nutrs
 
@@ -1250,10 +1252,11 @@ def get_range(edad, unidad_edad, rnv_type=1):
         edad_range_list = ["0-6", "7-12"]
     else:
         if rnv_type == 1:
-            edad_range_list = ["1-3", "4-8", "9-13", "14-18", "19-30", "31-50", "51-70", "71-150"]
+            edad_range_list = ["1-3", "4-8", "9-13", "14-18", "19-30", "19-50", "31-50", "51-70", "51-150", "71-150"]
         else:
             edad_range_list = ["1-150"]
 
+    candidates = []
     for edad_range in edad_range_list:
         min_year, max_year = edad_range.split("-")
         min_year = int(min_year)
@@ -1262,7 +1265,8 @@ def get_range(edad, unidad_edad, rnv_type=1):
         else:
             max_year = int(max_year)
         if min_year <= edad <= max_year:
-            return edad_range
+            candidates.append(edad_range)
+    return candidates
 
 class NutrIntake(object):
     def __init__(self, nutr_no, nutrdesc):

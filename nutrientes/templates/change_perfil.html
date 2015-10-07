@@ -36,12 +36,19 @@ El perfil es el conjunto de datos de referencia, que sirve para obtener el valor
 <thead>
 {% for _, norma in normas %}
 <th>{{ norma }}</th>
+<th>Monto</th>
 {% endfor %}
 </thead>
 {% for normas in nutrs_intake %}
 <tr>
-{% for norma_nutr in normas %}
-<td>{{ norma_nutr }}</td>
+{% for nutr in normas %}
+{% if nutr == "X" %}
+<td>X</td>
+<td></td>
+{% else %}
+<td>{{ nutr.nutrdesc }}</td>
+<td>{{ nutr.get_value }}{{ nutr.units }}</td>
+{% endif %}
 {% endfor %}
 </tr>
 {% endfor %}

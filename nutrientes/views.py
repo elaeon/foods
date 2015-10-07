@@ -93,7 +93,7 @@ def nutrient_selection(request):
     from nutrientes.utils import nutr_features_group, categories_foods, Food
 
     features = nutr_features_group(order_by="nutrdesc")
-    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, e[2]+"#"+str(e[3])) for e in features])
+    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, e[2]+"#"+unicode(e[3])) for e in features])
     nutr = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
     categories = categories_foods()
     
@@ -469,17 +469,17 @@ def change_perfil(request, intake_params):
         intake_params["unidad_edad"], 
         2)
 
-    nutrs = {"Folic acid": ["Folate, DFE [Folate food, Folic acid]", "X"]}
-    for nutrdesc in nutrs_intake_usacan:
-        nutrs[nutrdesc] = [nutrdesc, "X"]
+    nutrs = {"Folic acid": ["X", "X"]} #Folate, DFE [Folate food, Folic acid]
+    for nutrdesc, nutr in nutrs_intake_usacan.items():
+        nutrs[nutrdesc] = [nutr, "X"]
 
-    for nutrdesc in nutrs_intake_mx:
-        nutrs.setdefault(nutrdesc, ["X", nutrdesc])
-        nutrs[nutrdesc][1] = nutrdesc
+    for nutrdesc, nutr in nutrs_intake_mx.items():
+        nutrs.setdefault(nutrdesc, ["X", None])
+        nutrs[nutrdesc][1] = nutr
 
     return render(request, "change_perfil.html", {
         "intake_form": intake_form, 
-        "nutrs_intake": sorted(nutrs.values(), key=lambda x: x[0] if x[0] != "X" else x[1]),
+        "nutrs_intake": sorted(nutrs.values(), key=lambda x: x[0].nutrdesc if x[0] != "X" else x[1].nutrdesc),
         "normas": RNV_TYPE.items()})
 
 
