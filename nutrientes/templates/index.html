@@ -111,6 +111,153 @@ Noticias
 </table>
 </div>
 {% endif %}
+
+<h2 style="margin-left: 20px;">Vitaminas</h2>
+<div class="col-sm-6 col-md-4">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+            <h3>Vitaminas Hidrosolubles</h3>
+            <p style="text-align:justify;">
+            Se caracterizan porque se disuelven en agua. Muchos alimentos ricos en este tipo de vitaminas no aportan, al término de su preparación, la misma cantidad que contenían inicialmente. Para recuperar parte de estas vitaminas se puede aprovechar el agua de cocción de las verduras. Es necesario consumirlas diario debido a que el cuerpo no las almacena, además si se consumen en exceso no produce mayores daños al cuerpo, debido a que el excedente es desechado atravez de la orina.
+            </p>
+            <ul>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=404">Vitamina B1 (tiamina)</a>
+            </li>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=405">Vitamina B2 (riboflavina)</a>
+            </li>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=406">Vitamina B3 (niacina o ácido nicotínico)</a>
+            </li>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=410">Vitamina B5 (ácido pantoténico)</a>
+            </li>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=415">Vitamina B6 (fosfato de piridoxal)</a>
+            </li>
+            <li>
+            Vitamina B8 (biotina)
+            </li>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=435">Vitamina B9 (ácido fólico)</a>
+            </li>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=418">Vitamina B12 (cianocobalamina)</a>
+            </li>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=401">Vitamina C (ácido ascórbico)</a>
+            </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="col-sm-6 col-md-4">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+            <h3>Vitaminas Liposolubles</h3>
+            <p style="text-align:justify;">
+            Estas vitaminas, normalmente son absorbidas por las lipoproteínas conocidas como quilomicrones que viajan a través del sistema linfático del intestino delgado y en la circulación de la sangre de nuestro organismo. Estas vitaminas liposolubles, especialmente las vitaminas A y E se almacenan en los tejidos de nuestro organismo.
+            Las vitaminas liposolubles no se absorben ni se excretan fácilmente, y su exceso en el organismo puede resultar tóxico.
+            </p>
+            <ul>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=319">Vitamina A (retinol)</a>
+            </li>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=328">Vitamina D (calciferol)</a>
+            </li>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=323">Vitamina E (tocoferol)</a>
+            </li>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=430">Vitamina K1 (filoquinona)</a>
+            </li>
+            <li>
+            <a href="{% url 'best_of_nutrients' %}?nutr_no=428">Vitamina K2 (menaquinona)</a>
+            </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="col-sm-6 col-md-4">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+            <h3>Resistencia y Debilidades</h3>
+            <div class="table-responsive" style="font-size: 90%">
+            <table class="table table-striped table-hover table-condensed">
+            <thead>
+                <th>Nombre</th>
+                <th>Resistencia</th>
+                <th>Debilidades</th>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Vitamina B2</td>
+                <td>calor</td>
+                <td>agua, luz solar, solucion alcalina</td>
+            </tr>
+            <tr>
+                <td>Vitamina B1</td>
+                <td>alcohol</td>
+                <td>agua, calor</td>
+            </tr>
+            <tr>
+                <td>Vitamina B6</td>
+                <td>calor, oxidación</td>
+                <td>luz, solución ácida, solución alcalina</td>
+            </tr>
+            <tr>
+                <td>Vitamina B5</td>
+                <td>calor</td>
+                <td>agua, alcohol, luz, solución ácida, solución alcalina</td>
+            </tr>
+            <tr>
+                <td>Vitamina B12</td>
+                <td>calor</td>
+                <td>luz, solución ácida, solución alcalina</td>
+            </tr>
+            <tr>
+                <td>Vitamina B8</td>
+                <td>calor</td>
+                <td>agua, alcohol, oxidación</td>
+            </tr>
+            <tr>
+                <td>Vitamina C</td>
+                <td>luz</td>
+                <td>calor, solución alcalina</td>
+            </tr>
+            <tr>
+                <td>Vitamina K</td>
+                <td>calor</td>
+                <td>luz</td>
+            </tr>
+            <tr>
+                <td>Vitamina A</td>
+                <td>calor</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>Vitamina D</td>
+                <td>calor</td>
+                <td>-</td>
+            </tr>
+            </tbody>
+            <tfoot>
+            <tr>
+            <td colspan="3">Las vitaminas resistentes al calor son adecuadas para la cocción.</td>
+            </tr>
+            <tr>
+            <td colspan="3">Los alimentos que son licuados, deben de consumirse el mismo dia. Al licuar la degradación de las vitaminas se acelera.</td>
+            </tr>
+            </tfoot>
+            </table>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block js %}

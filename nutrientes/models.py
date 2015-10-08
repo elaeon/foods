@@ -8,6 +8,14 @@ class SatietyIndex(models.Model):
     def __unicode__(self):
         return self.ndb_no_t
 
+class NutrDesc(models.Model):
+    nutr_no_t = models.TextField(unique=True)
+    desc = models.TextField()
+    group = models.TextField()
+
+    def __unicode__(self):
+        return self.nutr_no_t
+
 # Create your models here.
 #class Recipe(models.Model):
 #    name = models.TextField()
