@@ -2,9 +2,70 @@
   "nodes": [
     {
       "id": "mala-alimentacion",
-      "label": "Mala Alimentación",
+      "label": "Mala alimentación",
       "x": -2,
-      "y": 4,
+      "y": 6,
+      "size": 10,
+      "color": "#00f" 
+    },
+    {
+      "id": "ambiente",
+      "label": "Factores ambientales",
+      "x": 2,
+      "y": 5,
+      "size": 10,
+      "color": "#00f"
+    },
+    {
+      "id": "gen",
+      "label": "Causas genéticas",
+      "x": 6,
+      "y": 6,
+      "size": 10,
+      "color": "#00f"
+    },
+    {
+      "id": "obesidad",
+      "label": "Obesidad",
+      "x": 2,
+      "y": 7,
+      "size": 10,
+      "color": "#000"
+    },
+    {
+      "id": "diabetes",
+      "label": "Diabetes",
+      "x": 2,
+      "y": 9,
+      "size": 30,
+      "color": "#a00"
+    },
+    {
+      "id": "corazon",
+      "label": "Enfermedades isquémicas del corazón",
+      "x": 0,
+      "y": 12,
+      "size": 10
+    },
+    {
+      "id": "cerebrovascular",
+      "label": "Enfermedad cerebrovascular",
+      "x": -6,
+      "y": 12,
+      "size": 10
+    },
+    {
+      "id": "hipertension",
+      "label": "Enfermedades hipertensivas",
+      "x": 5,
+      "y": 12,
+      "size": 10
+    },
+    {
+      "id": "nefritis",
+      "label": "Nefritis y nefrosis",
+      "x": 10,
+      "y": 12,
       "size": 10
     },
     {
@@ -15,61 +76,32 @@
       "size": 10
     },
     {
-      "id": "gen",
-      "label": "Causas genéticas",
-      "x": 6,
+      "id": "sueño",
+      "label": "Total tiempo de sueño",
+      "x": -2,
       "y": 4,
       "size": 10
     },
     {
-      "id": "obesidad",
-      "label": "Obesidad",
-      "x": 2,
-      "y": 6,
+      "id": "altitud",
+      "label": "Presión atmosférica (altitud)",
+      "x": -6,
+      "y": 4,
       "size": 10
     },
     {
-      "id": "diabetes",
-      "label": "Diabetes",
-      "x": 2,
-      "y": 8,
-      "size": 30,
-      "color": "red"
-    },
-    {
-      "id": "corazon",
-      "label": "Enfermedades isquémicas del corazón",
-      "x": 0,
-      "y": 12,
-      "size": 8
-    },
-    {
-      "id": "cerebrovascular",
-      "label": "Enfermedad cerebrovascular",
-      "x": -6,
-      "y": 12,
-      "size": 7
-    },
-    {
-      "id": "hipertension",
-      "label": "Enfermedades hipertensivas",
-      "x": 4,
-      "y": 10,
-      "size": 5
-    },
-    {
-      "id": "nefritis",
-      "label": "Nefritis y nefrosis",
-      "x": 10,
-      "y": 12,
-      "size": 3
-    } 
+      "id": "estres",
+      "label": "Estrés",
+      "x": 6,
+      "y": 4,
+      "size": 10
+    }
   ],
   "edges": [
     {
       "id": "e0",
       "source": "sedentarismo",
-      "target": "obesidad",
+      "target": "ambiente",
       "type": "arrow"
     },    
     {
@@ -112,6 +144,42 @@
       "id": "e9",
       "source": "mala-alimentacion",
       "target": "obesidad",
+      "type": "arrow"
+    },
+    {
+      "id": "e10",
+      "source": "gen",
+      "target": "obesidad",
+      "type": "arrow"
+    },
+    {
+      "id": "e11",
+      "source": "sueño",
+      "target": "ambiente",
+      "type": "arrow"
+    },
+    {
+      "id": "e12",
+      "source": "estres",
+      "target": "ambiente",
+      "type": "arrow"
+    },
+    {
+      "id": "e13",
+      "source": "altitud",
+      "target": "ambiente",
+      "type": "arrow"
+    },
+    {
+      "id": "e14",
+      "source": "ambiente",
+      "target": "obesidad",
+      "type": "arrow"
+    },
+    {
+      "id": "e15",
+      "source": "mala-alimentacion",
+      "target": "ambiente",
       "type": "arrow"
     }
   ]

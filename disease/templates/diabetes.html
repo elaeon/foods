@@ -156,7 +156,7 @@
 
 <div class="starter-template2">
     <div id="graphContainer" style="width:auto;"></div>
-    <div style="margin:auto;width:500px;"><h3>Árbol de posibles causas de la enfermedad.</h3></div>
+    <div style="margin:auto;width:500px;"><h3>Gráfica de la enfermedad.</h3></div>
     <div id="sigma_container" style="height:400px;"></div>
 </div>
 <div>Fuente: <a href="http://ensanut.insp.mx/">encuesta nacional de salud y nutrición 2012</a></div>
@@ -173,9 +173,10 @@
 sigma.parsers.json('/static/red.json', {
     container: 'sigma_container',
     settings: {
-        defaultNodeColor: 'grey',
+        defaultNodeColor: '#999',
         minArrowSize: 10,
         labelThreshold: 1,
+        defaultLabelSize: 12,
         touchEnabled: false,
         mouseEnabled: false,
         mouseWheelEnabled: false,
@@ -183,6 +184,7 @@ sigma.parsers.json('/static/red.json', {
         enableCamera: false,
         maxNodeSize: 30,
         maxEdgeSize: 20,
+        labelSize: "proportional"
     }
 });
 
