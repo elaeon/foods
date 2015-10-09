@@ -1405,9 +1405,9 @@ def recipes_list_users(max_number):
     recipes_l = {}
     for recipe_id, name, ndb_no, weight, perfil, author in cursor.fetchall():
         try:
-            authors_recipes[author]["{}_{}_{}".format(recipe_id, name, perfil)][ndb_no] = float(weight)
+            authors_recipes[author]["{}_{}_{}".format(recipe_id, name, perfil.encode("utf8", "replace"))][ndb_no] = float(weight)
         except KeyError:
-            authors_recipes[author]["{}_{}_{}".format(recipe_id, name, perfil)] = {ndb_no:float(weight)}
+            authors_recipes[author]["{}_{}_{}".format(recipe_id, name, perfil.encode("utf8", "replace"))] = {ndb_no:float(weight)}
             recipes_l[author] = {"total": {"score": 0, "kcal": 0, "weight": 0}, "recipes": []}
 
     cache = {}
