@@ -2,11 +2,11 @@
   "nodes": [
     {
       "id": "mala-alimentacion",
-      "label": "Mala alimentación",
-      "x": -2,
-      "y": 6,
+      "label": "Alimentos ricos en carbohidratos o grasas",
+      "x": -4,
+      "y": 5,
       "size": 10,
-      "color": "#00f" 
+      "color": "#0af" 
     },
     {
       "id": "ambiente",
@@ -14,15 +14,15 @@
       "x": 2,
       "y": 5,
       "size": 10,
-      "color": "#00f"
+      "color": "#0af"
     },
     {
       "id": "gen",
       "label": "Causas genéticas",
       "x": 6,
-      "y": 6,
+      "y": 5,
       "size": 10,
-      "color": "#00f"
+      "color": "#0af"
     },
     {
       "id": "obesidad",
@@ -95,6 +95,22 @@
       "x": 6,
       "y": 4,
       "size": 10
+    },
+    {
+      "id": "sindrome",
+      "label": "Sindrome metabólico",
+      "x": 2,
+      "y": 6,
+      "size": 10,
+      "color": "#0af"
+    },
+    {
+      "id": "tabaquismo",
+      "label": "Tabaquismo",
+      "x": -2,
+      "y": 7,
+      "size": 10,
+      "color": "#000"
     }
   ],
   "edges": [
@@ -180,6 +196,30 @@
       "id": "e15",
       "source": "mala-alimentacion",
       "target": "ambiente",
+      "type": "arrow"
+    },
+    {
+      "id": "e16",
+      "source": "sindrome",
+      "target": "obesidad",
+      "type": "arrow"
+    },
+    {
+      "id": "e17",
+      "source": "gen",
+      "target": "sindrome",
+      "type": "arrow"
+    },
+    {
+      "id": "e18",
+      "source": "tabaquismo",
+      "target": "sindrome",
+      "type": "arrow"
+    },
+    {
+      "id": "e19",
+      "source": "mala-alimentacion",
+      "target": "sindrome",
       "type": "arrow"
     }
   ]
