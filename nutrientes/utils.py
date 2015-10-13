@@ -341,18 +341,6 @@ def ranking_nutr_perfil(perfil, edad_range, category_food=None):
 
     return cursor.fetchall()
 
-
-def ranking_nutr_detail(ndb_no):
-    _, cursor = conection()
-    
-    query = """SELECT nutr_def.nutr_no, nutr_def.nutrdesc, position
-            FROM nutr_def, ranking_food_detail
-            WHERE ranking_food_detail.ndb_no='{ndb_no}'
-            AND nutr_def.nutr_no=ranking_food_detail.nutr_no
-            ORDER BY nutr_def.nutrdesc""".format(ndb_no=ndb_no)
-
-    cursor.execute(query)
-    return cursor.fetchall()
  
 weight_nutrs = {
     "255": 1.0, #Water
@@ -778,7 +766,8 @@ class Food(object):
     def min_distance(self, vector_base, vectors, top=15):
         distance = lambda x, y: sum((x_i - y_i)**2 for x_i, y_i in zip(x, y))**.5
         #distance = self. cosine_similarity
-        distances = ((vector[0], distance(vector_base[1], vector[1])) for vector in vectors if vector_base[0] != vector[0])
+        distances = ((vector[0], distance(vector_base[1], vector[1])) 
+                        for vector in vectors if vector_base[0] != vector[0])
         return heapq.nsmallest(top, distances, key=lambda x: x[1])
         #return heapq.nlargest(15, distances, key=lambda x: x[1])
 
@@ -833,7 +822,9 @@ class Food(object):
     def mark_caution_good_nutrients(self):
         #nutr_no, nutr, v, u, caution, good
         nutrients = self.mark_nutrients()
-        return ((n[0], n[1], n[2], n[3], int((n[2] > self.nutr_avg[n[0]][1]) and n[4]), int((n[2] > self.nutr_avg[n[0]][1]) and not n[4])) 
+        return ((n[0], n[1], n[2], n[3], 
+                int((n[2] > self.nutr_avg[n[0]][1]) and n[4]), 
+                int((n[2] > self.nutr_avg[n[0]][1]) and not n[4]))
             for n in nutrients)
 
     def mark_nutrients(self):
@@ -845,13 +836,6 @@ class Food(object):
         return {"total": len(self.nutrients),
             "good": good,
             "bad": bad}
-
-    def ranking_nutr_detail_base(self):
-        tabla_nutr_rank = ranking_nutr_detail(self.ndb_no)
-        nutr_base = set([nutr_no for nutr_no, _, _, _ in self.nutrients])
-        tabla_nutr_rank = [(desc, position, "{0:04d}".format(position)) 
-                for nutr, desc , position in tabla_nutr_rank if nutr in nutr_base]
-        return tabla_nutr_rank
 
     def score(self, perfil, data=True, features=None):
         recipe = self.food2recipe(perfil, data=data, features=features)
@@ -868,6 +852,18 @@ class Food(object):
             "name": ""   
         }
         return Recipe.from_light_format(light_format, data=data, features=features)
+
+    def top_nutrients(self):
+        units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
+        totals = []
+        for nutr_no, nutrdesc, total, units in self.nutrients:
+            val = units_scale.get(units, 0)
+            if val != 0:
+                totals.append((float(total / val), nutrdesc, 'g'))
+
+        totals.sort(reverse=True, key=lambda x:x[0])
+        maximum = sum([v for v, _, _ in totals])
+        return [(e[0] * 100 / maximum, e[1]) for e in totals]
 
 def create_common_table(dicts):
     common_keys = set(dicts[0].keys())
@@ -1661,14 +1657,6 @@ class Recipe(object):
         totals.sort(reverse=True, key=lambda x:x[0])
         otros_total = (sum([v for v, _ in totals[9:]]), "Vitaminas, Minerales, Aminoacidos, Acidos grasos, etc.")
         base = totals[:9]
-        #def bisect(a, x):
-        #    for i, elem in enumerate(a):
-        #        if elem[0] < x[0]:
-        #            return i
-        #    else:
-        #        return len(a) - 1
-        #index = bisect(base, otros_total)
-        #base[index:index] = [otros_total]
         base.append(otros_total)
         if percentage:
             maximum = sum([v for v, _ in base])
