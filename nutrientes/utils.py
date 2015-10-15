@@ -547,7 +547,7 @@ def normal(x, u, s):
     import math
     return math.exp(-((x-u)**2)/(2*(s**2)))/(s*((2*math.pi)**.5))
 
-
+#nutrients excluded from the matrix similarity
 exclude_nutr = {
     "268": "Energy",
     "269": "Sugars, total",
@@ -559,10 +559,7 @@ exclude_nutr = {
     "695": "Fatty acids, total trans-polyenoic",
     "693": "Fatty acids, total trans-monoenoic",
     "204": "Total lipid (fat)",
-    #"205": "Carbohydrate, by difference",
     "203": "Protein",
-    #"318": "Vitamin A, IU", 
-    #"320": "Vitamin A, RAE"
 }
 
 OMEGAS = {
@@ -649,7 +646,8 @@ class Food(object):
         if self.ndb_no is None and ndb_no is not None:
             self.ndb_no = ndb_no
         records = self.get_raw_nutrients(self.ndb_no)
-        e_data = exclude_data(records, exclude=set(["268"])) #Energy#ENERC_KJ
+        #Energy#ENERC_KJ, 'Vitamin A, IU', 'Folate, food', 'Folate, total', Folic acid
+        e_data = exclude_data(records, exclude=set(["268", "318", "432", "417", "431"]))
         food = self.get_food(self.ndb_no)
         self.name = food[0][0]
         self.name_en = food[0][3]
@@ -864,6 +862,12 @@ class Food(object):
         totals.sort(reverse=True, key=lambda x:x[0])
         maximum = sum([v for v, _, _ in totals])
         return [(e[0] * 100 / maximum, e[1]) for e in totals]
+
+    def top_avg_nutrients(self):
+        diff_nutr = [(nutr_no, nutrdesc, v - self.nutr_avg[nutr_no][1]) 
+            for nutr_no, nutrdesc, v, _ in self.nutrients]
+        return sorted(diff_nutr, key=lambda x: x[2], reverse=True)
+
 
 def create_common_table(dicts):
     common_keys = set(dicts[0].keys())
