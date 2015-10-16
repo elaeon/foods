@@ -16,6 +16,13 @@ class NutrDesc(models.Model):
     def __unicode__(self):
         return self.nutr_no_t
 
+class FoodDescImg(models.Model):
+    ndb_no_t = models.TextField(unique=True)
+    img = models.ImageField(upload_to="food/", max_length=255)
+
+    def __unicode__(self):
+        return self.ndb_no_t
+
 # Create your models here.
 #class Recipe(models.Model):
 #    name = models.TextField()
