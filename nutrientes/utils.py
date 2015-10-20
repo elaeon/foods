@@ -868,6 +868,9 @@ class Food(object):
             for nutr_no, nutrdesc, v, _ in self.nutrients]
         return sorted(diff_nutr, key=lambda x: x[2], reverse=True)
 
+    def img_obj(self):
+        from nutrientes.models import FoodDescImg
+        return FoodDescImg.objects.get(ndb_no_t=self.ndb_no)
 
 def create_common_table(dicts):
     common_keys = set(dicts[0].keys())

@@ -1,4 +1,5 @@
 from django.db import models
+from sorl.thumbnail import ImageField as sorl_ImageField
 
 class SatietyIndex(models.Model):
     ndb_no_t = models.TextField(unique=True)
@@ -18,7 +19,7 @@ class NutrDesc(models.Model):
 
 class FoodDescImg(models.Model):
     ndb_no_t = models.TextField(unique=True)
-    img = models.ImageField(upload_to="food/", max_length=255)
+    img = sorl_ImageField(upload_to="food/")
 
     def __unicode__(self):
         return self.ndb_no_t

@@ -139,6 +139,7 @@ def ajax_search(request):
 @perfil
 def food(request, ndb_no, intake_params={}):
     from nutrientes.utils import Food
+
     food = Food(ndb_no)
     food_compare = request.session.get("food_compare", {})
     recipe = food.food2recipe(intake_params)
@@ -495,3 +496,6 @@ def news(request):
     latest_news = News.objects.latest("date_pub")
     return render(request, "news.html", {"latest_news": latest_news})
 
+
+def recomended_diet(request):
+    pass

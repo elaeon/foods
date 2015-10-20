@@ -1,5 +1,6 @@
 {% extends "busqueda.html" %}
 {% load staticfiles %}
+{% load thumbnail %}
 
 {% block contenido_base %}
 <div class="container">
@@ -36,9 +37,14 @@
         </div>
     </div>
     <div class="col-md-5 col-md-pull-6">
-        <!--<img src="http://lorempixel.com/400/200/" class="img-rounded">-->
-        <div style="height:200px;width:450px;background-color:#ddd;"></div>
-        <div style="font-size:80%">
+        {% if not food.img_obj %}
+            <div style="width:250px;height:200px"></div>
+        {% else %}
+        {% thumbnail food.img_obj.img "400x250" crop="center" as im %}
+            <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}" class="img-rounded">
+        {% endthumbnail %}
+        {% endif %}
+        <div style="font-size:80%;margin-top:10px;">
             <form id="analyze" action="{% url 'food_compare' %}" method="POST">
             {% csrf_token %}
             <button name="comparar" type="submit">Comparar</button>
