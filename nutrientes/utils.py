@@ -42,7 +42,10 @@ def perfiles(rnv_type=1):
 
 def nutr_features_group(order_by="sr_order"):
     _, cursor = conection()
-    query  = """SELECT nutr_no, nutrdesc, nutr_def.group, nutr_def.desc FROM nutr_def ORDER BY {order_by}""".format(order_by=order_by)
+    query  = """SELECT nutr_no, nutrdesc, nutrientes_nutrdesc.group, nutrientes_nutrdesc.desc 
+                FROM nutr_def, nutrientes_nutrdesc 
+                WHERE nutr_def.nutr_no=nutrientes_nutrdesc.nutr_no_t
+                ORDER BY {order_by}""".format(order_by=order_by)
     cursor.execute(query)
     return cursor.fetchall()
 

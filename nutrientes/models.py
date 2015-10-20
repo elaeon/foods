@@ -11,7 +11,7 @@ class SatietyIndex(models.Model):
 
 class NutrDesc(models.Model):
     nutr_no_t = models.TextField(unique=True)
-    desc = models.TextField()
+    desc = models.TextField(blank=True, null=True)
     group = models.TextField()
 
     def __unicode__(self):
