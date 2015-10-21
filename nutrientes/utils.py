@@ -259,14 +259,14 @@ def get_many_food(ids):
     cursor.execute(query)
     return cursor.fetchall()
 
-def best_of_query(nutr_no_list, category_food):
+def best_of_query(nutr_no_list, category_food, exclude=None):
     _, cursor = conection()
     nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
     nutr_avg = {nutr_no: (avg, caution) 
         for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
     querys = []
     for nutr_no, (avg, caution) in nutr_avg.items():
-        query = query_build(nutr_no, category_food)
+        query = query_build(nutr_no, category_food, exclude=exclude)
         cursor.execute(query)
         querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
@@ -472,7 +472,7 @@ class Rank(object):
         return self.rank2natural(self.sorted_data(self.ids2data_sorted(), limit=limit), f_index=lambda x: x["i"])
     
 
-def query_build(nutr_no, category_food, name=None, order_by=None):
+def query_build(nutr_no, category_food, name=None, order_by=None, exclude=None):
     attrs = {"nutr_no": nutr_no}
     if nutr_no.startswith("omega"):
         query = """
@@ -495,6 +495,12 @@ def query_build(nutr_no, category_food, name=None, order_by=None):
     if category_food:
         query += """ AND food_des.fdgrp_cd='{category_food}'"""
         attrs["category_food"] = category_food
+
+    if exclude == "processed_food":
+        query += """ AND food_des.fdgrp_cd != '3600'""" ## Restaurant Foods
+        query += """ AND food_des.fdgrp_cd != '2500'""" ## Snacks
+        query += """ AND food_des.fdgrp_cd != '2200'""" ## Meals, Entrees, and Side Dishes
+        query += """ AND food_des.fdgrp_cd != '2100'""" ## Fast Foods
 
     if order_by is not None:
         query += """ ORDER BY nutr_val {order_by}""".format(order_by=order_by)

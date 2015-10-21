@@ -15,7 +15,8 @@ $(document).ready(function(){
         <form action="{% url 'best_of_nutrients' %}" method="POST">
         {% csrf_token %}
         <select name="category_food">
-        <option value="0">Todas las categorias</option>
+        <option value="X">Todas las categorias, excepto productos elaborados</option>
+        <option value="XX">Todas las categorias</option>
         {% for fdgrp_cd, fdgrp_desc_es in categories %}
         <option value="{{ fdgrp_cd }}">{{ fdgrp_desc_es }}</option>
         {% endfor %}

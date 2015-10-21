@@ -8,5 +8,9 @@ from sorl.thumbnail.admin import AdminImageMixin
 class FoodDescImgAdmin(AdminImageMixin, admin.ModelAdmin):
     pass
 
+
+class NutrDescAdmin(admin.ModelAdmin):
+    list_display = ('nutr_no_t', 'group', 'essencial')
+
 admin.site.register(FoodDescImg, FoodDescImgAdmin)
-admin.site.register(NutrDesc)
+admin.site.register(NutrDesc, NutrDescAdmin)

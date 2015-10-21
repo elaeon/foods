@@ -324,9 +324,19 @@ def best_of_nutrients(request):
 
     if request.method == "POST":
         nutr_nos = request.POST.getlist("nutr_no")
-        category_food = request.POST.get("category_food", '0')
-        category_food = None if category_food == '0' else category_food
-        rank = best_of_query(nutr_nos, category_food)
+        category_food = request.POST.get("category_food", 'X')
+
+        if category_food == "X":
+            exclude = "processed_food"
+            category_food = None
+        elif category_food == "XX":
+            category_food = None
+            exclude = None
+        else:
+            category_food = category_food
+            exclude = None
+            
+        rank = best_of_query(nutr_nos, category_food, exclude=exclude)
         nutrs = nutr_features_ids(rank.category_nutr.keys())
         try:
             categoria = alimentos_category_name(category_food)[0][0]
