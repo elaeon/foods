@@ -1979,6 +1979,15 @@ def read_vector_food():
         print("****AVG", sum(results)/len(results))
         print(results)
 
-def get_best():
-    pass
-    #weight_nutrs
+def order_best(foods):
+    n_foods = []
+    for food in foods:
+        v = 0
+        for nutr_no, nutrdesc, mount in food.top_nutrients_avg():
+            w = weight_nutrs.get(nutr_no, 0)
+            if w > 0:
+                v += w * mount
+            else:
+                v -= mount 
+        n_foods.append((food, v))
+    return [f for f, _ in sorted(n_foods, key=lambda x:x[1])]
