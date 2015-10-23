@@ -37,13 +37,11 @@
         </div>
     </div>
     <div class="col-md-5 col-md-pull-6">
-        {% if not food.img_obj %}
-            <div style="width:250px;height:200px"></div>
-        {% else %}
         {% thumbnail food.img_obj.img "400x250" crop="center" as im %}
             <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}" class="img-rounded">
+        {% empty %}
+            <div style="width:250px;height:200px"></div>
         {% endthumbnail %}
-        {% endif %}
         <div style="font-size:80%;margin-top:10px;">
             <form id="analyze" action="{% url 'food_compare' %}" method="POST">
             {% csrf_token %}

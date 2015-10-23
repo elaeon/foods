@@ -61,6 +61,7 @@ urlpatterns = [
     url(r'^best_menu/$', nutr_views.best_menu, name="best_menu"),
     url(r'^news/$', nutr_views.news, name="nutr_news"),
     url(r'^diabetes/$', disease_views.diabetes, name="diabetes"),
+    url(r'^recommended_food/$', nutr_views.recomended_food, name="recommended_food"),
     url(r'^admin/', include(admin.site.urls)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

@@ -498,7 +498,7 @@ def query_build(nutr_no, category_food, name=None, order_by=None, exclude=None):
 
     if exclude == "processed_food":
         query += """ AND food_des.fdgrp_cd != '3600'""" ## Restaurant Foods
-        query += """ AND food_des.fdgrp_cd != '2500'""" ## Snacks
+        #query += """ AND food_des.fdgrp_cd != '2500'""" ## Snacks
         query += """ AND food_des.fdgrp_cd != '2200'""" ## Meals, Entrees, and Side Dishes
         query += """ AND food_des.fdgrp_cd != '2100'""" ## Fast Foods
 
@@ -556,7 +556,8 @@ def normal(x, u, s):
     import math
     return math.exp(-((x-u)**2)/(2*(s**2)))/(s*((2*math.pi)**.5))
 
-#nutrients excluded from the matrix similarity
+#nutrients excluded from the matrix similarity, because are the sum of others
+#nutrients
 exclude_nutr = {
     "268": "Energy",
     "269": "Sugars, total",
@@ -872,14 +873,21 @@ class Food(object):
         maximum = sum([v for v, _, _ in totals])
         return [(e[0] * 100 / maximum, e[1]) for e in totals]
 
-    def top_avg_nutrients(self):
+    def avg_nutrients_best(self):
         diff_nutr = [(nutr_no, nutrdesc, v - self.nutr_avg[nutr_no][1]) 
             for nutr_no, nutrdesc, v, _ in self.nutrients]
         return sorted(diff_nutr, key=lambda x: x[2], reverse=True)
 
+    def top_nutrients_avg(self):
+        result = self.avg_nutrients_best()
+        return filter(lambda x:x[2] > 0, result)
+
     def img_obj(self):
         from nutrientes.models import FoodDescImg
-        return FoodDescImg.objects.get(ndb_no_t=self.ndb_no)
+        try:
+            return FoodDescImg.objects.get(ndb_no_t=self.ndb_no)
+        except FoodDescImg.DoesNotExist:
+            return None
 
 def create_common_table(dicts):
     common_keys = set(dicts[0].keys())
@@ -1970,3 +1978,7 @@ def read_vector_food():
             #    break
         print("****AVG", sum(results)/len(results))
         print(results)
+
+def get_best():
+    pass
+    #weight_nutrs
