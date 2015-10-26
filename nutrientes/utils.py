@@ -875,12 +875,16 @@ class Food(object):
 
     def avg_nutrients_best(self):
         diff_nutr = [(nutr_no, nutrdesc, v - self.nutr_avg[nutr_no][1]) 
-            for nutr_no, nutrdesc, v, _ in self.nutrients]
+            for nutr_no, nutrdesc, v, _ in self.nutrients if nutr_no != "255"]
         return sorted(diff_nutr, key=lambda x: x[2], reverse=True)
 
     def top_nutrients_avg(self):
         result = self.avg_nutrients_best()
         return filter(lambda x:x[2] > 0, result)
+
+    def top_nutrients_detail_avg(self):
+        return [(nutr_no, nutrdesc, self.nutr_detail.get(nutr_no, ""), mount)
+                for nutr_no, nutrdesc, mount in self.top_nutrients_avg()]
 
     def img_obj(self):
         from nutrientes.models import FoodDescImg
@@ -1980,14 +1984,23 @@ def read_vector_food():
         print(results)
 
 def order_best(foods):
+    from nutrientes.models import NutrDesc
     n_foods = []
+    nutr_detail = {}
+    for nutrdesc in NutrDesc.objects.all():
+        nutr_detail[nutrdesc.nutr_no_t] = nutrdesc.desc
+
     for food in foods:
+        food.nutr_detail = nutr_detail
         v = 0
+        good = 0
         for nutr_no, nutrdesc, mount in food.top_nutrients_avg():
             w = weight_nutrs.get(nutr_no, 0)
-            if w > 0:
-                v += w * mount
+            if w > 1:
+                v -= w * mount
             else:
-                v -= mount 
+                v += mount
+                good += 1
+        v = v + abs(v * good) + (normal(food.radio_omega_raw, 1, 1) * 100)
         n_foods.append((food, v))
-    return [f for f, _ in sorted(n_foods, key=lambda x:x[1])]
+    return [f for f, _ in sorted(n_foods, key=lambda x:x[1], reverse=True)]

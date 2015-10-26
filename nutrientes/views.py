@@ -511,6 +511,7 @@ def recomended_food(request):
     from nutrientes.utils import Food, order_best
     data_list = ["11529", "09037", "11446", "11457", "11091", "02003", "12220", 
         "12036", "09139", "11964", "15212", "12065", "12151", "14355", "14219", "11124"]
+    #data_list = ["09037"]
     foods = [Food(ndb_no) for ndb_no in data_list]
     foods = order_best(foods)
     return render(request, "recommended_food.html", {"foods": foods})
