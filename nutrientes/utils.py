@@ -349,7 +349,7 @@ weight_nutrs = {
     "255": 1.0, #Water
     "601": 10.0, #Cholesterol
     "269": 8.0, #Sugars, total
-    "262": 10.5, #Caffeine
+    "262": 5.5, #Caffeine
     "307": 8.0, #Sodium, Na
     "605": 9.6, #Fatty acids, total trans
     "606": 9.5, #Fatty acids, total saturated
@@ -358,28 +358,28 @@ weight_nutrs = {
     "607": 8.5, #4:0
     "609": 8.5, #8:0
     "608": 8.5, #6:0
-    "204": 1.1, #Total lipid (fat)
+    "204": 1.5, #Total lipid (fat)
     "omega3": 0.05,
     "205": 1.5, #Carbohydrate, by difference
     "211": 5.0, #Glucose (dextrose)
     "212": 6.0, #Fructose
     "210": 5.0, #Sucrose
-    "203": .5,  #Protein
+    "203": 1,  #Protein
     "209": 3.0, #Starch
     "431": .5,  #Folic acid
     "213": 4.0, #Lactose
     "287": 4.0, #Galactose
     "214": 3.0, #Maltose
-    "207": 1.1, #Ash
-    "291": .5,  #Fiber, total dietary
+    "207": 1.0, #Ash
+    "291": .8,  #Fiber, total dietary
     "313": .9, #Fluoride, F
-    "309": .9, #Zinc
-    "430": .9, #Vitamin K
-    "323": .9, #Vitamin E
+    "309": .8, #Zinc
+    "430": .8, #Vitamin K
+    "323": .8, #Vitamin E
     "401": .8, #Vitamin C
-    "415": .9, #Vitamin B6
-    "418": .9, #Vitamin B12
-    "320": .9, #Vitamin A
+    "415": .8, #Vitamin B6
+    "418": .8, #Vitamin B12
+    "320": .8, #Vitamin A
     "305": .8, #Phosphorus,
     "410": .8, #Pantothenic
     "406": .8, #Niacin
@@ -471,6 +471,22 @@ class Rank(object):
     def order(self, limit=None):
         return self.rank2natural(self.sorted_data(self.ids2data_sorted(), limit=limit), f_index=lambda x: x["i"])
     
+    def weight_order(self, omegas):
+        total = {food["attr"][0]: {"global": i, "name": food["attr"][1]} for i, food in self.order()}
+
+        for ndb_no, radio in omegas:
+            if not ndb_no in total:
+                total[ndb_no] = {}
+
+            if 0 < radio <= 4:
+                total[ndb_no]["radio"] = -normal(radio, 1, 1) * 3
+            else:
+                total[ndb_no]["radio"] = normal(radio, 1, 1) * 20
+        
+        results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", "")) 
+            for ndb_no, v in total.items()]
+        results.sort()
+        self.results = results
 
 def query_build(nutr_no, category_food, name=None, order_by=None, exclude=None):
     attrs = {"nutr_no": nutr_no}
@@ -533,24 +549,28 @@ def best_of_general_2(category=None, name=None):
         querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
     rank = Rank(querys)
-    total = {food["attr"][0]: {"global": i, "name": food["attr"][1]} for i, food in rank.order()}
-
-    for ndb_no, radio in radio_omega(category=category):
-        if not ndb_no in total:
-            total[ndb_no] = {}
-
-        if 0 < radio <= 4:
-            total[ndb_no]["radio"] = -normal(float(radio - 1), 0, 0.3993)
-        elif radio == 0:
-            total[ndb_no]["radio"] = 1
-        else:
-            total[ndb_no]["radio"] = (float(radio)*70 / 8618.)
-    
-    results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", "")) 
-        for ndb_no, v in total.items()]
-    results.sort()
-    rank.results = results
+    rank.weight_order(radio_omega(category=category))
     return rank
+
+def best_of_selected_food(foods):
+    nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
+    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
+
+    nutr_detail = {}
+    for food in foods:
+        for nutr_no, nutrdesc, v, u in [e for e in food.nutrients if e[0] != "255"]:
+            nutr_detail.setdefault(nutr_no, [])
+            nutr_detail[nutr_no].append((food.ndb_no, food.name, v, u))
+
+    querys = []
+    for nutr_no, data in nutr_detail.items():
+        avg, caution = nutr_avg[nutr_no]
+        querys.append((nutr_no, caution, avg, data))
+
+    rank = Rank(querys)
+    omegas = [(food.ndb_no, food.radio_omega_raw) for food in foods]
+    rank.weight_order(omegas)
+    return [(i, ndb_no) for i, (_, ndb_no, _) in Rank.rank2natural(rank.results, f_index=lambda x: x[0])]
 
 def normal(x, u, s):
     import math
@@ -558,7 +578,7 @@ def normal(x, u, s):
 
 #nutrients excluded from the matrix similarity, because are the sum of others
 #nutrients
-exclude_nutr = {
+EXCLUDE_NUTR = {
     "268": "Energy",
     "269": "Sugars, total",
     "605": "Fatty acids, total trans",
@@ -782,7 +802,7 @@ class Food(object):
     @classmethod
     def create_vector_fields_nutr(self, exclude_nutr_l=None):
         if exclude_nutr_l is None:
-            exclude_nutr_l = exclude_nutr.keys()
+            exclude_nutr_l = EXCLUDE_NUTR.keys()
         features = nutr_features()
         fields, omegas = self.subs_omegas([(e[0], e[1], 0, None) for e in features])
         fields = fields + [(v[0], None, 0, None) for _, v in omegas.items()]
@@ -874,8 +894,8 @@ class Food(object):
         return [(e[0] * 100 / maximum, e[1]) for e in totals]
 
     def avg_nutrients_best(self):
-        diff_nutr = [(nutr_no, nutrdesc, v - self.nutr_avg[nutr_no][1]) 
-            for nutr_no, nutrdesc, v, _ in self.nutrients if nutr_no != "255"]
+        diff_nutr = [(nutr_no, nutrdesc, v - self.nutr_avg[nutr_no][1], u) 
+            for nutr_no, nutrdesc, v, u in self.nutrients if nutr_no != "255"]
         return sorted(diff_nutr, key=lambda x: x[2], reverse=True)
 
     def top_nutrients_avg(self):
@@ -883,8 +903,8 @@ class Food(object):
         return filter(lambda x:x[2] > 0, result)
 
     def top_nutrients_detail_avg(self):
-        return [(nutr_no, nutrdesc, self.nutr_detail.get(nutr_no, ""), mount)
-                for nutr_no, nutrdesc, mount in self.top_nutrients_avg()]
+        return [(nutr_no, nutrdesc, self.nutr_detail.get(nutr_no, ""), mount, u)
+                for nutr_no, nutrdesc, mount, u in self.top_nutrients_avg()]
 
     def img_obj(self):
         from nutrientes.models import FoodDescImg
@@ -975,19 +995,12 @@ class MostSimilarFood(object):
         if exclude_nutr is None:
             exclude_nutr = {
                 "601": "Cholesterol",
-                "269": "Sugars, total",
-                "605": "Fatty acids, total trans",
-                "606": "Fatty acids, total saturated",
-                "645": "Fatty acids, total monounsaturated",
-                "646": "Fatty acids, total polyunsaturated",
-                "695": "Fatty acids, total trans-polyenoic",
-                "693": "Fatty acids, total trans-monoenoic",
-                "204": "Total lipid (fat)",
                 "307": "Sodium, Na",
                 "607": "4:0",
                 "609": "8:0",
                 "608": "6:0",
             }
+            exclude_nutr.update(EXCLUDE_NUTR)
 
         vector_base = self.food_base.vector_features(
             self.food_base.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr), 
@@ -1990,17 +2003,9 @@ def order_best(foods):
     for nutrdesc in NutrDesc.objects.all():
         nutr_detail[nutrdesc.nutr_no_t] = nutrdesc.desc
 
+    rank_results = best_of_selected_food(foods)
+    foods_dict = {}
     for food in foods:
         food.nutr_detail = nutr_detail
-        v = 0
-        good = 0
-        for nutr_no, nutrdesc, mount in food.top_nutrients_avg():
-            w = weight_nutrs.get(nutr_no, 0)
-            if w > 1:
-                v -= w * mount
-            else:
-                v += mount
-                good += 1
-        v = v + abs(v * good) + (normal(food.radio_omega_raw, 1, 1) * 100)
-        n_foods.append((food, v))
-    return [f for f, _ in sorted(n_foods, key=lambda x:x[1], reverse=True)]
+        foods_dict[food.ndb_no] = food
+    return ((i, foods_dict[ndb_no]) for i, ndb_no in rank_results)
