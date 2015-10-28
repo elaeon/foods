@@ -8,9 +8,33 @@ from collections import OrderedDict
 from functools import wraps
 import os
 
+from nutrientes.weights import WEIGHT_NUTRS
+
 PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
 USERNAME = 'agmartinez'
 RNV_TYPE = {2: "NOM-051-SCFI/SSA1-2010", 1: "USACAN"}
+#nutrients excluded from the matrix similarity, because are the sum of others
+#nutrients
+EXCLUDE_NUTR = {
+    "268": "Energy",
+    "269": "Sugars, total",
+    "605": "Fatty acids, total trans",
+    "606": "Fatty acids, total saturated",
+    "645": "Fatty acids, total monounsaturated",
+    "646": "Fatty acids, total polyunsaturated",
+    "208": "Energy",
+    "695": "Fatty acids, total trans-polyenoic",
+    "693": "Fatty acids, total trans-monoenoic",
+    "204": "Total lipid (fat)",
+    "203": "Protein",
+}
+
+OMEGAS = {
+    "omega 3": ["16:3", "18:3", "18:4", "20:3", "20:4", "20:5", "21:5", "22:5", "22:6", "24:5", "24:6"],
+    "omega 6": ["18:2", "18:3", "20:2", "20:3", "20:4", "22:2", "22:4", "22:5", "24:4", "24:5"],
+    "omega 7": ["12:1", "14:1", "16:1", "18:1", "20:1", "22:1", "24:1"],
+    "omega 9": ["18:1", "20:1", "20:3", "22:1", "24:1"]
+}
 
 def conection():
     conn_string = "host='/var/run/postgresql/' dbname='alimentos' user='{username}'".format(username=USERNAME)
@@ -160,7 +184,7 @@ def get_omegas():
     return cursor.fetchall()
 
 def mark_caution_nutr(features):
-    caution_nutr = {nutr_no: weight for nutr_no, weight in weight_nutrs.items() if weight > 1}
+    caution_nutr = {nutr_no: weight for nutr_no, weight in WEIGHT_NUTRS.items() if weight > 1}
     return [(nutr_no, nut, v, u, int(nutr_no in caution_nutr)) for nutr_no, nut, v, u in features]
 
 def category_food():
@@ -344,56 +368,9 @@ def ranking_nutr_perfil(perfil, edad_range, category_food=None):
 
     return cursor.fetchall()
 
- 
-weight_nutrs = {
-    "255": 1.0, #Water
-    "601": 10.0, #Cholesterol
-    "269": 8.0, #Sugars, total
-    "262": 5.5, #Caffeine
-    "307": 8.0, #Sodium, Na
-    "605": 9.6, #Fatty acids, total trans
-    "606": 9.5, #Fatty acids, total saturated
-    "693": 8.0, #Fatty acids, total trans-monoenoic
-    "695": 8.0, #Fatty acids, total trans-polyenoic
-    "607": 8.5, #4:0
-    "609": 8.5, #8:0
-    "608": 8.5, #6:0
-    "204": 1.5, #Total lipid (fat)
-    "omega3": 0.05,
-    "205": 1.5, #Carbohydrate, by difference
-    "211": 5.0, #Glucose (dextrose)
-    "212": 6.0, #Fructose
-    "210": 5.0, #Sucrose
-    "203": 1,  #Protein
-    "209": 3.0, #Starch
-    "431": .5,  #Folic acid
-    "213": 4.0, #Lactose
-    "287": 4.0, #Galactose
-    "214": 3.0, #Maltose
-    "207": 1.0, #Ash
-    "291": .8,  #Fiber, total dietary
-    "313": .9, #Fluoride, F
-    "309": .8, #Zinc
-    "430": .8, #Vitamin K
-    "323": .8, #Vitamin E
-    "401": .8, #Vitamin C
-    "415": .8, #Vitamin B6
-    "418": .8, #Vitamin B12
-    "320": .8, #Vitamin A
-    "305": .8, #Phosphorus,
-    "410": .8, #Pantothenic
-    "406": .8, #Niacin
-    "304": .8, #Magnesium,
-    "306": .8, #Potassium,
-    "317": .8, #Selenium,
-    "435": .8, #Folate,
-    "421": .8, #Choline,
-    "315": .8, #Manganese,
-    "omega6": 1.8
-}
 
 class Rank(object):
-    def __init__(self, base_food_querys, weights=True):
+    def __init__(self, base_food_querys, weights=WEIGHT_NUTRS):
         self.foods = {}
         self.category_nutr = {}
         self.base_food = None
@@ -401,7 +378,7 @@ class Rank(object):
         self.category_nutr = self.get_categories_nutr()
         self.ranks = None
         self.results = None
-        self.weight_nutrs = weight_nutrs if weights else {}
+        self.weight_nutrs = weights
 
     def get_categories_nutr(self):
         category_nutr = {}
@@ -552,7 +529,7 @@ def best_of_general_2(category=None, name=None):
     rank.weight_order(radio_omega(category=category))
     return rank
 
-def best_of_selected_food(foods):
+def best_of_selected_food(foods, weights):
     nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
 
@@ -567,7 +544,7 @@ def best_of_selected_food(foods):
         avg, caution = nutr_avg[nutr_no]
         querys.append((nutr_no, caution, avg, data))
 
-    rank = Rank(querys)
+    rank = Rank(querys, weights=weights)
     omegas = [(food.ndb_no, food.radio_omega_raw) for food in foods]
     rank.weight_order(omegas)
     return [(i, ndb_no) for i, (_, ndb_no, _) in Rank.rank2natural(rank.results, f_index=lambda x: x[0])]
@@ -576,28 +553,6 @@ def normal(x, u, s):
     import math
     return math.exp(-((x-u)**2)/(2*(s**2)))/(s*((2*math.pi)**.5))
 
-#nutrients excluded from the matrix similarity, because are the sum of others
-#nutrients
-EXCLUDE_NUTR = {
-    "268": "Energy",
-    "269": "Sugars, total",
-    "605": "Fatty acids, total trans",
-    "606": "Fatty acids, total saturated",
-    "645": "Fatty acids, total monounsaturated",
-    "646": "Fatty acids, total polyunsaturated",
-    "208": "Energy",
-    "695": "Fatty acids, total trans-polyenoic",
-    "693": "Fatty acids, total trans-monoenoic",
-    "204": "Total lipid (fat)",
-    "203": "Protein",
-}
-
-OMEGAS = {
-    "omega 3": ["16:3", "18:3", "18:4", "20:3", "20:4", "20:5", "21:5", "22:5", "22:6", "24:5", "24:6"],
-    "omega 6": ["18:2", "18:3", "20:2", "20:3", "20:4", "22:2", "22:4", "22:5", "24:4", "24:5"],
-    "omega 7": ["12:1", "14:1", "16:1", "18:1", "20:1", "22:1", "24:1"],
-    "omega 9": ["18:1", "20:1", "20:3", "22:1", "24:1"]
-}
 
 class Food(object):
     def __init__(self, ndb_no=None, avg=True, weight=100):
@@ -1998,12 +1953,13 @@ def read_vector_food():
 
 def order_best(foods):
     from nutrientes.models import NutrDesc
+    from nutrientes.weights import WEIGHT_NUTRS_OSTEOPOROSIS
     n_foods = []
     nutr_detail = {}
     for nutrdesc in NutrDesc.objects.all():
         nutr_detail[nutrdesc.nutr_no_t] = nutrdesc.desc
 
-    rank_results = best_of_selected_food(foods)
+    rank_results = best_of_selected_food(foods, WEIGHT_NUTRS_OSTEOPOROSIS)
     foods_dict = {}
     for food in foods:
         food.nutr_detail = nutr_detail
