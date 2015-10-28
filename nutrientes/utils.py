@@ -1953,13 +1953,16 @@ def read_vector_food():
 
 def order_best(foods):
     from nutrientes.models import NutrDesc
-    from nutrientes.weights import WEIGHT_NUTRS_OSTEOPOROSIS
+    from nutrientes.weights import WEIGHT_NUTRS_OSTEOPOROSIS, WEIGHT_NUTRS_LOW_SUGAR
+    from nutrientes.weights import WEIGHT_NUTRS_FREE_RADICALS_AO, WEIGHT_NUTRS_ANTI_CHOLESTEROL
+    from nutrientes.weights import WEIGHT_NUTRS_WEIGHT_BODY
+
     n_foods = []
     nutr_detail = {}
     for nutrdesc in NutrDesc.objects.all():
         nutr_detail[nutrdesc.nutr_no_t] = nutrdesc.desc
 
-    rank_results = best_of_selected_food(foods, WEIGHT_NUTRS_OSTEOPOROSIS)
+    rank_results = best_of_selected_food(foods, WEIGHT_NUTRS_WEIGHT_BODY)
     foods_dict = {}
     for food in foods:
         food.nutr_detail = nutr_detail

@@ -12,9 +12,50 @@ WEIGHT_NUTRS_OSTEOPOROSIS = {
     "428": .1, #Menaquinone-4    
 }
 
-WEIGHT_NUTRS_DIABETES = {
+WEIGHT_NUTRS_LOW_SUGAR = {
     "410": .1, #Pantothenic acid, 
     "404": .1, #Thiamin
+    "269": 10.0, #Sugars, total
+    "205": 1.5, #Carbohydrate, by difference
+    "211": 8.0, #Glucose (dextrose)
+    "212": 8.0, #Fructose
+    "210": 8.0, #Sucrose
+    "209": 3.0, #Starch
+    "213": 4.0, #Lactose
+    "287": 4.0, #Galactose
+    "214": 4.0, #Maltose
+}
+
+WEIGHT_NUTRS_FREE_RADICALS_AO = {
+    "317": .1, #Selenium, Se
+    "341": .1, #Tocopherol, beta
+    "343": .1, #Tocopherol, delta
+    "342": .1, #Tocopherol, gamma
+    "344": .1, #Tocotrienol, alpha
+    "345": .1, #Tocotrienol, beta
+    "347": .1, #Tocotrienol, delta
+    "346": .1, #Tocotrienol, gamma
+    "323": .1, #Vitamin E (alpha-tocopherol)
+    "321": .1, #Carotene, beta
+    "337": .1, #Lycopene
+    "401": .1, #Vitamin C
+}
+
+WEIGHT_NUTRS_ANTI_CHOLESTEROL = {
+    "omega3": .1,
+    "639": .1, #Campesterol
+    "636": .1, #Phytosterols
+    "638": .1, #Stigmasterol
+    "511": .1, #Arginine
+}
+
+WEIGHT_NUTRS_WEIGHT_BODY = {
+    "502": .1, #Threonine
+    "511": .1, #Arginine
+    "504": .1, #Leucine
+    "505": .1, #Lysine
+    "501": .1, #Tryptophan
+    "510": .1, #Valine
 }
 
 WEIGHT_NUTRS = {
