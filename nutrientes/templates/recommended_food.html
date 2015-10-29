@@ -1,0 +1,57 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+{% load thumbnail %}
+
+{% block js %}
+<script type="text/javascript">
+$(document).ready(function(){
+    $('[data-toggle="popover"]').popover();   
+});
+</script>
+{% endblock %}
+
+{% block contenido_base %}
+<div class="container">
+<div class="starter-template">
+<form method="post" action=".">
+<span>
+<input name="nutr_no" type="checkbox" value="osteoporosis"> 
+<a tabindex="0" class="btn btn-sm btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Osteoporosis" data-content="bla bla">Osteoporosis</a>
+</span>
+
+</form>
+
+<div class="row">
+{% for i, food in foods %}
+<div class="col-md-6 col-md-6">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+            <span class="badge">{{ i }}</span>
+            <p class="panel-title">
+            <a href="{% url 'view_food' food.ndb_no %}">{{ food.name|truncatewords:6 }}</a>
+            </p>
+        </div>
+
+        <div class="panel-body">
+        {% thumbnail food.img_obj.img "250x200" crop="center" as im %}
+        <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}" 
+            class="img-rounded" style="float:left;">
+        {% empty %}
+        <div style="width:250px;height:200px"></div>
+        {% endthumbnail %}
+        <div style="margin-left:10px;">
+        <p style="font-weight:bold;">Nutrientes destacados.</p>
+        {% for nutr_no, nutrdesc, detail, mount in food.top_nutrients_detail_avg %}
+        <a tabindex="0" class="btn btn-xs btn-default" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ nutrdesc }}" data-content="{{ detail }}"  style="font-size:70%;">{{ nutrdesc }}</a>
+        {% endfor %}
+        </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+
+</div>
+</div>
+{% endblock %}
+
