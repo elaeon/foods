@@ -26,6 +26,13 @@ WEIGHT_NUTRS_LOW_SUGAR = {
     "214": 4.0, #Maltose
 }
 
+WEIGHT_NUTR_PROSTATE_CARE = {
+    "309": .1, #Zinc, Zn
+    "641": .1, #Beta-sitosterol
+    "638": .1, #Stigmasterol
+    "337": .1, #Lycopene
+}
+
 WEIGHT_NUTRS_FREE_RADICALS_AO = {
     "317": .1, #Selenium, Se
     "341": .1, #Tocopherol, beta
@@ -43,11 +50,31 @@ WEIGHT_NUTRS_FREE_RADICALS_AO = {
 
 WEIGHT_NUTRS_ANTI_CHOLESTEROL = {
     "omega3": .1,
+    "omega6": 1,
     "639": .1, #Campesterol
     "636": .1, #Phytosterols
     "638": .1, #Stigmasterol
     "511": .1, #Arginine
+    "605": 9.6, #Fatty acids, total trans
+    "607": 3.1, #4:0
+    "609": 3.1, #8:0
+    "608": 3.1, #6:0
 }
+
+WEIGHT_NUTR_LOW_FAT = {
+    "omega3": .1,
+    "omega6": 1,
+    "605": 9.6, #Fatty acids, total trans
+    "606": 9.5, #Fatty acids, total saturated
+    "693": 8.0, #Fatty acids, total trans-monoenoic
+    "695": 8.0, #Fatty acids, total trans-polyenoic
+    "607": 8.5, #4:0
+    "609": 8.5, #8:0
+    "608": 8.5, #6:0
+    "204": 1.5, #Total lipid (fat)
+    "429": 5.0, #Dihydrophylloquinone
+}
+
 
 WEIGHT_NUTRS_WEIGHT_BODY = {
     "502": .1, #Threonine
@@ -56,6 +83,19 @@ WEIGHT_NUTRS_WEIGHT_BODY = {
     "505": .1, #Lysine
     "501": .1, #Tryptophan
     "510": .1, #Valine
+}
+
+WEIGHT_NUTRS_NEURAL = {
+    "307": .1, #Sodium, Na
+    "454": .1, #Betaine
+    "309": .1, #Zinc, Zn
+    "418": .1, #Vitamin B12
+    "421": .1, #Choline,
+    "406": .1, #Niacin
+    "415": .1, #Vitamin B6
+    "514": .1, #Aspartic acid
+    "516": .1, #Glycine
+    "512": .1, #Histidine
 }
 
 WEIGHT_NUTRS = {
@@ -79,16 +119,16 @@ WEIGHT_NUTRS = {
     "213": 4.0, #Lactose
     "287": 4.0, #Galactose
     "214": 3.0, #Maltose    
-    "429": 5, #Dihydrophylloquinone
+    "429": 5.0, #Dihydrophylloquinone
     "omega6": 1.8,
 
-    "203": 1,  #Protein
+    "203": 1.0,  #Protein
     "255": 1.0, #Water    
     "207": 1.0, #Ash
 
     "omega3": 0.05,
-    "435": .5,  #Folate DFE
-    "291": .8,  #Fiber, total dietary
+    "435": .5, #Folate DFE
+    "291": .8, #Fiber, total dietary
     "313": .9, #Fluoride, F
     "309": .8, #Zinc
     "430": .8, #Vitamin K

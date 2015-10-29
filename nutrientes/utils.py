@@ -183,8 +183,8 @@ def get_omegas():
     cursor.execute(query)
     return cursor.fetchall()
 
-def mark_caution_nutr(features):
-    caution_nutr = {nutr_no: weight for nutr_no, weight in WEIGHT_NUTRS.items() if weight > 1}
+def mark_caution_nutr(features, weights=WEIGHT_NUTRS):
+    caution_nutr = {nutr_no: weight for nutr_no, weight in weights.items() if weight > 1}
     return [(nutr_no, nut, v, u, int(nutr_no in caution_nutr)) for nutr_no, nut, v, u in features]
 
 def category_food():
@@ -418,6 +418,7 @@ class Rank(object):
                 positions[v[0]]["val"].append(
                     (v[2], diff_avg, self.category_nutr[nutr_no]["units"]))
                 self.set_rank(v[0], nutr_no, i)
+
         if limit is None:
             return sorted(positions.values(), key=lambda x: x["i"])
         else:
@@ -448,17 +449,19 @@ class Rank(object):
     def order(self, limit=None):
         return self.rank2natural(self.sorted_data(self.ids2data_sorted(), limit=limit), f_index=lambda x: x["i"])
     
-    def weight_order(self, omegas):
-        total = {food["attr"][0]: {"global": i, "name": food["attr"][1]} for i, food in self.order()}
+    def weight_order(self, omegas, limit=None, radio_o=True):
+        total = {food["attr"][0]: {"global": i, "name": food["attr"][1]} for i, food in self.order(limit=limit)}
 
-        for ndb_no, radio in omegas:
-            if not ndb_no in total:
-                total[ndb_no] = {}
+        if radio_o:
+            omegas_d = dict(omegas)
+            for ndb_no in total:
+                radio = omegas_d[ndb_no]
+                total.setdefault(ndb_no, {})
 
-            if 0 < radio <= 4:
-                total[ndb_no]["radio"] = -normal(radio, 1, 1) * 3
-            else:
-                total[ndb_no]["radio"] = normal(radio, 1, 1) * 20
+                if 0 < radio <= 4:
+                    total[ndb_no]["radio"] = -normal(radio, 1, 1) * 3
+                else:
+                    total[ndb_no]["radio"] = normal(radio, 1, 1) * 200
         
         results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", "")) 
             for ndb_no, v in total.items()]
@@ -529,13 +532,16 @@ def best_of_general_2(category=None, name=None):
     rank.weight_order(radio_omega(category=category))
     return rank
 
-def best_of_selected_food(foods, weights):
+def best_of_selected_food(foods, weights, limit, radio_o=True):
     nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
-    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
+    nutr_avg = {nutr_no:(avg, caution) 
+                for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr, weights=weights)}
 
     nutr_detail = {}
     for food in foods:
-        for nutr_no, nutrdesc, v, u in [e for e in food.nutrients if e[0] != "255"]:
+        base_nutr = [e for e in food.nutrients if e[0] in weights]
+        #[e for e in food.nutrients if e[0] != "255"]:
+        for nutr_no, nutrdesc, v, u in base_nutr:
             nutr_detail.setdefault(nutr_no, [])
             nutr_detail[nutr_no].append((food.ndb_no, food.name, v, u))
 
@@ -546,7 +552,7 @@ def best_of_selected_food(foods, weights):
 
     rank = Rank(querys, weights=weights)
     omegas = [(food.ndb_no, food.radio_omega_raw) for food in foods]
-    rank.weight_order(omegas)
+    rank.weight_order(omegas, limit=limit, radio_o=radio_o)
     return [(i, ndb_no) for i, (_, ndb_no, _) in Rank.rank2natural(rank.results, f_index=lambda x: x[0])]
 
 def normal(x, u, s):
@@ -1955,14 +1961,16 @@ def order_best(foods):
     from nutrientes.models import NutrDesc
     from nutrientes.weights import WEIGHT_NUTRS_OSTEOPOROSIS, WEIGHT_NUTRS_LOW_SUGAR
     from nutrientes.weights import WEIGHT_NUTRS_FREE_RADICALS_AO, WEIGHT_NUTRS_ANTI_CHOLESTEROL
-    from nutrientes.weights import WEIGHT_NUTRS_WEIGHT_BODY
+    from nutrientes.weights import WEIGHT_NUTRS_WEIGHT_BODY, WEIGHT_NUTRS_NEURAL, WEIGHT_NUTR_PROSTATE_CARE
+    from nutrientes.weights import WEIGHT_NUTR_LOW_FAT
 
     n_foods = []
     nutr_detail = {}
     for nutrdesc in NutrDesc.objects.all():
         nutr_detail[nutrdesc.nutr_no_t] = nutrdesc.desc
 
-    rank_results = best_of_selected_food(foods, WEIGHT_NUTRS_WEIGHT_BODY)
+    rank_results = best_of_selected_food(foods, WEIGHT_NUTR_LOW_FAT, 10, True)
+    #best_of_selected_food(foods, WEIGHT_NUTRS_LOW_SUGAR, 10, False)
     foods_dict = {}
     for food in foods:
         food.nutr_detail = nutr_detail
