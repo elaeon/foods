@@ -14,11 +14,14 @@ $(document).ready(function(){
 <div class="container">
 <div class="starter-template">
 <form method="post" action=".">
+{% csrf_token %}
+{% for type in  type_food %}
 <span>
-<input name="nutr_no" type="checkbox" value="osteoporosis"> 
-<a tabindex="0" class="btn btn-sm btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Osteoporosis" data-content="bla bla">Osteoporosis</a>
+<input name="nutr_no" type="checkbox" value="{{ type }}"> 
+<a tabindex="0" class="btn btn-sm btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ type }}" data-content="{{ type.desc }}">{{ type.title }}</a>
 </span>
-
+{% endfor %}
+<button type="submit">Buscar</button>
 </form>
 
 <div class="row">

@@ -1957,22 +1957,59 @@ def read_vector_food():
         print("****AVG", sum(results)/len(results))
         print(results)
 
-def order_best(foods):
-    from nutrientes.models import NutrDesc
-    from nutrientes.weights import WEIGHT_NUTRS_OSTEOPOROSIS, WEIGHT_NUTRS_LOW_SUGAR
-    from nutrientes.weights import WEIGHT_NUTRS_FREE_RADICALS_AO, WEIGHT_NUTRS_ANTI_CHOLESTEROL
-    from nutrientes.weights import WEIGHT_NUTRS_WEIGHT_BODY, WEIGHT_NUTRS_NEURAL, WEIGHT_NUTR_PROSTATE_CARE
-    from nutrientes.weights import WEIGHT_NUTR_LOW_FAT
 
-    n_foods = []
-    nutr_detail = {}
-    for nutrdesc in NutrDesc.objects.all():
-        nutr_detail[nutrdesc.nutr_no_t] = nutrdesc.desc
+class OptionSearch(object):
+    def __init__(self):
+        self.foods = {
+            "fruits": ["09139", "09037", "09200", "09266", "09218", 
+                        "09500", "09277", "09086", "09252", "09414", 
+                        "09412", "09340", "09415", "09129", "09132", 
+                        "09131", "09236", "09316", "09167", "09302", 
+                        "09174", "09181", "09148", "09326", "09226", 
+                        "09279", "09089", "09286", "09322", "09030", "09176"],
+            "vegetables": ["11603", "11205", "11529", "11446", "11457", 
+                            "11091", "11964", "11124", "11216", "11357"],
+            "spices_herbs": ["02003"],
+            "nuts_seeds": ["12036", "12065", "12151", "12220"]}
+        self.weights = self.set_weights()
+    
+    def join(self, food_values):
+        import itertools
+        data_list = itertools.chain.from_iterable(food_values)
+        return data_list
 
-    rank_results = best_of_selected_food(foods, WEIGHT_NUTR_LOW_FAT, 10, True)
-    #best_of_selected_food(foods, WEIGHT_NUTRS_LOW_SUGAR, 10, False)
-    foods_dict = {}
-    for food in foods:
-        food.nutr_detail = nutr_detail
-        foods_dict[food.ndb_no] = food
-    return ((i, foods_dict[ndb_no]) for i, ndb_no in rank_results)
+    def select_food(self, type_food):
+        return self.join(self.foods[type_] for type_ in type_food)
+
+    @classmethod
+    def set_weights(self):
+        from nutrientes.weights import *
+        weights = {
+            "Osteoporosis": WEIGHT_NUTRS_OSTEOPOROSIS, 
+            "Bajo Azucar": WEIGHT_NUTRS_LOW_SUGAR,
+            "Anti oxidantes": WEIGHT_NUTRS_FREE_RADICALS_AO,
+            "Anti colesterol": WEIGHT_NUTRS_ANTI_CHOLESTEROL,
+            "Bajo en grasas": WEIGHT_NUTR_LOW_FAT,
+            "Ayuda al sistema nervioso": WEIGHT_NUTRS_NEURAL,
+            "Ayuda a la prostata": WEIGHT_NUTR_PROSTATE_CARE,
+            "Ayuda a los musculos": WEIGHT_NUTRS_WEIGHT_BODY}
+        return weights
+
+    def order_best(self, foods, weights_best_for, limit, radio_o):
+        from nutrientes.models import NutrDesc
+
+        n_foods = []
+        nutr_detail = {}
+        for nutrdesc in NutrDesc.objects.all():
+            nutr_detail[nutrdesc.nutr_no_t] = nutrdesc.desc
+
+        rank_results = best_of_selected_food(foods, weights_best_for, limit, radio_o)
+        foods_dict = {}
+        for food in foods:
+            food.nutr_detail = nutr_detail
+            foods_dict[food.ndb_no] = food
+        return ((i, foods_dict[ndb_no]) for i, ndb_no in rank_results)
+
+    def best(self, type_food, weights_best_for=WEIGHT_NUTRS, limit=10, radio_o=True):
+        foods = [Food(ndb_no) for ndb_no in self.select_food(type_food)]
+        return self.order_best(foods, weights_best_for, limit, radio_o)
