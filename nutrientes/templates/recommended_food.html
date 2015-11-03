@@ -15,10 +15,17 @@ $(document).ready(function(){
 <div class="starter-template">
 <form method="post" action=".">
 {% csrf_token %}
-{% for type in  type_food %}
+{% for id, type in  type_food %}
 <span>
-<input name="nutr_no" type="checkbox" value="{{ type }}"> 
-<a tabindex="0" class="btn btn-sm btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ type }}" data-content="{{ type.desc }}">{{ type.title }}</a>
+<input name="nutr_no" type="checkbox" value="{{ id }}"> 
+<a tabindex="0" class="btn btn-sm btn-info" role="button" data-container="body" data-placement="right">{{ type.category }}</a>
+</span>
+{% endfor %}
+<br>
+{% for type in  best_for %}
+<span>
+<input name="best_for" type="checkbox" value="{{ type }}"> 
+<a tabindex="0" class="btn btn-sm btn-success" role="button" data-container="body" data-placement="right">{{ type }}</a>
 </span>
 {% endfor %}
 <button type="submit">Buscar</button>

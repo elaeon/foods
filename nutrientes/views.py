@@ -514,13 +514,14 @@ def recomended_food(request):
     #    "12036", "09139", "11964", "15212", "12065", "12151", "14355", "14219", "11124", "11216"]
     search = OptionSearch()
     if request.method == "POST":
-        type_food = request.POST.getlist("nutr_no")
-        foods = search.best(type_food, limit=10, radio_o=True)
+        type_food_raw = request.POST.getlist("nutr_no")
+        best_for = request.POST.getlist("best_for")
+        foods = search.best(type_food_raw, weights_for=best_for, limit=10, radio_o=True)
     else:
-        foods = search.best("fruits", limit=10, radio_o=True)
+        foods = search.best(["fruits"], limit=10, radio_o=True)
     
-    best_for = search.weights.keys()
-    type_food = search.foods.keys()
+    best_for = sorted(search.weights.keys())
+    type_food = search.foods.items()
     return render(request, "recommended_food.html", {
         "foods": foods,
         "best_for": best_for,
