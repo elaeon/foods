@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="297mm"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="medicion_diabetes.svg"
+   inkscape:export-filename="/home/agmartinez/Programas/alimentos/disease/static/medicion_diabetes.png"
+   inkscape:export-xdpi="25.950001"
+   inkscape:export-ydpi="25.950001">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.7"
+     inkscape:cx="323.58884"
+     inkscape:cy="618.48541"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1280"
+     inkscape:window-height="776"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Capa 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <rect
+       style="fill:#f70000;fill-opacity:1;stroke:#000000;stroke-width:13.79922962;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect2985"
+       width="286.98492"
+       height="473.10446"
+       x="65.261894"
+       y="277.73685"
+       inkscape:export-filename="/home/agmartinez/Programas/alimentos/disease/static/medicion_diabetes.png"
+       inkscape:export-xdpi="25.950001"
+       inkscape:export-ydpi="25.950001" />
+    <rect
+       style="fill:#ffffff;fill-opacity:1;stroke:#000000;stroke-width:11.61995506;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect2987"
+       width="630.45056"
+       height="92.437431"
+       x="64.25901"
+       y="780.06671"
+       inkscape:export-filename="/home/agmartinez/Programas/alimentos/disease/static/medicion_diabetes.png"
+       inkscape:export-xdpi="25.950001"
+       inkscape:export-ydpi="25.950001" />
+    <text
+       xml:space="preserve"
+       style="font-size:45.04121017px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="190.45314"
+       y="717.05707"
+       id="text2989"
+       sodipodi:linespacing="125%"
+       transform="scale(0.85163766,1.1742083)"
+       inkscape:export-filename="/home/agmartinez/Programas/alimentos/disease/static/medicion_diabetes.png"
+       inkscape:export-xdpi="25.950001"
+       inkscape:export-ydpi="25.950001"><tspan
+         sodipodi:role="line"
+         id="tspan2991"
+         x="190.45314"
+         y="717.05707">Medición de la glucosa</tspan></text>
+    <rect
+       style="fill:#f70000;fill-opacity:1;stroke:#000000;stroke-width:15.2247448;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect2985-7"
+       width="285.55096"
+       height="578.79242"
+       x="405.01172"
+       y="169.96716"
+       inkscape:export-filename="/home/agmartinez/Programas/alimentos/disease/static/medicion_diabetes.png"
+       inkscape:export-xdpi="25.950001"
+       inkscape:export-ydpi="25.950001" />
+    <text
+       xml:space="preserve"
+       style="font-size:54.97924805px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Sans"
+       x="96.102638"
+       y="501.57874"
+       id="text3834"
+       sodipodi:linespacing="125%"
+       transform="scale(0.83013586,1.2046221)"
+       inkscape:export-filename="/home/agmartinez/Programas/alimentos/disease/static/medicion_diabetes.png"
+       inkscape:export-xdpi="25.950001"
+       inkscape:export-ydpi="25.950001"><tspan
+         sodipodi:role="line"
+         id="tspan3836"
+         x="96.102638"
+         y="501.57874"
+         style="font-weight:bold;-inkscape-font-specification:Sans Bold">Más de </tspan><tspan
+         sodipodi:role="line"
+         x="96.102638"
+         y="570.3028"
+         id="tspan3838"
+         style="font-weight:bold;-inkscape-font-specification:Sans Bold">126 mg/dl</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:54.97924805px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Sans"
+       x="660.23816"
+       y="504.1076"
+       id="text3834-9"
+       sodipodi:linespacing="125%"
+       transform="scale(0.83013587,1.2046221)"
+       inkscape:export-filename="/home/agmartinez/Programas/alimentos/disease/static/medicion_diabetes.png"
+       inkscape:export-xdpi="25.950001"
+       inkscape:export-ydpi="25.950001"><tspan
+         sodipodi:role="line"
+         x="660.23816"
+         y="504.1076"
+         style="font-weight:bold;text-align:center;text-anchor:middle;-inkscape-font-specification:Sans Bold"
+         id="tspan3905">Más de</tspan><tspan
+         sodipodi:role="line"
+         x="660.23816"
+         y="572.83167"
+         style="font-weight:bold;text-align:center;text-anchor:middle;-inkscape-font-specification:Sans Bold"
+         id="tspan3907">200 mg/dl</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:45.99560165px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="121.45259"
+       y="187.25716"
+       id="text3866"
+       sodipodi:linespacing="125%"
+       transform="scale(0.79342776,1.2603542)"
+       inkscape:export-filename="/home/agmartinez/Programas/alimentos/disease/static/medicion_diabetes.png"
+       inkscape:export-xdpi="25.950001"
+       inkscape:export-ydpi="25.950001"><tspan
+         sodipodi:role="line"
+         id="tspan3868"
+         x="121.45259"
+         y="187.25716">En <tspan
+   style="font-size:47.98454666px"
+   id="tspan3876">ayunas</tspan></tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:42.71651459px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="572.17517"
+       y="51.796204"
+       id="text3870"
+       sodipodi:linespacing="125%"
+       transform="scale(0.70699613,1.4144349)"
+       inkscape:export-filename="/home/agmartinez/Programas/alimentos/disease/static/medicion_diabetes.png"
+       inkscape:export-xdpi="25.950001"
+       inkscape:export-ydpi="25.950001"><tspan
+         sodipodi:role="line"
+         id="tspan3872"
+         x="572.17517"
+         y="51.796204">Dos horas después </tspan><tspan
+         sodipodi:role="line"
+         x="572.17517"
+         y="105.19185"
+         id="tspan3874">de comer</tspan></text>
+  </g>
+</svg>
