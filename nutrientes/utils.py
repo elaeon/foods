@@ -1976,8 +1976,10 @@ class OptionSearch(object):
                         "09279", "09089", "09286", "09322", "09030", "09176"], "", "Frutas"),
             "vegetables": FoodType(["11603", "11205", "11529", "11446", "11457", 
                             "11091", "11964", "11124", "11216", "11357"], "", "Vegetales"),
-            "spices_herbs": FoodType(["02003"], "", "Especias y Hierbas"),
-            "nuts_seeds": FoodType(["12036", "12065", "12151", "12220"], "", "Nueces y Semillas")}
+            "spices_herbs": FoodType(["02003", "02009"], "", "Especias y Hierbas"),
+            "nuts_seeds": FoodType(["12036", "12065", "12151", "12220"], "", "Nueces y Semillas"),
+            "legumes": FoodType(["16109", "16139", "16168", "16027", "16069", 
+                                "16014", "16389", "16087"], "", "Legumbres")}
         self.weights = self.set_weights()
         self.nutr_detail = self.fill_nutr_detail()
     
