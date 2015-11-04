@@ -41,3 +41,23 @@ class MenuRecipeForm(forms.Form):
         super(MenuRecipeForm, self).__init__(*args, **kwargs)
         if 'initial' in kwargs:
             self.name = kwargs['initial'].get('name', '')
+
+class CategoryForm(forms.Form):
+    key = forms.CharField(widget=forms.HiddenInput())
+    check = forms.BooleanField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(CategoryForm, self).__init__(*args, **kwargs)
+        if 'initial' in kwargs:
+            self.key = kwargs['initial'].get('key')
+            self.food_type = kwargs['initial'].get('food_type')
+
+class WeightFoodForm(forms.Form):
+    key = forms.CharField(widget=forms.HiddenInput())
+    check = forms.BooleanField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(WeightFoodForm, self).__init__(*args, **kwargs)
+        if 'initial' in kwargs:
+            self.key = kwargs['initial'].get('key')
+            self.name = kwargs['initial'].get('name')

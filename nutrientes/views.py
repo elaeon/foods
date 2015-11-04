@@ -509,20 +509,32 @@ def news(request):
 
 def recomended_food(request):
     from nutrientes.utils import OptionSearch
+    from nutrientes.forms import CategoryForm, WeightFoodForm
+    from django.forms.formsets import formset_factory
 
-    #data_list = ["11529", "09037", "11446", "11457", "11091", "02003", "12220", 
-    #    "12036", "09139", "11964", "15212", "12065", "12151", "14355", "14219", "11124", "11216"]
+    CategoryFormSet = formset_factory(CategoryForm, extra=0)
+    WeightFoodFormSet = formset_factory(WeightFoodForm, extra=0)
     search = OptionSearch()
+    initial_w = [{'key': k, 'name': k} for k in sorted(search.weights)]
     if request.method == "POST":
-        type_food_raw = request.POST.getlist("nutr_no")
-        best_for = request.POST.getlist("best_for")
+        initial = [{'key': k, 'food_type': v} 
+            for k, v in sorted(search.foods.items(), key=lambda x: x[1].category)]
+        type_food_formset = CategoryFormSet(request.POST, initial=initial, prefix='type_food')
+        weight_formset = WeightFoodFormSet(request.POST, initial=initial_w, prefix='weight')
+        if type_food_formset.is_valid() and weight_formset.is_valid():
+            type_food_raw = [form.cleaned_data["key"] 
+                for form in type_food_formset.forms if form.cleaned_data["check"]]
+            best_for = [form.cleaned_data["key"] 
+                for form in weight_formset.forms if form.cleaned_data["check"]]
         foods = search.best(type_food_raw, weights_for=best_for, limit=10, radio_o=True)
     else:
+        initial = [{'key': k, 'food_type': v, 'check': k == "fruits"} 
+            for k, v in sorted(search.foods.items(), key=lambda x: x[1].category)]
+        type_food_formset = CategoryFormSet(initial=initial, prefix='type_food')
+        weight_formset = WeightFoodFormSet(initial=initial_w, prefix='weight')
         foods = search.best(["fruits"], limit=10, radio_o=True)
     
-    best_for = sorted(search.weights.keys())
-    type_food = search.foods.items()
     return render(request, "recommended_food.html", {
         "foods": foods,
-        "best_for": best_for,
-        "type_food": type_food})
+        "weight_formset": weight_formset,
+        "type_food_formset": type_food_formset})
