@@ -38,7 +38,8 @@
     </div>
     <div class="col-md-5 col-md-pull-6">
         {% thumbnail food.img_obj.img "400x250" crop="center" as im %}
-            <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}" class="img-rounded">
+            <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}" 
+            class="img-rounded img-responsive">
         {% empty %}
             <div style="width:250px;height:200px"></div>
         {% endthumbnail %}
@@ -51,7 +52,8 @@
             <div id="comparationContainer">
             {% for ndb_no, name in food_compare.items %}
             <div id="comparationContainer-{{ ndb_no }}">
-                <a aria-hidden="true" class="glyphicon glyphicon-remove-sign" href="#" onclick="javascript:borrar('{{ ndb_no }}');"></a>
+                <a aria-hidden="true" class="glyphicon glyphicon-remove-sign" 
+                href="#" onclick="javascript:borrar('{{ ndb_no }}');"></a>
                 <span>{{ name }}</span>
             </div>
             {% endfor %}

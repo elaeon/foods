@@ -36,6 +36,12 @@ OMEGAS = {
     "omega 9": ["18:1", "20:1", "20:3", "22:1", "24:1"]
 }
 
+OMEGAS_DOMINAT = {
+    "omega 9": ["18:1 undifferentiated", "18:1 c", "18:1 t", "20:1", 
+                "20:3 undifferentiated", "22:1 c", "22:1 t", "22:1 undifferentiated", 
+                "24:1 c"]
+}
+
 def conection():
     conn_string = "host='/var/run/postgresql/' dbname='alimentos' user='{username}'".format(username=USERNAME)
     conn = psycopg2.connect(conn_string)
@@ -535,12 +541,11 @@ def best_of_general_2(category=None, name=None):
 def best_of_selected_food(foods, weights, limit, radio_o=True):
     nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
     nutr_avg = {nutr_no:(avg, caution) 
-                for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr, weights=weights)}
+                for nutr_no, _, avg, _, caution in mark_caution_nutr(nutr, weights=weights)}
 
     nutr_detail = {}
     for food in foods:
         base_nutr = [e for e in food.nutrients if e[0] in weights]
-        #[e for e in food.nutrients if e[0] != "255"]:
         for nutr_no, nutrdesc, v, u in base_nutr:
             nutr_detail.setdefault(nutr_no, [])
             nutr_detail[nutr_no].append((food.ndb_no, food.name, v, u))
@@ -687,16 +692,19 @@ class Food(object):
         s_tipo_molecula = re.compile(pattern_base)
         n_features = []
         omegas = {}
+        totals_base = {}
         for nutr_no, nut, v, u in features:
             molecula = s_molecula.search(nut)
             if molecula:
                 molecula_txt = molecula.groupdict()["molecula"]
                 tipo_molecula = s_tipo_molecula.search(nut)
+                
                 if tipo_molecula:
                     tipo_molecula_txt = tipo_molecula.groupdict()["tipo"]
                 else:
                     tipo_molecula_txt = None
 
+                #print(molecula_txt, nut, v)
                 if tipo_molecula_txt == "n-3":
                     omega = "omega 3"
                 elif tipo_molecula_txt == "n-6":
@@ -709,16 +717,20 @@ class Food(object):
                     omega = "omega 3"
                 elif molecula_txt in OMEGAS["omega 6"]:
                     omega = "omega 6"
+                elif nut in OMEGAS_DOMINAT["omega 9"]:
+                    omega = "omega 9"
                 elif molecula_txt in OMEGAS["omega 7"]:
                     omega = "omega 7"
-                elif molecula_txt in OMEGAS["omega 9"]:
-                    omega = "omega 9"
                 else:
                     omega = None
             
                 if omega is not None:
-                    omegas.setdefault(omega, [omega.replace(" ", ""), 0, u])
-                    omegas[omega][1] += v
+                    if totals_base.get(molecula_txt, "") != omega:
+                        omegas.setdefault(omega, [omega.replace(" ", ""), 0, u])
+                        omegas[omega][1] += v
+                        totals_base[molecula_txt] = omega
+                else:
+                    n_features.append((nutr_no, nut, v, u))
             else:
                 n_features.append((nutr_no, nut, v, u))
 
@@ -940,12 +952,9 @@ def create_order_matrix():
         cursor.execute(query)
         querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
-    rank = Rank(querys, weights=True)
+    rank = Rank(querys)
     order = [food["attr"][0] for _, food in rank.order()]
     return order
-
-def read_avg():
-    return Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
 
 def principal_nutrients(category=None):
     _, cursor = conection()
@@ -1832,7 +1841,7 @@ class Recipe(object):
         return food
 
 def lower_essencial_nutrients(perfil):
-    nutr_avg = read_avg()
+    nutr_avg = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
     edad = perfil["edad"]
     genero = perfil["genero"]
     unidad_edad = perfil["unidad_edad"]
@@ -1999,12 +2008,14 @@ class OptionSearch(object):
             "vegetables": FoodType(["11603", "11205", "11529", "11446", "11457", 
                             "11091", "11964", "11124", "11216", "11357", "11080"], "", "Vegetales"),
             "spices_herbs": FoodType(["02003", "02009"], "", "Especias y Hierbas"),
-            "nuts_seeds": FoodType(["12036", "12065", "12151", "12220"], "", "Nueces y Semillas"),
+            "nuts_seeds": FoodType(["12036", "12065", "12151", "12220", "12006",
+                        "12155"], "", "Nueces y Semillas"),
             "legumes": FoodType(["16109", "16139", "16168", "16027", "16069", 
                                 "16014", "16389", "16087", "16057"], "", "Legumbres")}
         self.weights = self.set_weights()
         self.nutr_detail = self.fill_nutr_detail()
-    
+        self.weights_best_for = None
+
     def join(self, food_values):
         import itertools
         data_list = itertools.chain.from_iterable(food_values)
@@ -2015,21 +2026,35 @@ class OptionSearch(object):
 
     @classmethod
     def set_weights(self):
-        from nutrientes.weights import *
+        from nutrientes import weights
         weights = {
-            "Osteoporosis": WEIGHT_NUTRS_OSTEOPOROSIS, 
-            "Bajo en carbohidratos y azucar": WEIGHT_NUTRS_LOW_SUGAR,
-            "Anti oxidantes": WEIGHT_NUTRS_FREE_RADICALS_AO,
-            "Anti colesterol": WEIGHT_NUTRS_ANTI_CHOLESTEROL,
-            "Bajo en grasas": WEIGHT_NUTR_LOW_FAT,
-            "Ayuda al sistema nervioso": WEIGHT_NUTRS_NEURAL,
-            "Ayuda a la prostata": WEIGHT_NUTR_PROSTATE_CARE,
-            "Ayuda a los musculos": WEIGHT_NUTRS_WEIGHT_BODY}
+            "Osteoporosis": weights.WEIGHT_NUTRS_OSTEOPOROSIS, 
+            "Bajo en carbohidratos y azucar": weights.WEIGHT_NUTRS_LOW_SUGAR,
+            "Anti oxidantes": weights.WEIGHT_NUTRS_FREE_RADICALS_AO,
+            "Anti colesterol": weights.WEIGHT_NUTRS_ANTI_CHOLESTEROL,
+            "Bajo en grasas": weights.WEIGHT_NUTR_LOW_FAT,
+            "Ayuda al sistema nervioso": weights.WEIGHT_NUTRS_NEURAL,
+            "Ayuda a la prostata": weights.WEIGHT_NUTR_PROSTATE_CARE,
+            "Ayuda a los musculos": weights.WEIGHT_NUTRS_WEIGHT_BODY}
         return weights
+
+    def extra_nutr_detail(self):
+        return {"omega3": """Los ácidos grasos omega 3 son ácidos grasos poliinsaturados esenciales (el organismo humano no los puede fabricar a partir de otras sustancias). Algunas fuentes de omega 3 pueden contener otros ácidos grasos como los omega 6. Se ha demostrado experimentalmente que el consumo de grandes cantidades de omega-3 aumenta considerablemente el tiempo de coagulación de la sangre, son benéficos para el corazón y entre sus efectos positivos se pueden mencionar, entre otros: acciones antiinflamatorias y anticoagulantes, disminución de los niveles de colesterol y triglicéridos y la reducción de la presión sanguínea. Estos ácidos grasos también pueden reducir los riesgos y síntomas de otros trastornos, incluyendo diabetes, accidente cerebrovascular, algunos cánceres, artritis reumatoidea, asma, enfermedad intestinal inflamatoria, colitis ulcerativa y deterioro mental.  Los estudios han demostrado que los omega-3 y omega-6 no sólo hay que tomarlos en cantidades suficientes, además hay que guardar una cierta proporción entre ambos tipos, de preferencia 1:1.""",
+        "omega6": """
+        Los ácidos grasos omega-6 (ω-6) son un tipo de ácido graso comúnmente encontrados en los alimentos grasos o la piel de animales. Estudios recientes han encontrado que niveles excesivos de omega-6, comparado con omega-3, incrementan el riesgo de contraer diferentes enfermedades, incluyendo depresión.
+
+Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos omega-6 a omega-3, algunos de 30 a 1. La proporción sugerida es de 4 a 1 o menor. Los riesgos de alta concentración o consumo de omega-6 están asociados con ataques al corazón, ACV, artritis, osteoporosis, inflamación, cambios de ánimo, obesidad y cáncer. 
+""",
+        "omega7": """Es un acido graso monoinsaturado que ayuda de forma muy específica en la regeneración y nutrición de la piel y mucosas.
+""",
+        "omega9": """Los ácidos grasos omega-9 (ω-9) son un tipo de ácido graso monoinsaturado. Es una grasa que esta presente en la membrana de las células y vasos sanguineos. El omega 9 ayuda a bajar la hipertensión arterial y ayuda a prevenir problemas circulatorios.
+"""}
 
     def fill_nutr_detail(self):
         from nutrientes.models import NutrDesc
-        return {nutrdesc.nutr_no_t: nutrdesc.desc for nutrdesc in NutrDesc.objects.all()}
+        base = {nutrdesc.nutr_no_t: nutrdesc.desc for nutrdesc in NutrDesc.objects.all()}
+        base.update(self.extra_nutr_detail())
+        return base
 
     def order_best(self, foods, weights_best_for, limit, radio_o):
         rank_results = best_of_selected_food(foods, weights_best_for, limit, radio_o)
@@ -2054,7 +2079,13 @@ class OptionSearch(object):
             return nutrs
 
     def best(self, type_food, weights_for=["all"], limit=10, radio_o=True):
-        weights_best_for = self.best_weights(weights_for)
+        self.weights_best_for = self.best_weights(weights_for)
         foods = [Food(ndb_no) for ndb_no in self.select_food(type_food)]
-        candidate_food = [food for food in foods if food.is_weight_nutrients(weights_best_for)]
-        return self.order_best(candidate_food, weights_best_for, limit, radio_o)
+        candidate_food = [food for food in foods if food.is_weight_nutrients(self.weights_best_for)]
+        return self.order_best(candidate_food, self.weights_best_for, limit, radio_o)
+
+    def weights_best_list(self):
+        nutavg_vector = {nutr_no: nutrdesc 
+            for nutr_no, nutrdesc, _, _ in Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")}
+        return sorted([(nutavg_vector.get(nutr_no, ''), self.nutr_detail.get(nutr_no, '')) 
+                for nutr_no in self.weights_best_for])

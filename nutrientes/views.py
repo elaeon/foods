@@ -527,14 +527,17 @@ def recomended_food(request):
             best_for = [form.cleaned_data["key"] 
                 for form in weight_formset.forms if form.cleaned_data["check"]]
         foods = search.best(type_food_raw, weights_for=best_for, limit=10, radio_o=True)
+        found_nutr = search.weights_best_list()
     else:
         initial = [{'key': k, 'food_type': v, 'check': k == "fruits"} 
             for k, v in sorted(search.foods.items(), key=lambda x: x[1].category)]
         type_food_formset = CategoryFormSet(initial=initial, prefix='type_food')
         weight_formset = WeightFoodFormSet(initial=initial_w, prefix='weight')
         foods = search.best(["fruits"], limit=10, radio_o=True)
-    
+        found_nutr = []
+
     return render(request, "recommended_food.html", {
         "foods": foods,
         "weight_formset": weight_formset,
-        "type_food_formset": type_food_formset})
+        "type_food_formset": type_food_formset,
+        "found_nutr": found_nutr})
