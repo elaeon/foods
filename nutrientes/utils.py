@@ -887,8 +887,8 @@ class Food(object):
             return None
 
     def is_weight_nutrients(self, weights, good_nutr=None):
-        MIN_PORCENTAJE_EXIST = .3
-        WEIGHT_AVG_NUTR = .1
+        MIN_PORCENTAJE_EXIST = .5
+        WEIGHT_AVG_NUTR = .2
         nutr_weight = 0
         nutrients = {nutr_no: v for nutr_no, _, v, _ in self.nutrients}
         if good_nutr is True:
@@ -2045,9 +2045,9 @@ class OptionSearch(object):
 
 Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos omega-6 a omega-3, algunos de 30 a 1. La proporción sugerida es de 4 a 1 o menor. Los riesgos de alta concentración o consumo de omega-6 están asociados con ataques al corazón, ACV, artritis, osteoporosis, inflamación, cambios de ánimo, obesidad y cáncer. 
 """,
-        "omega7": """Es un acido graso monoinsaturado que ayuda de forma muy específica en la regeneración y nutrición de la piel y mucosas.
+        "omega7": """Es un acido graso monoinsaturado que ayuda de forma muy específica en la regeneración y nutrición de la piel y mucosas. Sin embargo, su consumo incrementa la resistencia a la insulina.
 """,
-        "omega9": """Los ácidos grasos omega-9 (ω-9) son un tipo de ácido graso monoinsaturado. Es una grasa que esta presente en la membrana de las células y vasos sanguineos. El omega 9 ayuda a bajar la hipertensión arterial y ayuda a prevenir problemas circulatorios.
+        "omega9": """Los ácidos grasos omega-9 (ω-9) son un tipo de ácido graso monoinsaturado. Es una grasa que esta presente en la membrana de las células y vasos sanguineos. El omega 9 ayuda a bajar la hipertensión arterial y ayuda a prevenir problemas circulatorios. Sin embargo, su consumo incrementa la resistencia a la insulina.
 """}
 
     def fill_nutr_detail(self):
@@ -2087,5 +2087,7 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
     def weights_best_list(self):
         nutavg_vector = {nutr_no: nutrdesc 
             for nutr_no, nutrdesc, _, _ in Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")}
-        return sorted([(nutavg_vector.get(nutr_no, ''), self.nutr_detail.get(nutr_no, '')) 
+        return sorted([(nutavg_vector.get(nutr_no, ''), 
+                    self.nutr_detail.get(nutr_no, ''),  
+                    self.weights_best_for.get(nutr_no) > 1)
                 for nutr_no in self.weights_best_for])

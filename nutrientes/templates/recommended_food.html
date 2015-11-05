@@ -51,10 +51,17 @@ $(document).ready(function(){
 <button type="submit" class="btn btn-default" >Buscar</button>
 </div>
 </form>
-{% for nutrdesc, detail in found_nutr %}
-<a tabindex="0" class="btn btn-xs btn-default" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ nutrdesc }}" data-content="{{ detail }}"  style="font-size:70%;">{{ nutrdesc }}</a>
+{% if best_for_text != "" %}
+<h3>Listado de nutrientes examinados que sirven como {{ best_for_text }}.</h3>
+{% endif %}
+{% for nutrdesc, detail, caution in found_nutr %}
+{% if caution %}
+<a tabindex="0" class="btn btn-xs btn-danger" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ nutrdesc }}" data-content="{{ detail }}"  style="font-size:70%;">{{ nutrdesc }}</a>
+{% else %}
+<a tabindex="0" class="btn btn-xs btn-success" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ nutrdesc }}" data-content="{{ detail }}"  style="font-size:70%;">{{ nutrdesc }}</a>
+{% endif %}
 {% endfor %}
-<br>
+<br><br>
 <div class="row">
 {% for i, food in foods %}
 <div class="col-md-6 col-md-6">
