@@ -888,7 +888,7 @@ class Food(object):
 
     def is_weight_nutrients(self, weights, good_nutr=None):
         MIN_PORCENTAJE_EXIST = .5
-        WEIGHT_AVG_NUTR = .2
+        WEIGHT_AVG_NUTR = .1
         nutr_weight = 0
         nutrients = {nutr_no: v for nutr_no, _, v, _ in self.nutrients}
         if good_nutr is True:
@@ -2004,14 +2004,18 @@ class OptionSearch(object):
                         "09412", "09340", "09415", "09129", "09132", 
                         "09131", "09236", "09316", "09167", "09302", 
                         "09174", "09181", "09148", "09326", "09226", 
-                        "09279", "09089", "09286", "09322", "09030", "09176"], "", "Frutas"),
+                        "09279", "09089", "09286", "09322", "09030", "09176"
+                        "09287"], "", "Frutas"),
             "vegetables": FoodType(["11603", "11205", "11529", "11446", "11457", 
                             "11091", "11964", "11124", "11216", "11357", "11080"], "", "Vegetales"),
-            "spices_herbs": FoodType(["02003", "02009"], "", "Especias y Hierbas"),
+            "spices_herbs": FoodType(["02003", "02009", "02066", "02044", "02012", 
+                        "02029", "02049", "02030", "02027", "02020", "02032", 
+                        "02063", "02037"], "", "Especias y Hierbas"),
             "nuts_seeds": FoodType(["12036", "12065", "12151", "12220", "12006",
                         "12155"], "", "Nueces y Semillas"),
             "legumes": FoodType(["16109", "16139", "16168", "16027", "16069", 
-                                "16014", "16389", "16087", "16057"], "", "Legumbres")}
+                                "16014", "16389", "16087", "16057"], "", "Legumbres"),
+            "granos": FoodType(["20078", "20038", "20035", "20001"], "", "Granos y pastas")}
         self.weights = self.set_weights()
         self.nutr_detail = self.fill_nutr_detail()
         self.weights_best_for = None
