@@ -52,7 +52,7 @@ $(document).ready(function(){
 </div>
 </form>
 {% if best_for_text != "" %}
-<h3>Listado de nutrientes examinados que sirven como {{ best_for_text }}.</h3>
+<h3>Listado de nutrientes examinados que sirven como: "{{ best_for_text }}".</h3>
 {% endif %}
 {% for nutrdesc, detail, caution in found_nutr %}
 {% if caution %}

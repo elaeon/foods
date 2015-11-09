@@ -886,26 +886,21 @@ class Food(object):
         except FoodDescImg.DoesNotExist:
             return None
 
-    def is_weight_nutrients(self, weights, good_nutr=None):
+    def is_weight_nutrients(self, weights):
         MIN_PORCENTAJE_EXIST = .5
         WEIGHT_AVG_NUTR = .1
         nutr_weight = 0
         nutrients = {nutr_no: v for nutr_no, _, v, _ in self.nutrients}
-        if good_nutr is True:
-            weights_tmp = ((nutr_no, weight) for nutr_no, weight in weights.items() if weight <= 1)
-        elif good_nutr is False:
-            weights_tmp = ((nutr_no, weight) for nutr_no, weight in weights.items() if weight > 1)
-        else:
-            weights_tmp = weights.items()
+        weights_tmp_good = [(nutr_no, weight) for nutr_no, weight in weights.items() if weight <= 1]
 
-        for w_nutr_no, _ in weights_tmp:
+        for w_nutr_no, _ in weights_tmp_good:
             val_min = self.nutr_avg.get(w_nutr_no, [0,0])[1] * WEIGHT_AVG_NUTR
             v = nutrients.get(w_nutr_no, -1)
             if val_min <= v:
                 nutr_weight += 1
             else:
                 nutr_weight += 0
-        return (int(len(weights_tmp) * MIN_PORCENTAJE_EXIST)) <= nutr_weight
+        return (int(len(weights_tmp_good) * MIN_PORCENTAJE_EXIST)) <= nutr_weight
              
 
 def create_common_table(dicts):
@@ -2018,7 +2013,8 @@ class OptionSearch(object):
                                 "16014", "16389", "16087", "16057"], "", "Legumbres"),
             "grains": FoodType(["20078", "20038", "20035", "20001", "20137", 
                     "20035", "20034", "20033"], "", "Granos y pastas"),
-            "drinks": FoodType(["14096", "14106", "14352"], "", "Bebidas")}
+            "drinks": FoodType(["14096", "14106", "14352", "43479", "14649", 
+                                "14545", "14219", "14003"], "", "Bebidas")}
         self.weights = self.set_weights()
         self.nutr_detail = self.fill_nutr_detail()
         self.weights_best_for = None
