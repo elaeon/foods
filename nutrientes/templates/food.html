@@ -4,42 +4,24 @@
 
 {% block contenido_base %}
 <div class="container">
-<div class="starter-template">
-{% with food.ranking as ranking %}        
+<div class="starter-template">       
 <h2>
 {{ food.name }}
 <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ food.name_en }}" alt=" {{ food.name_en }}">En</a>
-<a tabindex="0" class="btn btn-xs btn-{% if ranking.global < 500%}info{% else %}success{% endif %}" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Ranking" data-content="Posición del total">#{{ ranking.global }}</a>
-<a href="{% url 'ranking_list' 'best' %}">Ranking</a>
 </h2>
 <h4>
-<a href="{% url 'list_food_category' food.group.id 'best' %}">{{ food.group.name }}</a> 
-<a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Ranking" data-content="Posición en la categoria {{ food.group.name }}">#{{ ranking.category }}</a>
 <a tabindex="0" class="btn btn-xs btn-success" role="button" data-trigger="focus" title="Agregar alimento" onclick="javascript:agregar();">+Agregar</a>
 <a tabindex="0" href="{% url 'equivalents' food.ndb_no %}" class="btn btn-xs btn-success" role="button" data-trigger="focus" title="alimento similar">Ver sustitutos</a>
-<span>Score: {{ food_score }}</span>
+<a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Puntaje en base al perfil" alt="Puntaje en base al perfil">Puntaje: {{ food_score }}</a>
 </h4>
-{% endwith %}
 <div class="row">
-    <div class="col-md-6 col-md-push-5">
-        <p><a href="{% url 'view_romega' %}">Radio de Omegas:</a>
-            {% if food.radio_omega_raw > 4 %}
-                <span style="color: red;">
-            {% else %}
-                <span style="color: green;">
-            {% endif %}
-            {{ food.radio }}</span></p>
-        <p>Alimentos relacionados</p>
-        <div style="font-size:70%">
-        {% for ndb_no, other_food, distance in food.similarity %}
-        <div><a href="{% url 'view_food' ndb_no %}">{{ other_food.0.0 }}</a></div>
-        {% endfor %}
-        </div>
-    </div>
-    <div class="col-md-5 col-md-pull-6">
+    <div class="col-md-6 col-md-5">
         {% thumbnail food.img_obj.img "400x250" crop="center" as im %}
             <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}" 
             class="img-rounded img-responsive">
+            {% if food.img_obj.ref_img %}
+            <a href="{{ food.img_obj.ref_img }}" style="position:absolute;float:top;top:10px;left:20px;"><img src="https://upload.wikimedia.org/wikipedia/en/thumb/4/4a/Commons-logo.svg/30px-Commons-logo.svg.png" alt="wikimedia" title="wikimedia"></a>
+            {% endif %}
         {% empty %}
             <div style="width:250px;height:200px"></div>
         {% endthumbnail %}
@@ -58,6 +40,21 @@
             </div>
             {% endfor %}
             </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-md-5">
+        <p><a href="{% url 'view_romega' %}">Radio de Omegas:</a>
+            {% if food.radio_omega_raw > 4 %}
+                <span style="color: red;">
+            {% else %}
+                <span style="color: green;">
+            {% endif %}
+            {{ food.radio }}</span></p>
+        <p>Alimentos relacionados</p>
+        <div style="font-size:70%">
+        {% for ndb_no, other_food, distance in food.similarity %}
+        <div><a href="{% url 'view_food' ndb_no %}">{{ other_food.0.0 }}</a></div>
+        {% endfor %}
         </div>
     </div>
 </div>
