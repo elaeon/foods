@@ -9,6 +9,7 @@
 {{ food.name }}
 <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ food.name_en }}" alt=" {{ food.name_en }}">En</a>
 </h2>
+<a href="{% url 'list_food_category' food.group.id 'normal' %}">{{ food.group.name }}</a>
 <h4>
 <a tabindex="0" class="btn btn-xs btn-success" role="button" data-trigger="focus" title="Agregar alimento" onclick="javascript:agregar();">+Agregar</a>
 <a tabindex="0" href="{% url 'equivalents' food.ndb_no %}" class="btn btn-xs btn-success" role="button" data-trigger="focus" title="alimento similar">Ver sustitutos</a>
