@@ -52,19 +52,13 @@ $(document).ready(function(){
 </div>
 </form>
 {% if best_for_text != "" %}
-<h3>Listado de nutrientes examinados que sirven como: "{{ best_for_text }}".</h3>
-{% endif %}
-{% for nutrdesc, detail, caution in found_nutr %}
-{% if caution %}
-<a tabindex="0" class="btn btn-xs btn-danger" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ nutrdesc }}" data-content="{{ detail }}"  style="font-size:70%;">{{ nutrdesc }}</a>
+<h3>Busqueda de: "{{ best_for_text }}".</h3>
 {% else %}
-<a tabindex="0" class="btn btn-xs btn-success" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ nutrdesc }}" data-content="{{ detail }}"  style="font-size:70%;">{{ nutrdesc }}</a>
+<br>
 {% endif %}
-{% endfor %}
-<br><br>
-<div class="row">
+<div class="row-eq-height">
 {% for i, food in foods %}
-<div class="col-md-6 col-md-6">
+<div class="col-md-6">
     <div class="panel panel-default">
         <div class="panel-heading list-group-item">
             <span class="badge">{{ i }}</span>
@@ -81,9 +75,15 @@ $(document).ready(function(){
         <div style="width:250px;height:200px"></div>
         {% endthumbnail %}
         <div style="margin-left:10px;">
+        <p style="font-weight:bold;">Nutrientes examinados</p>
+        <div style="margin:10px;">
+        {% for _, nutrdesc, detail in food.weights_nutrients_approved %}
+        <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ nutrdesc }}" data-content="{{ detail }}" style="font-size:70%;">{{ nutrdesc }}</a>
+        {% endfor %}
+        </div>
         <p style="font-weight:bold;">Nutrientes destacados.</p>
-        {% for nutr_no, nutrdesc, detail, mount in food.top_nutrients_detail_avg %}
-        <a tabindex="0" class="btn btn-xs btn-default" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ nutrdesc }}" data-content="{{ detail }}"  style="font-size:70%;">{{ nutrdesc }}</a>
+        {% for _, nutrdesc, detail, mount in food.top_nutrients_detail_avg %}
+        <a tabindex="0" class="btn btn-xs btn-default" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ nutrdesc }}" data-content="{{ detail }}" style="font-size:70%;">{{ nutrdesc }}</a>
         {% endfor %}
         </div>
         </div>
