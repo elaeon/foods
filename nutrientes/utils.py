@@ -11,7 +11,7 @@ import os
 from nutrientes.weights import WEIGHT_NUTRS
 
 PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
-USERNAME = 'agmartinez'
+USERNAME = 'alejandro'
 RNV_TYPE = {2: "NOM-051-SCFI/SSA1-2010", 1: "USACAN"}
 #nutrients excluded from the matrix similarity, because are the sum of others
 #nutrients
@@ -2004,7 +2004,7 @@ class OptionSearch(object):
                         "09412", "09340", "09415", "09129", "09132", 
                         "09131", "09236", "09316", "09167", "09302", 
                         "09174", "09181", "09148", "09326", "09226", 
-                        "09279", "09089", "09286", "09322", "09030", "09176"
+                        "09279", "09089", "09286", "09322", "09030", "09176",
                         "09287"], "", "Frutas"),
             "vegetables": FoodType(["11603", "11205", "11529", "11446", "11457", 
                             "11091", "11964", "11124", "11216", "11357", "11080"], "", "Vegetales"),
