@@ -566,7 +566,7 @@ def normal(x, u, s):
 
 
 class Food(object):
-    def __init__(self, ndb_no=None, avg=True, weight=100):
+    def __init__(self, ndb_no=None, avg=True, weight=100, nutr_detail=None):
         self.nutrients = None
         self.name = None
         self.name_en = None
@@ -576,6 +576,7 @@ class Food(object):
         self.ndb_no = ndb_no
         self.omegas = None
         self.weight = weight
+        self.nutr_detail = nutr_detail
         if self.ndb_no is not None:
             self.get(ndb_no, avg=avg)
 
@@ -875,9 +876,9 @@ class Food(object):
         result = self.avg_nutrients_best()
         return filter(lambda x:x[2] > 0, result)
 
-    def top_nutrients_detail_avg(self):
+    def top_nutrients_detail_avg(self, limit=15):
         return [(nutr_no, nutrdesc, self.nutr_detail.get(nutr_no, ""), mount, u)
-                for nutr_no, nutrdesc, mount, u in self.top_nutrients_avg()]
+                for nutr_no, nutrdesc, mount, u in self.top_nutrients_avg()][:limit]
 
     def img_obj(self):
         from nutrientes.models import FoodDescImg
@@ -886,26 +887,23 @@ class Food(object):
         except FoodDescImg.DoesNotExist:
             return None
 
-    def is_weight_nutrients(self, weights, good_nutr=None):
+    def is_weight_nutrients(self, weights):
         MIN_PORCENTAJE_EXIST = .5
         WEIGHT_AVG_NUTR = .1
-        nutr_weight = 0
+        nutr_weight = []
         nutrients = {nutr_no: v for nutr_no, _, v, _ in self.nutrients}
-        if good_nutr is True:
-            weights_tmp = ((nutr_no, weight) for nutr_no, weight in weights.items() if weight <= 1)
-        elif good_nutr is False:
-            weights_tmp = ((nutr_no, weight) for nutr_no, weight in weights.items() if weight > 1)
-        else:
-            weights_tmp = weights.items()
+        weights_tmp_good = [(nutr_no, weight) for nutr_no, weight in weights.items() if weight <= 1]
 
-        for w_nutr_no, _ in weights_tmp:
+        for w_nutr_no, _ in weights_tmp_good:
             val_min = self.nutr_avg.get(w_nutr_no, [0,0])[1] * WEIGHT_AVG_NUTR
             v = nutrients.get(w_nutr_no, -1)
             if val_min <= v:
-                nutr_weight += 1
-            else:
-                nutr_weight += 0
-        return (int(len(weights_tmp) * MIN_PORCENTAJE_EXIST)) <= nutr_weight
+                nutr_weight.append((w_nutr_no, 
+                    self.nutr_avg.get(w_nutr_no, "")[0], 
+                    self.nutr_detail.get(w_nutr_no, "")))
+
+        self.weights_nutrients_approved = nutr_weight
+        return (int(len(weights_tmp_good) * MIN_PORCENTAJE_EXIST)) <= len(nutr_weight)
              
 
 def create_common_table(dicts):
@@ -2005,9 +2003,15 @@ class OptionSearch(object):
                         "09131", "09236", "09316", "09167", "09302", 
                         "09174", "09181", "09148", "09326", "09226", 
                         "09279", "09089", "09286", "09322", "09030", "09176",
+<<<<<<< HEAD
                         "09287"], "", "Frutas"),
+=======
+                        "09287", "09150", "09112", "09042", "09050", "09078",
+                        "09079", "09163", "09298"], "", "Frutas"),
+>>>>>>> d3f84073d8e4cb2562eaddc00b86d553b5feb20a
             "vegetables": FoodType(["11603", "11205", "11529", "11446", "11457", 
-                            "11091", "11964", "11124", "11216", "11357", "11080"], "", "Vegetales"),
+                            "11091", "11964", "11124", "11216", "11357", "11080", 
+                            "11984"], "", "Vegetales"),
             "spices_herbs": FoodType(["02003", "02009", "02066", "02044", "02012", 
                         "02029", "02049", "02030", "02027", "02020", "02032", 
                         "02063", "02037"], "", "Especias y Hierbas"),
@@ -2015,7 +2019,10 @@ class OptionSearch(object):
                         "12155"], "", "Nueces y Semillas"),
             "legumes": FoodType(["16109", "16139", "16168", "16027", "16069", 
                                 "16014", "16389", "16087", "16057"], "", "Legumbres"),
-            "granos": FoodType(["20078", "20038", "20035", "20001"], "", "Granos y pastas")}
+            "grains": FoodType(["20078", "20038", "20035", "20001", "20137", 
+                    "20035", "20034", "20033", "02013"], "", "Granos y pastas"),
+            "drinks": FoodType(["14096", "14106", "14352", "43479", "14649", 
+                                "14545", "14219", "14003"], "", "Bebidas")}
         self.weights = self.set_weights()
         self.nutr_detail = self.fill_nutr_detail()
         self.weights_best_for = None
@@ -2032,7 +2039,7 @@ class OptionSearch(object):
     def set_weights(self):
         from nutrientes import weights
         weights = {
-            "Osteoporosis": weights.WEIGHT_NUTRS_OSTEOPOROSIS, 
+            "Ayuda a combatir la Osteoporosis": weights.WEIGHT_NUTRS_OSTEOPOROSIS, 
             "Bajo en carbohidratos y azucar": weights.WEIGHT_NUTRS_LOW_SUGAR,
             "Anti oxidantes": weights.WEIGHT_NUTRS_FREE_RADICALS_AO,
             "Anti colesterol": weights.WEIGHT_NUTRS_ANTI_CHOLESTEROL,
@@ -2062,10 +2069,7 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
 
     def order_best(self, foods, weights_best_for, limit, radio_o):
         rank_results = best_of_selected_food(foods, weights_best_for, limit, radio_o)
-        foods_dict = {}
-        for food in foods:
-            food.nutr_detail = self.nutr_detail
-            foods_dict[food.ndb_no] = food
+        foods_dict = {food.ndb_no: food for food in foods}
         return ((i, foods_dict[ndb_no]) for i, ndb_no in rank_results)
 
     def best_weights(self, weights):
@@ -2084,7 +2088,7 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
 
     def best(self, type_food, weights_for=["all"], limit=10, radio_o=True):
         self.weights_best_for = self.best_weights(weights_for)
-        foods = [Food(ndb_no) for ndb_no in self.select_food(type_food)]
+        foods = [Food(ndb_no, nutr_detail=self.nutr_detail) for ndb_no in self.select_food(type_food)]
         candidate_food = [food for food in foods if food.is_weight_nutrients(self.weights_best_for)]
         return self.order_best(candidate_food, self.weights_best_for, limit, radio_o)
 

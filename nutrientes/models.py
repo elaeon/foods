@@ -21,6 +21,7 @@ class NutrDesc(models.Model):
 class FoodDescImg(models.Model):
     ndb_no_t = models.TextField(unique=True)
     img = sorl_ImageField(upload_to="food/")
+    ref_img = models.URLField(blank=True, null=True)
 
     def __unicode__(self):
         return self.ndb_no_t
