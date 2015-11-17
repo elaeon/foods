@@ -6,7 +6,7 @@ from nutrientes.models import FoodDescImg, NutrDesc
 from sorl.thumbnail.admin import AdminImageMixin
 
 class FoodDescImgAdmin(AdminImageMixin, admin.ModelAdmin):
-    pass
+    list_display = ('ndb_no_t', 'name')
 
 
 class NutrDescAdmin(admin.ModelAdmin):

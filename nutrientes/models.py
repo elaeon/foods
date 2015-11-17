@@ -20,6 +20,7 @@ class NutrDesc(models.Model):
 
 class FoodDescImg(models.Model):
     ndb_no_t = models.TextField(unique=True)
+    name = models.CharField(max_length=255, blank=True, null=True)
     img = sorl_ImageField(upload_to="food/")
     ref_img = models.URLField(blank=True, null=True)
 

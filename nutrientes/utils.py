@@ -8,10 +8,11 @@ from collections import OrderedDict
 from functools import wraps
 import os
 
+from django.conf import settings
 from nutrientes.weights import WEIGHT_NUTRS
 
 PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
-USERNAME = 'alejandro'
+USERNAME = settings.DATABASES["default"]["USER"]
 RNV_TYPE = {2: "NOM-051-SCFI/SSA1-2010", 1: "USACAN"}
 #nutrients excluded from the matrix similarity, because are the sum of others
 #nutrients
@@ -885,7 +886,7 @@ class Food(object):
         try:
             return FoodDescImg.objects.get(ndb_no_t=self.ndb_no)
         except FoodDescImg.DoesNotExist:
-            return None
+            return None 
 
     def is_weight_nutrients(self, weights):
         MIN_PORCENTAJE_EXIST = .5
@@ -2003,12 +2004,8 @@ class OptionSearch(object):
                         "09131", "09236", "09316", "09167", "09302", 
                         "09174", "09181", "09148", "09326", "09226", 
                         "09279", "09089", "09286", "09322", "09030", "09176",
-<<<<<<< HEAD
-                        "09287"], "", "Frutas"),
-=======
                         "09287", "09150", "09112", "09042", "09050", "09078",
                         "09079", "09163", "09298"], "", "Frutas"),
->>>>>>> d3f84073d8e4cb2562eaddc00b86d553b5feb20a
             "vegetables": FoodType(["11603", "11205", "11529", "11446", "11457", 
                             "11091", "11964", "11124", "11216", "11357", "11080", 
                             "11984"], "", "Vegetales"),
