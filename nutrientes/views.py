@@ -509,7 +509,7 @@ def news(request):
 
 def recomended_food(request):
     from nutrientes.utils import OptionSearch, Food
-    from nutrientes.forms import CategoryForm, WeightFoodForm
+    from nutrientes.forms import CategoryForm, WeightFoodForm, OmegaRadioForm
     from django.forms.formsets import formset_factory
 
     CategoryFormSet = formset_factory(CategoryForm, extra=0)
@@ -518,36 +518,46 @@ def recomended_food(request):
     initial_w = [{'key': k, 'name': k} for k in sorted(search.weights)]
     initial = [{'key': k, 'food_type': v} 
             for k, v in sorted(search.foods.items(), key=lambda x: x[1].category)]
-    if request.method == "POST":
-        type_food_formset = CategoryFormSet(request.POST, initial=initial, prefix='type_food')
-        weight_formset = WeightFoodFormSet(request.POST, initial=initial_w, prefix='weight')
-        if type_food_formset.is_valid() and weight_formset.is_valid():
-            type_food_raw = [form.cleaned_data["key"] 
-                for form in type_food_formset.forms if form.cleaned_data["check"]]
-            best_for = [form.cleaned_data["key"] 
-                for form in weight_formset.forms if form.cleaned_data["check"]]
-            best_for_text = ", ".join(best_for)
-        foods = search.best(type_food_raw, weights_for=best_for, limit=10, radio_o=False)
-        #found_nutr = search.weights_best_list()
-        return render(request, "recommended_food.html", {
-            "foods": foods,
-            "weight_formset": weight_formset,
-            "type_food_formset": type_food_formset,
-            #"found_nutr": found_nutr,
-            "best_for_text": best_for_text})
-    else:
+
+    def basic_state():
         type_food_formset = CategoryFormSet(initial=initial, prefix='type_food')
         weight_formset = WeightFoodFormSet(initial=initial_w, prefix='weight')
+        radio_omega_form = OmegaRadioForm()
         foods_dict = {}
         for _, food_type in search.foods.items():
             for ndb_no in food_type.foods:
                 foods_dict.setdefault(food_type.category, [])
                 foods_dict[food_type.category].append(Food(ndb_no, avg=False))
-        
         for k, v in foods_dict.items():
             v.sort(key=lambda x: x.img_obj().name if x.img_obj() is not None else "")
 
         return render(request, "recommended_food_intro.html", {
             "foods": sorted(foods_dict.items(), key=lambda x:x[0]),
             "weight_formset": weight_formset,
-            "type_food_formset": type_food_formset})
+            "total_food": search.total_food,
+            "type_food_formset": type_food_formset,
+            "radio_omega_form": radio_omega_form})
+
+    if request.method == "POST":
+        type_food_formset = CategoryFormSet(request.POST, initial=initial, prefix='type_food')
+        weight_formset = WeightFoodFormSet(request.POST, initial=initial_w, prefix='weight')
+        radio_omega_form = OmegaRadioForm(request.POST)
+        if type_food_formset.is_valid() and weight_formset.is_valid() and radio_omega_form.is_valid():
+            radio_o = radio_omega_form.cleaned_data["radio_omega"]
+            type_food_raw = [form.cleaned_data["key"] 
+                for form in type_food_formset.forms if form.cleaned_data["check"]]
+            if len(type_food_raw) > 0:
+                best_for = [form.cleaned_data["key"] 
+                    for form in weight_formset.forms if form.cleaned_data["check"]]
+                best_for_text = ", ".join(best_for)
+                foods = search.best(type_food_raw, weights_for=best_for, limit=10, radio_o=radio_o)
+                return render(request, "recommended_food.html", {
+                    "foods": foods,
+                    "weight_formset": weight_formset,
+                    "type_food_formset": type_food_formset,
+                    "best_for_text": best_for_text,
+                    "radio_omega_form": radio_omega_form})
+            else:
+                return basic_state()
+    else:
+        return basic_state()

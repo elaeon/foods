@@ -40,6 +40,13 @@
     {% endfor %}
     </ul>
 </div>
+
+<div class="btn-group" role="group">
+<div class="btn-info" style="margin:0;padding: 6px 12px;width:150px;text-align: center;">
+{{ radio_omega_form.radio_omega }} Radio Omega
+</div>
+</div>
+
 <button type="submit" class="btn btn-default" >Buscar</button>
 </div>
 </form>
@@ -47,13 +54,13 @@
 <h3>Instrucciones.</h3>
 <p style="margin-top:20px;">Elija la(s) categoria(s) de los alimentos, 
 asi como los beneficios que quiere buscar en ellos, puede elegir uno o varios.</p>
-<p>A continuación se lista los alimentos y bebidas donde se realiza la busqueda de beneficios.</p>
+<p>A continuación se listan los alimentos y bebidas (en total hay {{ total_food }}) donde se realiza la busqueda de beneficios.</p>
 <div class="row row-eq-height">
 {% for category, foods_list in foods %}
 <div class="col-sm-3">
 <h3>{{ category }}</h3>
 {% for food in foods_list %}
-<label style="font-weight:normal;">{{ food.img_obj.name }}</label>
+<div>{{ food.img_obj.name }}</div>
 {% endfor %}
 </div>
 {% endfor %}

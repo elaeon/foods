@@ -48,6 +48,13 @@ $(document).ready(function(){
     {% endfor %}
     </ul>
 </div>
+
+<div class="btn-group" role="group">
+<div class="btn-info" style="margin:0;padding: 6px 12px;width:150px;text-align: center;">
+{{ radio_omega_form.radio_omega }} Radio Omega
+</div>
+</div>
+
 <button type="submit" class="btn btn-default" >Buscar</button>
 </div>
 </form>
@@ -63,7 +70,7 @@ $(document).ready(function(){
         <div class="panel-heading list-group-item">
             <span class="badge">{{ i }}</span>
             <p class="panel-title">
-            <a href="{% url 'view_food' food.ndb_no %}">{{ food.name|truncatewords:6 }}</a>
+            <a href="{% url 'view_food' food.ndb_no %}">{{ food.img_obj.name|truncatewords:6 }}</a>
             </p>
         </div>
 
@@ -75,6 +82,7 @@ $(document).ready(function(){
         <div style="width:250px;height:200px"></div>
         {% endthumbnail %}
         <div style="margin-left:10px;">
+        <p>Radio omega: {{ food.radio }}</p>
         <p style="font-weight:bold;">Nutrientes examinados</p>
         <div style="margin:10px;">
         {% for _, nutrdesc, detail in food.weights_nutrients_approved %}

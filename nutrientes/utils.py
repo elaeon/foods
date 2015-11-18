@@ -578,6 +578,7 @@ class Food(object):
         self.omegas = None
         self.weight = weight
         self.nutr_detail = nutr_detail
+        self.energy_density = 0
         if self.ndb_no is not None:
             self.get(ndb_no, avg=avg)
 
@@ -594,6 +595,10 @@ class Food(object):
             return round(omega6/omega3, 2)
         except ZeroDivisionError:
             return 0
+
+    def calc_energy_density(self):
+        n = {k: v for k, name, v, u in self.nutrients}
+        self.energy_density = n["208"] / self.weight
 
     def ranking(self):
         _, cursor = conection()
@@ -1989,40 +1994,34 @@ def read_vector_food():
 
 
 class FoodType(object):
-    def __init__(self, foods, desc, category):
-        self.desc = desc
+    def __init__(self, foods, category):
         self.foods = foods
         self.category = category
 
 
 class OptionSearch(object):
     def __init__(self):
-        self.foods = {
-            "fruits": FoodType(["09139", "09037", "09200", "09266", "09218", 
-                        "09500", "09277", "09086", "09252", "09414", 
-                        "09412", "09340", "09415", "09129", "09132", 
-                        "09131", "09236", "09316", "09167", "09302", 
-                        "09174", "09181", "09148", "09326", "09226", 
-                        "09279", "09089", "09286", "09322", "09030", "09176",
-                        "09287", "09150", "09112", "09042", "09050", "09078",
-                        "09079", "09163", "09298"], "", "Frutas"),
-            "vegetables": FoodType(["11603", "11205", "11529", "11446", "11457", 
-                            "11091", "11964", "11124", "11216", "11357", "11080", 
-                            "11984"], "", "Vegetales"),
-            "spices_herbs": FoodType(["02003", "02009", "02066", "02044", "02012", 
-                        "02029", "02049", "02030", "02027", "02020", "02032", 
-                        "02063", "02037"], "", "Especias y Hierbas"),
-            "nuts_seeds": FoodType(["12036", "12065", "12151", "12220", "12006",
-                        "12155"], "", "Nueces y Semillas"),
-            "legumes": FoodType(["16109", "16139", "16168", "16027", "16069", 
-                                "16014", "16389", "16087", "16057"], "", "Legumbres"),
-            "grains": FoodType(["20078", "20038", "20035", "20001", "20137", 
-                    "20035", "20034", "20033", "02013"], "", "Granos y pastas"),
-            "drinks": FoodType(["14096", "14106", "14352", "43479", "14649", 
-                                "14545", "14219", "14003"], "", "Bebidas")}
+        self.foods = self.get_food_db()
         self.weights = self.set_weights()
         self.nutr_detail = self.fill_nutr_detail()
         self.weights_best_for = None
+        self.total_food = sum(len(self.foods[c].foods) for c in self.foods)
+
+    def get_food_db(self):
+        conn, cursor = conection()
+        query = """SELECT ndb_no_t, fdgrp_desc_es
+                FROM nutrientes_fooddescimg, food_des, fd_group 
+            WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+            AND nutrientes_fooddescimg.ndb_no_t=food_des.ndb_no"""
+        cursor.execute(query)
+        foods = {}
+        for ndb_no, category in cursor.fetchall():
+            foods.setdefault(category, [])
+            foods[category].append(ndb_no)
+        conn.close()
+
+        return {category: FoodType(foods[category], category) for category in foods}
+            
 
     def join(self, food_values):
         import itertools

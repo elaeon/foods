@@ -61,3 +61,6 @@ class WeightFoodForm(forms.Form):
         if 'initial' in kwargs:
             self.key = kwargs['initial'].get('key')
             self.name = kwargs['initial'].get('name')
+
+class OmegaRadioForm(forms.Form):
+    radio_omega = forms.BooleanField(required=False)
