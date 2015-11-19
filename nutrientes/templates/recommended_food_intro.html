@@ -58,9 +58,9 @@ asi como los beneficios que quiere buscar en ellos, puede elegir uno o varios.</
 <div class="row row-eq-height">
 {% for category, foods_list in foods %}
 <div class="col-sm-3">
-<h3>{{ category }}</h3>
+<h4>{{ category }}</h4>
 {% for food in foods_list %}
-<div>{{ food.img_obj.name }}</div>
+<div><a href="{% url 'view_food' food.ndb_no %}">{{ food.img_obj.name }}</a></div>
 {% endfor %}
 </div>
 {% endfor %}
