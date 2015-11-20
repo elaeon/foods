@@ -2042,7 +2042,8 @@ class OptionSearch(object):
             "Bajo en grasas": weights.WEIGHT_NUTR_LOW_FAT,
             "Ayuda al sistema nervioso": weights.WEIGHT_NUTRS_NEURAL,
             "Ayuda a la prostata": weights.WEIGHT_NUTR_PROSTATE_CARE,
-            "Ayuda a los musculos": weights.WEIGHT_NUTRS_WEIGHT_BODY}
+            u"Ayuda a la salud de los músculos": weights.WEIGHT_NUTRS_WEIGHT_BODY,
+            u"Ayuda a la memoria y concentración": weights.WEIGHT_NUTRS_BRAIN_MEMORY}
         return weights
 
     def extra_nutr_detail(self):

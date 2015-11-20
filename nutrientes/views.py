@@ -550,7 +550,7 @@ def recomended_food(request):
                 best_for = [form.cleaned_data["key"] 
                     for form in weight_formset.forms if form.cleaned_data["check"]]
                 best_for_text = ", ".join(best_for)
-                foods = search.best(type_food_raw, weights_for=best_for, limit=10, radio_o=radio_o)
+                foods = search.best(type_food_raw, weights_for=best_for, limit=20, radio_o=radio_o)
                 return render(request, "recommended_food.html", {
                     "foods": foods,
                     "weight_formset": weight_formset,
