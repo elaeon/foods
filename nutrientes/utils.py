@@ -468,7 +468,7 @@ class Rank(object):
                 if 0 < radio <= 4:
                     total[ndb_no]["radio"] = -normal(radio, 1, 1) * 3
                 else:
-                    total[ndb_no]["radio"] = normal(radio, 1, 1) * 200
+                    total[ndb_no]["radio"] = radio + 10
         
         results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", "")) 
             for ndb_no, v in total.items()]
@@ -862,13 +862,9 @@ class Food(object):
         return Recipe.from_light_format(light_format, data=data, features=features)
 
     def top_nutrients(self):
-        units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
-        totals = []
-        for nutr_no, nutrdesc, total, units in self.nutrients:
-            val = units_scale.get(units, 0)
-            if val != 0:
-                totals.append((float(total / val), nutrdesc, 'g'))
-
+        #nutrientes = [(nutrdesc, total, units) for nutr_no, nutrdesc, total, units in self.nutrients]
+        nutrientes_units_converted = convert_units_scale((total, units) for _, _, total, units in self.nutrients)
+        totals = [(nc, n[1], 'g') for n, nc in zip(self.nutrients, nutrientes_units_converted) if nc != None]
         totals.sort(reverse=True, key=lambda x:x[0])
         maximum = sum([v for v, _, _ in totals])
         return [(e[0] * 100 / maximum, e[1]) for e in totals]
@@ -897,19 +893,25 @@ class Food(object):
         MIN_PORCENTAJE_EXIST = .5
         WEIGHT_AVG_NUTR = .1
         nutr_weight = []
-        nutrients = {nutr_no: v for nutr_no, _, v, _ in self.nutrients}
+        nutrients = {nutr_no: (v, u) for nutr_no, _, v, u in self.nutrients}
         weights_tmp_good = [(nutr_no, weight) for nutr_no, weight in weights.items() if weight <= 1]
 
         for w_nutr_no, _ in weights_tmp_good:
             val_min = self.nutr_avg.get(w_nutr_no, [0,0])[1] * WEIGHT_AVG_NUTR
-            v = nutrients.get(w_nutr_no, -1)
-            if val_min <= v:
+            v_u = nutrients.get(w_nutr_no, [-1, None])
+            if val_min <= v_u[0]:
                 nutr_weight.append((w_nutr_no, 
+                    v_u,
                     self.nutr_avg.get(w_nutr_no, "")[0], 
                     self.nutr_detail.get(w_nutr_no, "")))
 
-        self.weights_nutrients_approved = nutr_weight
-        return (int(len(weights_tmp_good) * MIN_PORCENTAJE_EXIST)) <= len(nutr_weight)
+        approved = (int(len(weights_tmp_good) * MIN_PORCENTAJE_EXIST)) <= len(nutr_weight)
+        if approved:
+            nutrientes_units_converted = convert_units_scale((v, u) for _, (v, u), _, _ in nutr_weight)
+            totals = [(n[0], nc, n[2], n[3]) 
+                for n, nc in zip(nutr_weight, nutrientes_units_converted) if nc != None]
+            self.weights_nutrients_approved = sorted(totals, key=lambda x:x[1], reverse=True)
+        return approved
              
 
 def create_common_table(dicts):
@@ -976,13 +978,21 @@ def principal_nutrients(category=None):
                 AND food_des.fdgrp_cd='{category}' 
                 GROUP BY nutrdesc,units ORDER BY avg desc""".format(category=category)
     cursor.execute(query)
-    units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
-    totals = []
-    for nutrdesc, avg, units in cursor.fetchall():
-        val = units_scale.get(units, 0)
-        if val != 0:
-            totals.append((nutrdesc, float(avg / val)))
+    nutrientes = [(nutrdesc, avg, units) for nutrdesc, avg, units in cursor.fetchall()]
+    nutrientes_units_converted = convert_units_scale((avg, units) for _, avg, units in nutrientes)
+    totals = [(n[0], nc) for n, nc in zip(nutrientes, nutrientes_units_converted) if nc != None]
     return sorted(totals, key=lambda x: x[1], reverse=True)
+
+def convert_units_scale(values):
+    units_scale = {"g": 1, "mg": 1000, u"µg": 1000000} #gramo, miligramo, microgramo
+    converted = []
+    for v, units in values:
+        unit_c = units_scale.get(units, 0)
+        if unit_c != 0:
+            converted.append(float(v / unit_c))
+        else:
+            converted.append(None)
+    return converted
 
 class MostSimilarFood(object):
     def __init__(self, ndb_no, category_to_search, exclude_nutr=None):
@@ -1684,13 +1694,9 @@ class Recipe(object):
         return self.insuficient_intake
 
     def principals_nutrients(self, percentage=False):
-        units_scale = {"g": 1, "mg": 1000, "µg": 1000000000}
-        totals = []
-        for nutrdesc, (total, units) in self.total_nutr_names.items():
-            val = units_scale.get(units, 0)
-            if val != 0:
-                totals.append((float(total / val), nutrdesc))
-
+        nutrientes = [(nutrdesc, avg, units) for nutrdesc, (total, units) in self.total_nutr_names.items()]
+        nutrientes_units_converted = convert_units_scale((avg, units) for _, avg, units in nutrientes)
+        totals = [(nc, n[0]) for n, nc in zip(nutrientes, nutrientes_units_converted) if nc != None]
         totals.sort(reverse=True, key=lambda x:x[0])
         otros_total = (sum([v for v, _ in totals[9:]]), "Vitaminas, Minerales, Aminoacidos, Acidos grasos, etc.")
         base = totals[:9]
@@ -2043,7 +2049,9 @@ class OptionSearch(object):
             "Ayuda al sistema nervioso": weights.WEIGHT_NUTRS_NEURAL,
             "Ayuda a la prostata": weights.WEIGHT_NUTR_PROSTATE_CARE,
             u"Ayuda a la salud de los músculos": weights.WEIGHT_NUTRS_WEIGHT_BODY,
-            u"Ayuda a la memoria y concentración": weights.WEIGHT_NUTRS_BRAIN_MEMORY}
+            u"Ayuda a la memoria y concentración": weights.WEIGHT_NUTRS_BRAIN_MEMORY,
+            "Ayuda a la vista": weights.WEIGHT_NUTRS_EYES,
+            "Ayuda a la piel": weights.WEIGHT_NUTRS_SKIN}
         return weights
 
     def extra_nutr_detail(self):

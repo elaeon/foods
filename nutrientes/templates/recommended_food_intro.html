@@ -57,10 +57,10 @@ asi como los beneficios que quiere buscar en ellos, puede elegir uno o varios.</
 <p>A continuación se listan los alimentos y bebidas (en total hay {{ total_food }}) donde se realiza la busqueda de beneficios.</p>
 <div class="row row-eq-height">
 {% for category, foods_list in foods %}
-<div class="col-sm-3">
+<div class="col-md-4">
 <h4>{{ category }}</h4>
 {% for food in foods_list %}
-<div><a href="{% url 'view_food' food.ndb_no %}">{{ food.img_obj.name }}</a></div>
+<div class="{{ forloop.counter|divisibleby:2|yesno:'alternate0,alternate1' }}"><a href="{% url 'view_food' food.ndb_no %}">{{ food.img_obj.name }}</a></div>
 {% endfor %}
 </div>
 {% endfor %}

@@ -58,3 +58,11 @@
   display: -ms-flexbox;
   display:         flex;
 }
+
+.alternate0 {
+    background-color: #ddd;
+}
+
+.alternate1 {
+    background-color: #eee;
+}

@@ -10,6 +10,8 @@ WEIGHT_NUTRS_OSTEOPOROSIS = {
     "505": .1, #Lysine
     "517": .1, #Proline
     "428": .1, #Menaquinone-4    
+    "325": .1, #Vitamin D2 (ergocalciferol)
+    "312": .1, #Copper, Cu
 }
 
 WEIGHT_NUTRS_LOW_SUGAR = {
@@ -56,13 +58,15 @@ WEIGHT_NUTRS_FREE_RADICALS_AO = {
 
 WEIGHT_NUTRS_ANTI_CHOLESTEROL = {
     "omega3": .1,
-    "omega6": 1,
-    "omega9": .1,
-    "omega7": .1,
+    "omega6": 1.5,
+    "omega9": 1,
+
     "639": .1, #Campesterol
     "636": .1, #Phytosterols
     "638": .1, #Stigmasterol
     "511": .1, #Arginine
+
+    "601": 10.0, #Cholesterol
     "605": 9.6, #Fatty acids, total trans
     "607": 3.1, #4:0
     "609": 3.1, #8:0
@@ -127,6 +131,42 @@ WEIGHT_NUTRS_NEURAL = {
     "512": .1, #Histidine
     "404": .1, #Thiamin
     "338": .1, #Lutein + zeaxanthin
+    "312": .1, #Copper, Cu
+}
+
+WEIGHT_NUTRS_SKIN = {
+    "320": .1, #Vitamin A
+    "321": .1, #Carotene, beta
+    "341": .1, #Tocopherol, beta
+    "343": .1, #Tocopherol, delta
+    "342": .1, #Tocopherol, gamma
+    "344": .1, #Tocotrienol, alpha
+    "345": .1, #Tocotrienol, beta
+    "347": .1, #Tocotrienol, delta
+    "346": .1, #Tocotrienol, gamma
+    "323": .1, #Vitamin E (alpha-tocopherol)
+    "401": .1, #Vitamin C
+    "406": .1, #Niacin
+    "317": .1, #Selenium
+    "309": .1, #Zinc, Zn
+    "337": .1, #Lycopene
+}
+
+WEIGHT_NUTRS_EYES = {
+    "omega3": .1,
+    "338": .1, #Lutein + zeaxanthin
+    "320": .1, #Vitamin A
+    "321": .1, #Carotene, beta
+    "322": .1, #Carotene, alpha
+    "401": .1, #Vitamin C
+    "309": .1, #Zinc, Zn
+    "337": .1, #Lycopene
+    "454": .1, #Betaine
+    "319": .1, #Retinol
+    "334": .1, #Cryptoxanthin, beta
+
+    "omega6": 5,
+    "omega9": 5,
 }
 
 WEIGHT_NUTRS_BRAIN_MEMORY = {
@@ -141,7 +181,7 @@ WEIGHT_NUTRS_BRAIN_MEMORY = {
     "509": .1, #Tyrosine
     "262": 5.5, #Caffeine
 } 
-#WEIGHT_NUTRS_BRAIN_MEMORY.update(WEIGHT_NUTRS_NEURAL)
+WEIGHT_NUTRS_BRAIN_MEMORY.update(WEIGHT_NUTRS_NEURAL)
 
 WEIGHT_NUTRS = {
     "601": 10.0, #Cholesterol

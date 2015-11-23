@@ -522,7 +522,7 @@ def recomended_food(request):
     def basic_state():
         type_food_formset = CategoryFormSet(initial=initial, prefix='type_food')
         weight_formset = WeightFoodFormSet(initial=initial_w, prefix='weight')
-        radio_omega_form = OmegaRadioForm()
+        radio_omega_form = OmegaRadioForm({"radio_omega": True})
         foods_dict = {}
         for _, food_type in search.foods.items():
             for ndb_no in food_type.foods:

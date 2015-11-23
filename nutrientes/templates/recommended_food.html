@@ -85,7 +85,7 @@ $(document).ready(function(){
         <p>Radio omega: {{ food.radio }}</p>
         <p style="font-weight:bold;">Nutrientes examinados</p>
         <div style="margin:10px;">
-        {% for _, nutrdesc, detail in food.weights_nutrients_approved %}
+        {% for _, v, nutrdesc, detail in food.weights_nutrients_approved %}
         <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ nutrdesc }}" data-content="{{ detail }}" style="font-size:70%;">{{ nutrdesc }}</a>
         {% endfor %}
         </div>
