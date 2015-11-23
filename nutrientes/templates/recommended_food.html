@@ -77,12 +77,12 @@ $(document).ready(function(){
         <div class="panel-body">
         {% thumbnail food.img_obj.img "250x200" crop="center" as im %}
         <img src="{{ im.url }}" width="{{ im.width }}" height="{{ im.height }}" 
-            class="img-rounded img-responsive" style="float:left;">
+            class="img-rounded img-responsive" style="margin:auto;">
         {% empty %}
         <div style="width:250px;height:200px"></div>
         {% endthumbnail %}
         <div style="margin-left:10px;">
-        <p>Radio omega: {{ food.radio }}</p>
+        <div><b>Radio omega:</b> {{ food.radio }}</div>
         <p style="font-weight:bold;">Nutrientes examinados</p>
         <div style="margin:10px;">
         {% for _, v, nutrdesc, detail in food.weights_nutrients_approved %}

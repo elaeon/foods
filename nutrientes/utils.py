@@ -2041,7 +2041,7 @@ class OptionSearch(object):
     def set_weights(self):
         from nutrientes import weights
         weights = {
-            "Ayuda a combatir la Osteoporosis": weights.WEIGHT_NUTRS_OSTEOPOROSIS, 
+            "Ayuda a combatir la osteoporosis": weights.WEIGHT_NUTRS_OSTEOPOROSIS, 
             "Bajo en carbohidratos y azucar": weights.WEIGHT_NUTRS_LOW_SUGAR,
             "Anti oxidantes": weights.WEIGHT_NUTRS_FREE_RADICALS_AO,
             "Anti colesterol": weights.WEIGHT_NUTRS_ANTI_CHOLESTEROL,
