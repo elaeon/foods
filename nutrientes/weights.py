@@ -81,10 +81,10 @@ WEIGHT_NUTRS_ANTI_CHOLESTEROL = {
 }
 
 WEIGHT_NUTR_LOW_FAT = {
-    "omega3": 1,
-    "omega6": 1,
-    "omega7": 1,
-    "omega9": 1,
+    "omega3": 1.1,
+    "omega6": 1.1,
+    "omega7": 1.1,
+    "omega9": 1.1,
 
     "605": 9.6, #Fatty acids, total trans
     "606": 9.5, #Fatty acids, total saturated

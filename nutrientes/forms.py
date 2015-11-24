@@ -62,5 +62,7 @@ class WeightFoodForm(forms.Form):
             self.key = kwargs['initial'].get('key')
             self.name = kwargs['initial'].get('name')
 
+#from django.forms.extras.widgets import SelectWidget
 class OmegaRadioForm(forms.Form):
     radio_omega = forms.BooleanField(required=False)
+    data_size = forms.ChoiceField(choices=[(i,i) for i in range(10, 60, 10)])

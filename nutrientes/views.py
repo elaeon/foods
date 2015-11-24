@@ -544,13 +544,14 @@ def recomended_food(request):
         radio_omega_form = OmegaRadioForm(request.POST)
         if type_food_formset.is_valid() and weight_formset.is_valid() and radio_omega_form.is_valid():
             radio_o = radio_omega_form.cleaned_data["radio_omega"]
+            limit = int(radio_omega_form.cleaned_data["data_size"])
             type_food_raw = [form.cleaned_data["key"] 
                 for form in type_food_formset.forms if form.cleaned_data["check"]]
             if len(type_food_raw) > 0:
                 best_for = [form.cleaned_data["key"] 
                     for form in weight_formset.forms if form.cleaned_data["check"]]
                 best_for_text = ", ".join(best_for)
-                foods = search.best(type_food_raw, weights_for=best_for, limit=20, radio_o=radio_o)
+                foods = search.best(type_food_raw, weights_for=best_for, limit=limit, radio_o=radio_o)
                 return render(request, "recommended_food.html", {
                     "foods": foods,
                     "weight_formset": weight_formset,

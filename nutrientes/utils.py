@@ -891,7 +891,7 @@ class Food(object):
 
     def is_weight_nutrients(self, weights):
         MIN_PORCENTAJE_EXIST = .5
-        WEIGHT_AVG_NUTR = .1
+        WEIGHT_AVG_NUTR = .3
         nutr_weight = []
         nutrients = {nutr_no: (v, u) for nutr_no, _, v, u in self.nutrients}
         weights_tmp_good = [(nutr_no, weight) for nutr_no, weight in weights.items() if weight <= 1]
