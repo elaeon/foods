@@ -311,7 +311,7 @@ def best_of_query(nutr_no_list, category_food, exclude=None):
             return set([])
 
     rank = Rank(querys)
-    rank.base_food = get_ids_intersection(rank.category_nutr)
+    #rank.base_food = get_ids_intersection(rank.category_nutr)
     return rank
 
 def ranking_nutr(category_food=None):
@@ -402,6 +402,7 @@ class Rank(object):
         data = OrderedDict()
         if self.base_food is None:
             self.base_food = set(self.foods.keys())
+        #print(u"15212" in self.base_food)
         for nutr_no in self.category_nutr.keys():
             data.setdefault(nutr_no, [])
             reverse = not bool(self.category_nutr[nutr_no]["caution"])
@@ -411,7 +412,7 @@ class Rank(object):
             data[nutr_no].sort(reverse=reverse, key=lambda x: x[2])
         return data
     
-    def sorted_data(self, category_nutr, limit):
+    def rank_weight_data(self, category_nutr):
         positions = {}
         for nutr_no in category_nutr.keys():
             weight = self.weight_nutrs.get(nutr_no, 1)
@@ -426,10 +427,7 @@ class Rank(object):
                     (v[2], diff_avg, self.category_nutr[nutr_no]["units"]))
                 self.set_rank(v[0], nutr_no, i)
 
-        if limit is None:
-            return sorted(positions.values(), key=lambda x: x["i"])
-        else:
-            return sorted(positions.values(), key=lambda x: x["i"])[:limit]
+        return positions.values()
 
     def set_rank(self, ndb_no, nutr_no, position):
         if self.ranks is None:
@@ -440,7 +438,7 @@ class Rank(object):
     def get_values_food(self, ndb_no):
         if self.ranks is None:
             category_nutr = self.ids2data_sorted()
-            self.sorted_data(self, category_nutr)            
+            self.rank_weight_data(self, category_nutr)            
         return self.ranks[ndb_no]
 
     @classmethod
@@ -453,13 +451,15 @@ class Rank(object):
                 index += 1
             yield index, d
     
-    def order(self, limit=None):
-        return self.rank2natural(self.sorted_data(self.ids2data_sorted(), limit=limit), f_index=lambda x: x["i"])
+    def order(self):
+        self.weight_order()
+        return self.results
     
-    def weight_order(self, omegas, limit=None, radio_o=True):
-        total = {food["attr"][0]: {"global": i, "name": food["attr"][1]} for i, food in self.order(limit=limit)}
+    def weight_order(self, omegas=None, limit=None, natural=True):
+        total = {food["attr"][0]: {"global": food["i"], "name": food["attr"][1], "val": food["val"]} 
+                for food in self.rank_weight_data(self.ids2data_sorted())}
 
-        if radio_o:
+        if omegas is not None:
             omegas_d = dict(omegas)
             for ndb_no in total:
                 radio = omegas_d[ndb_no]
@@ -470,10 +470,17 @@ class Rank(object):
                 else:
                     total[ndb_no]["radio"] = radio + 10
         
-        results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", "")) 
+        results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", ""), v["val"]) 
             for ndb_no, v in total.items()]
         results.sort()
-        self.results = results
+        if limit is not None:
+            self.results = results[:limit]
+        else:
+            self.results = results
+
+        if natural:
+            self.results = Rank.rank2natural(self.results, f_index=lambda x: x[0])
+
 
 def query_build(nutr_no, category_food, name=None, order_by=None, exclude=None):
     attrs = {"nutr_no": nutr_no}
@@ -536,7 +543,7 @@ def best_of_general_2(category=None, name=None):
         querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
     rank = Rank(querys)
-    rank.weight_order(radio_omega(category=category))
+    rank.weight_order(omegas=radio_omega(category=category))
     return rank
 
 def best_of_selected_food(foods, weights, limit, radio_o=True):
@@ -557,9 +564,12 @@ def best_of_selected_food(foods, weights, limit, radio_o=True):
         querys.append((nutr_no, caution, avg, data))
 
     rank = Rank(querys, weights=weights)
-    omegas = [(food.ndb_no, food.radio_omega_raw) for food in foods]
-    rank.weight_order(omegas, limit=limit, radio_o=radio_o)
-    return [(i, ndb_no) for i, (_, ndb_no, _) in Rank.rank2natural(rank.results, f_index=lambda x: x[0])]
+    if radio_o:
+        omegas = [(food.ndb_no, food.radio_omega_raw) for food in foods]
+    else:
+        omegas = None
+    rank.weight_order(omegas=omegas, limit=limit)
+    return [(i, ndb_no) for i, (_, ndb_no, _, _) in rank.results]
 
 def normal(x, u, s):
     import math
@@ -2051,7 +2061,8 @@ class OptionSearch(object):
             u"Ayuda a la salud de los músculos": weights.WEIGHT_NUTRS_WEIGHT_BODY,
             u"Ayuda a la memoria y concentración": weights.WEIGHT_NUTRS_BRAIN_MEMORY,
             "Ayuda a la vista": weights.WEIGHT_NUTRS_EYES,
-            "Ayuda a la piel": weights.WEIGHT_NUTRS_SKIN}
+            "Ayuda a la piel": weights.WEIGHT_NUTRS_SKIN,
+            "Necesarios durante el embarazo": weights.WEIGHT_NUTRS_PREGNANCY,}
         return weights
 
     def extra_nutr_detail(self):

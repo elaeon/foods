@@ -183,6 +183,25 @@ WEIGHT_NUTRS_BRAIN_MEMORY = {
 } 
 WEIGHT_NUTRS_BRAIN_MEMORY.update(WEIGHT_NUTRS_NEURAL)
 
+WEIGHT_NUTRS_PREGNANCY = {
+    "omega3": .1,
+    "435": .1, #Folate DFE
+    "418": .1, #Vitamin B12
+    "324": .1, #Vitamin D
+    "325": .1, #Vitamin D2 (ergocalciferol)
+    "301": .1, #Calcium
+    "303": .1, #Iron, Fe
+    "415": .1, #Vitamin B6
+    "401": .1, #Vitamin C
+    "304": .1, #Magnesium,
+    "309": .1, #Zinc
+
+    "203": 1.0,  #Protein
+    "204": 1.0, #Total lipid (fat)
+    "205": 1.0, #Carbohydrate, by difference
+}
+
+
 WEIGHT_NUTRS = {
     "601": 10.0, #Cholesterol
     "269": 8.0, #Sugars, total

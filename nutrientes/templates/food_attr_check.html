@@ -21,8 +21,8 @@
         </thead>
         {% for i, food in foods %}
         <tr>
-            <td>{{ i }}.- <a href="{% url 'view_food' food.attr.0 %}">{{ food.attr.1 }}</a></td>
-            {% for val in food.val %}
+            <td>{{ i }}.- <a href="{% url 'view_food' food.1 %}">{{ food.2 }}</a></td>
+            {% for val in food.3 %}
             {% if val.1 < 0 %}
                 <td  style="font-size: 90%" class="danger">{{ val.0 }}{{ val.2 }} <div style="font-size:70%">{{ val.1 }}</div></td>
             {% else %}
