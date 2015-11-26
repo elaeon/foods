@@ -303,15 +303,15 @@ def best_of_query(nutr_no_list, category_food, exclude=None):
 
     def get_ids_intersection(cat):
         if len(cat.values()) > 0:
-            set_base = set(cat.values()[0]["data"].keys())
+            set_base = set(ndb_no for ndb_no, v in cat.values()[0]["data"].items() if v > 0)
             for v in cat.values()[1:]:
-                set_base = set_base.intersection(set(v["data"].keys()))
+                set_base = set_base.intersection(set(ndb_no for ndb_no, v in v["data"].items() if v > 0))
             return set_base
         else:
             return set([])
 
     rank = Rank(querys)
-    #rank.base_food = get_ids_intersection(rank.category_nutr)
+    rank.base_food = get_ids_intersection(rank.category_nutr)
     return rank
 
 def ranking_nutr(category_food=None):
@@ -468,9 +468,9 @@ class Rank(object):
                 if 0 < radio <= 4:
                     total[ndb_no]["radio"] = -normal(radio, 1, 1) * 3
                 else:
-                    total[ndb_no]["radio"] = radio + 10
+                    total[ndb_no]["radio"] = radio
         
-        results = [(v.get("global", 10000) + v.get("radio", 0), ndb_no, v.get("name", ""), v["val"]) 
+        results = [(v.get("global", 10000)/10000.0 + v.get("radio", 0), ndb_no, v.get("name", ""), v["val"]) 
             for ndb_no, v in total.items()]
         results.sort()
         if limit is not None:
