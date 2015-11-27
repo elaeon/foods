@@ -17,6 +17,12 @@ function submit_form_validate() {
     alert("Elija una o varias categorias de alimentos para realizar la búsqueda.")
     return false;
 }
+
+$('#select_all_cat').click(function(event) {   
+    $("input[name^='type_food']").each(function() {
+        this.checked = this.checked^true;                        
+    });
+});
 </script>
 {% endblock %}
 
@@ -36,6 +42,8 @@ function submit_form_validate() {
     <span class="caret"></span>
     </button>
     <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+    <li><p style="background-color:#ddd">
+        <input type="checkbox" id="select_all_cat">&nbsp;<b>Elegir todas las categorias</b></p></li>
     {% for form in type_food_formset.forms %}
     <li><p>{{ form.key }}{{ form.check }}&nbsp;{{ form.food_type.category }}</p></li>
     {% endfor %}
