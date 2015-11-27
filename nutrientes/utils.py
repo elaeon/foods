@@ -899,14 +899,12 @@ class Food(object):
         except FoodDescImg.DoesNotExist:
             return None 
 
-    def is_weight_nutrients(self, weights):
-        MIN_PORCENTAJE_EXIST = .5
+    def is_weight_nutrients(self, weights_good):
+        MIN_PORCENTAJE_EXIST = .5 if len(weights_good) <= 20 else .7
         WEIGHT_AVG_NUTR = .3
         nutr_weight = []
         nutrients = {nutr_no: (v, u) for nutr_no, _, v, u in self.nutrients}
-        weights_tmp_good = [(nutr_no, weight) for nutr_no, weight in weights.items() if weight <= 1]
-
-        for w_nutr_no, _ in weights_tmp_good:
+        for w_nutr_no, _ in weights_good:
             val_min = self.nutr_avg.get(w_nutr_no, [0,0])[1] * WEIGHT_AVG_NUTR
             v_u = nutrients.get(w_nutr_no, [-1, None])
             if val_min <= v_u[0]:
@@ -915,7 +913,7 @@ class Food(object):
                     self.nutr_avg.get(w_nutr_no, "")[0], 
                     self.nutr_detail.get(w_nutr_no, "")))
 
-        approved = (int(len(weights_tmp_good) * MIN_PORCENTAJE_EXIST)) <= len(nutr_weight)
+        approved = (int(len(weights_good) * MIN_PORCENTAJE_EXIST)) <= len(nutr_weight)
         if approved:
             nutrientes_units_converted = convert_units_scale((v, u) for _, (v, u), _, _ in nutr_weight)
             totals = [(n[0], nc, n[2], n[3]) 
@@ -2105,7 +2103,8 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
     def best(self, type_food, weights_for=["all"], limit=10, radio_o=True):
         self.weights_best_for = self.best_weights(weights_for)
         foods = [Food(ndb_no, nutr_detail=self.nutr_detail) for ndb_no in self.select_food(type_food)]
-        candidate_food = [food for food in foods if food.is_weight_nutrients(self.weights_best_for)]
+        weights_good = [(nutr_no, weight) for nutr_no, weight in self.weights_best_for.items() if weight <= 1]
+        candidate_food = [food for food in foods if food.is_weight_nutrients(weights_good)]
         return self.order_best(candidate_food, self.weights_best_for, limit, radio_o)
 
     def weights_best_list(self):
