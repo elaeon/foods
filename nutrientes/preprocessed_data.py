@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
-from nutrientes.utils import Food, conection, best_of_general_2
-from django.core.exceptions import ImproperlyConfigured
 
+import sys
 import os
 PREPROCESSED_DATA_DIR = os.path.dirname(os.path.dirname(__file__)) + '/preprocessed_data/'
+
+import django
+sys.path.append(os.path.dirname(os.path.dirname(__file__))) #Set it to the root of your project
+os.environ["DJANGO_SETTINGS_MODULE"] = "alimentos.settings"
+django.setup()
+
+from nutrientes.utils import Food, conection, best_of_general_2
 
 
 def matrix_food():
@@ -207,14 +213,27 @@ def insert_update_db_ranking():
     data = ranking_global_perfil()
 
 
+def calc_energy_density():
+    from nutrientes.models import EnergyDensity
+    for ndb_no in Food.alimentos(limit="limit 9000"):
+        food = Food(ndb_no=ndb_no)
+        food.calc_energy_density()
+        energy_density = food.energy_density
+        if energy_density is not None:
+            EnergyDensity.objects.get_or_create(
+                ndb_no_t=ndb_no, 
+                defaults={"energy_density": energy_density})
+        print(ndb_no, energy_density)
+
 def recalc_preprocessed_data():
-    print "Generate Omegas"
-    calc_radio_omega_all()
-    print "Generate AVG"
-    calc_avg(force=True)
-    print "Generate Matrix"
-    matrix_food()
+    #print "Generate Omegas"
+    #calc_radio_omega_all()
+    #print "Generate AVG"
+    #calc_avg(force=True)
+    #print "Generate Matrix"
+    #matrix_food()
     #print "Generate Ranks"
     #insert_update_db_ranking()
     #print "Generate Ordered Matrix"
     #ordered_matrix()
+    calc_energy_density()

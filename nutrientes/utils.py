@@ -608,7 +608,10 @@ class Food(object):
 
     def calc_energy_density(self):
         n = {k: v for k, name, v, u in self.nutrients}
-        self.energy_density = n["208"] / self.weight
+        try:
+            self.energy_density = n["208"] / self.weight
+        except KeyError:
+            return None
 
     def ranking(self):
         _, cursor = conection()
@@ -1224,57 +1227,57 @@ class MatrixNutr(object):
             return {ndb_no: list(zip(self.column, vector)) for ndb_no, vector in self.rows}
         return {ndb_no: vector for ndb_no, vector in self.rows}
 
-class NodeNeighbors(object):
-    def __init__(self, category):
-        self.nodes = {}
-        self.category = category
+#class NodeNeighbors(object):
+#    def __init__(self, category):
+#        self.nodes = {}
+#        self.category = category
         
-    def add(self, key, best):
-        self.nodes[key] = best
+#    def add(self, key, best):
+#        self.nodes[key] = best
 
-    def sequence(self, k, items=10):
-        data = []
-        nk = k
-        category = self.category[nk]
-        while len(data) < items:
-            ndb_no = self.nodes[nk]
-            if ndb_no is None:
-                return data
-            if self.category[ndb_no] == category:
-                data.append(ndb_no)
-            nk = ndb_no
-        return data
+#    def sequence(self, k, items=10):
+#        data = []
+#        nk = k
+#        category = self.category[nk]
+#        while len(data) < items:
+#            ndb_no = self.nodes[nk]
+#            if ndb_no is None:
+#                return data
+#            if self.category[ndb_no] == category:
+#                data.append(ndb_no)
+#            nk = ndb_no
+#        return data
 
-    def get(self, k):
-        return self.nodes[k]
+#    def get(self, k):
+#        return self.nodes[k]
 
-class OrderSimilarity(object):
-    def __init__(self, data_list):
-        self.nodes = self.list2order(data_list)
+#class OrderSimilarity(object):
+#    def __init__(self, data_list):
+#        self.nodes = self.list2order(data_list)
 
-    def list2order(self, data_list):
-        nodes = NodeNeighbors({e["ndb_no"]: e["category"] for e in data_list})
-        nodes.add(data_list[0]["ndb_no"], None)
-        for x1, base in zip(data_list, data_list[1:]):
-            nodes.add(base["ndb_no"], x1["ndb_no"])
-        nodes.add(data_list[-1]["ndb_no"], data_list[-2]["ndb_no"])
-        return nodes
+#    def list2order(self, data_list):
+#        nodes = NodeNeighbors({e["ndb_no"]: e["category"] for e in data_list})
+#        nodes.add(data_list[0]["ndb_no"], None)
+#        for x1, base in zip(data_list, data_list[1:]):
+#            nodes.add(base["ndb_no"], x1["ndb_no"])
+#        nodes.add(data_list[-1]["ndb_no"], data_list[-2]["ndb_no"])
+#        return nodes
 
-    def get_top(self, k, level=10):
-        return self.nodes.sequence(k, items=level).pop()
+#    def get_top(self, k, level=10):
+#        return self.nodes.sequence(k, items=level).pop()
 
-def boost_food(ndb_no):
-    import csv
-    with open(PREPROCESSED_DATA_DIR+"order_matrix.csv", 'rb') as csvfile:
-        data_list = []
-        csvreader = csv.reader(csvfile, delimiter=',',
-                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        for row in csvreader:
-            data_list.append({"ndb_no": row[0], "category": row[1]})
+#def boost_food(ndb_no):
+#    import csv
+#    with open(PREPROCESSED_DATA_DIR+"order_matrix.csv", 'rb') as csvfile:
+#        data_list = []
+#        csvreader = csv.reader(csvfile, delimiter=',',
+#                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
+#        for row in csvreader:
+#            data_list.append({"ndb_no": row[0], "category": row[1]})
 
-    order = OrderSimilarity(data_list)
-    food = Food(order.get_top(ndb_no, level=10))
-    return food
+#    order = OrderSimilarity(data_list)
+#    food = Food(order.get_top(ndb_no, level=10))
+#    return food
 
 def intake(edad, genero, unidad_edad, rnv_type):
     conn, cursor = conection()
@@ -1558,7 +1561,8 @@ class MenuRecipe(object):
         return self.merged_recipes.radio_omega
 
 class Recipe(object):
-    def __init__(self, edad, genero, unidad_edad, rnv_type, blank=False, perfil_intake=None, name=None, features=None):
+    def __init__(self, edad, genero, unidad_edad, rnv_type, blank=False, 
+                perfil_intake=None, name=None, features=None):
         if not blank:
             self.perfil = self.build_perfil(edad, genero, unidad_edad, rnv_type)
             if perfil_intake is None:
@@ -1914,6 +1918,33 @@ def search_menu():
                 gc.collect(0)
     print(sorted(results, key=lambda x:x[0], reverse=True))
 
+def nutrients_to_matix():
+    from nutrientes.weights import WEIGHT_NUTRS
+    from nutrientes.models import FoodDescImg
+    
+    nutr_row = OrderedDict(((k, 0) for k, v in WEIGHT_NUTRS.items() if v <= 1))
+    for food in (Food(food_img.ndb_no_t) for food_img in FoodDescImg.objects.all()):
+        nutr_row_c = nutr_row.copy()
+        for nutr in food.top_nutrients_avg():
+            nutr_no, _, v, u = nutr
+            if nutr_no in nutr_row:
+                nutr_row_c[nutr_no] = v
+        yield food.ndb_no, nutr_row_c.values()
+
+def search_complete_foods():
+    d = dict(nutrients_to_matix())
+    active_positions = {}
+    for ndb_no, vector in d.items():
+        active_positions[ndb_no] = [i for i, e in enumerate(vector) if e > 0]
+
+    def probability(active_positions):
+        import collections
+        total = len(active_positions)
+        c = collections.Counter()
+        for indexes in active_positions:
+            c.update(indexes)
+        return c
+    return probability(active_positions.values())
 
 def categories_calif(data, cache):
     import random

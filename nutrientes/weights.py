@@ -211,9 +211,6 @@ WEIGHT_NUTRS = {
     "606": 9.5, #Fatty acids, total saturated
     "693": 8.0, #Fatty acids, total trans-monoenoic
     "695": 8.0, #Fatty acids, total trans-polyenoic
-    "607": 8.5, #4:0
-    "609": 8.5, #8:0
-    "608": 8.5, #6:0
     "204": 1.5, #Total lipid (fat)
     "205": 1.5, #Carbohydrate, by difference
     "211": 5.0, #Glucose (dextrose)
@@ -226,16 +223,17 @@ WEIGHT_NUTRS = {
     "429": 5.0, #Dihydrophylloquinone
     "omega6": 1.8,
 
-    "203": 1.0,  #Protein
+    "203": 1.0, #Protein
     "255": 1.0, #Water    
     "207": 1.0, #Ash
 
     "omega3": 0.05,
+    "301": .1, #Calcium
     "435": .5, #Folate DFE
     "291": .8, #Fiber, total dietary
     "313": .9, #Fluoride, F
     "309": .8, #Zinc
-    "430": .8, #Vitamin K
+    "430": .1, #Vitamin K (phylloquinone)
     "323": .8, #Vitamin E (alpha)
     "401": .8, #Vitamin C
     "415": .8, #Vitamin B6
@@ -253,5 +251,23 @@ WEIGHT_NUTRS = {
     "405": .8, #Riboflavin
     "404": .8, #Thiamin
     "324": .8, #Vitamin D
-    "428": .95, #Menaquinone-4
+    "505": .1, #Lysine
+    "517": .1, #Proline
+    "428": .1, #Menaquinone-4    
+    "325": .1, #Vitamin D2 (ergocalciferol)
+    "312": .1, #Copper, Cu
+    "641": .1, #Beta-sitosterol
+    "638": .1, #Stigmasterol
+    "337": .1, #Lycopene
+    "341": .1, #Tocopherol, beta
+    "343": .1, #Tocopherol, delta
+    "342": .1, #Tocopherol, gamma
+    "344": .1, #Tocotrienol, alpha
+    "345": .1, #Tocotrienol, beta
+    "347": .1, #Tocotrienol, delta
+    "346": .1, #Tocotrienol, gamma
+    "323": .1, #Vitamin E (alpha-tocopherol)
+    "639": .1, #Campesterol
+    "636": .1, #Phytosterols
+    "511": .1, #Arginine
 }

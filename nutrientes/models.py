@@ -27,6 +27,13 @@ class FoodDescImg(models.Model):
     def __unicode__(self):
         return self.ndb_no_t
 
+class EnergyDensity(models.Model):
+    ndb_no_t = models.TextField(unique=True)
+    energy_density = models.FloatField()
+
+    def __unicode__(self):
+        return self.ndb_no_t
+
 # Create your models here.
 #class Recipe(models.Model):
 #    name = models.TextField()
