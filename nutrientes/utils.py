@@ -1932,10 +1932,6 @@ def nutrients_to_matrix():
         yield food.ndb_no, nutr_row_c.values()
 
 def search_complete_foods():
-    d = dict(nutrients_to_matrix())
-    active_positions = {ndb_no: [i for i, e in enumerate(vector) if e > 0] 
-                        for ndb_no, vector in d.items()}
-
     def probability(active_positions):
         import collections
         total = float(len(active_positions))
@@ -1946,19 +1942,60 @@ def search_complete_foods():
 
     def difference(v1, v2):
         return sum((e1 > 0) ^ (e2 > 0) for e1, e2 in zip(v1, v2))
-            
-    probabilities = probability(filter(lambda x: len(x) > 0, active_positions.values()))
-    
-    score = {}
-    for ndb_no, vector in active_positions.items():
-        score[ndb_no] = sum(1 - probabilities[index] for index in vector)
+        #return sum(1 if e1 == 0 and e2 > 0 else 0 for e1, e2 in zip(v1, v2))
 
-    distance = []
-    for ndb_no1, vector1 in d.items():
-        for ndb_no2, vector2 in d.items():
-            distance.append((ndb_no1, ndb_no2, difference(vector1, vector2)))
+    def merge(v1, v2):
+        return [e1 + e2 for e1, e2 in zip(v1, v2)]
 
-    return score, distance
+    d = dict(nutrients_to_matrix())
+    active_positions = {ndb_no: [i for i, e in enumerate(vector) if e > 0] 
+                        for ndb_no, vector in d.items()}
+    counter = 0
+    min_data_g = 50
+    while counter < 25:
+        probabilities = probability(filter(lambda x: len(x) > 0, active_positions.values()))
+        print(probabilities.items())
+        score = {}
+        for ndb_no, vector in active_positions.items():
+            score[ndb_no] = sum(1 - probabilities[index] for index in vector)
+
+        t = sorted(score.items(), key=lambda x:x[1], reverse=True)
+        m1 = t[:len(score)/2]
+        m2 = t[len(score)/2:]
+        
+        distance = []
+        for ndb_no1, v1 in m1:
+            for ndb_no2, v2 in m2:
+                distance.append((ndb_no1, ndb_no2, difference(d[ndb_no1], d[ndb_no2])))
+
+        best = sorted(distance, key=lambda x:x[2], reverse=True)[:30]
+        for_delete = set([])
+        data_len = []
+        for v in best:
+            vector_merged = merge(d[v[0]], d[v[1]])
+            for_delete.add(v[1])
+            min_data_l = len([x for x in vector_merged if x == 0])
+            if min_data_l < min_data_g:
+                for_delete.add(v[0])
+                n_key = v[0]+"-"+v[1]
+                active_positions[n_key] = [i for i, e in enumerate(vector_merged) if e > 0]
+                d[n_key] = vector_merged
+                min_data_g = min_data_l
+
+        print(min_data_g)
+        for e in for_delete:
+            del active_positions[e]
+            del d[e]
+
+        counter += 1
+    print(vector_merged)
+    #return distance
+    #distance = []
+    #from itertools import combinations
+    #for v1, v2 in combinations(d.items(), 2):
+    #    distance.append((v1[0], v2[0], difference(v1[1], v2[1])))
+
+    #return score, distance
             
 
 def categories_calif(data, cache):
