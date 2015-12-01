@@ -1918,7 +1918,7 @@ def search_menu():
                 gc.collect(0)
     print(sorted(results, key=lambda x:x[0], reverse=True))
 
-def nutrients_to_matix():
+def nutrients_to_matrix():
     from nutrientes.weights import WEIGHT_NUTRS
     from nutrientes.models import FoodDescImg
     
@@ -1932,19 +1932,34 @@ def nutrients_to_matix():
         yield food.ndb_no, nutr_row_c.values()
 
 def search_complete_foods():
-    d = dict(nutrients_to_matix())
-    active_positions = {}
-    for ndb_no, vector in d.items():
-        active_positions[ndb_no] = [i for i, e in enumerate(vector) if e > 0]
+    d = dict(nutrients_to_matrix())
+    active_positions = {ndb_no: [i for i, e in enumerate(vector) if e > 0] 
+                        for ndb_no, vector in d.items()}
 
     def probability(active_positions):
         import collections
-        total = len(active_positions)
+        total = float(len(active_positions))
         c = collections.Counter()
         for indexes in active_positions:
             c.update(indexes)
-        return c
-    return probability(active_positions.values())
+        return {k: v/total for k, v in c.items()}
+
+    def difference(v1, v2):
+        return sum((e1 > 0) ^ (e2 > 0) for e1, e2 in zip(v1, v2))
+            
+    probabilities = probability(filter(lambda x: len(x) > 0, active_positions.values()))
+    
+    score = {}
+    for ndb_no, vector in active_positions.items():
+        score[ndb_no] = sum(1 - probabilities[index] for index in vector)
+
+    distance = []
+    for ndb_no1, vector1 in d.items():
+        for ndb_no2, vector2 in d.items():
+            distance.append((ndb_no1, ndb_no2, difference(vector1, vector2)))
+
+    return score, distance
+            
 
 def categories_calif(data, cache):
     import random
