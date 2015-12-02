@@ -1925,7 +1925,7 @@ def nutrients_to_matrix():
     nutr_row = OrderedDict(((k, 0) for k, v in WEIGHT_NUTRS.items() if v <= 1))
     for food in (Food(food_img.ndb_no_t) for food_img in FoodDescImg.objects.all()):
         nutr_row_c = nutr_row.copy()
-        for nutr in food.top_nutrients_avg():
+        for nutr in food.nutrients:#.top_nutrients_avg():
             nutr_no, _, v, u = nutr
             if nutr_no in nutr_row:
                 nutr_row_c[nutr_no] = v
@@ -1942,7 +1942,6 @@ def search_complete_foods():
 
     def difference(v1, v2):
         return sum((e1 > 0) ^ (e2 > 0) for e1, e2 in zip(v1, v2))
-        #return sum(1 if e1 == 0 and e2 > 0 else 0 for e1, e2 in zip(v1, v2))
 
     def merge(v1, v2):
         return [e1 + e2 for e1, e2 in zip(v1, v2)]
@@ -1952,9 +1951,10 @@ def search_complete_foods():
                         for ndb_no, vector in d.items()}
     counter = 0
     min_data_g = 50
-    while counter < 25:
+    candidates = []
+    while counter < 15:
         probabilities = probability(filter(lambda x: len(x) > 0, active_positions.values()))
-        print(probabilities.items())
+        #print(probabilities.items())
         score = {}
         for ndb_no, vector in active_positions.items():
             score[ndb_no] = sum(1 - probabilities[index] for index in vector)
@@ -1962,15 +1962,15 @@ def search_complete_foods():
         t = sorted(score.items(), key=lambda x:x[1], reverse=True)
         m1 = t[:len(score)/2]
         m2 = t[len(score)/2:]
-        
         distance = []
         for ndb_no1, v1 in m1:
             for ndb_no2, v2 in m2:
                 distance.append((ndb_no1, ndb_no2, difference(d[ndb_no1], d[ndb_no2])))
 
-        best = sorted(distance, key=lambda x:x[2], reverse=True)[:30]
+        best = sorted(distance, key=lambda x:x[2], reverse=True)[:50]
         for_delete = set([])
         data_len = []
+        minimum_data = []
         for v in best:
             vector_merged = merge(d[v[0]], d[v[1]])
             for_delete.add(v[1])
@@ -1980,22 +1980,23 @@ def search_complete_foods():
                 n_key = v[0]+"-"+v[1]
                 active_positions[n_key] = [i for i, e in enumerate(vector_merged) if e > 0]
                 d[n_key] = vector_merged
-                min_data_g = min_data_l
+                minimum_data.append(min_data_l)
+                candidates.append((n_key, min_data_l))
 
-        print(min_data_g)
+        if len(minimum_data) > 0:
+            tmp_min = min(minimum_data)
+            if tmp_min < min_data_g:
+                min_data_g = tmp_min
+
         for e in for_delete:
             del active_positions[e]
             del d[e]
 
         counter += 1
-    print(vector_merged)
-    #return distance
-    #distance = []
-    #from itertools import combinations
-    #for v1, v2 in combinations(d.items(), 2):
-    #    distance.append((v1[0], v2[0], difference(v1[1], v2[1])))
-
-    #return score, distance
+    for key, distance in sorted(candidates, key=lambda x:x[1], reverse=False):
+        print(key, "-", distance)
+        print(d[key])
+        break
             
 
 def categories_calif(data, cache):
