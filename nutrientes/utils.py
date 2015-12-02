@@ -923,7 +923,12 @@ class Food(object):
                 for n, nc in zip(nutr_weight, nutrientes_units_converted) if nc != None]
             self.weights_nutrients_approved = sorted(totals, key=lambda x:x[1], reverse=True)
         return approved
-             
+
+    def nutrients_selector(self, seleccion):
+        if seleccion == "nutrients":
+            return self.nutrients
+        else:
+            return self.top_nutrients_avg()
 
 def create_common_table(dicts):
     common_keys = set(dicts[0].keys())
@@ -1005,183 +1010,183 @@ def convert_units_scale(values):
             converted.append(None)
     return converted
 
-class MostSimilarFood(object):
-    def __init__(self, ndb_no, category_to_search, exclude_nutr=None):
-        self.food_base = Food(ndb_no, avg=False)
-        self.category_to_search = category_to_search
-        if exclude_nutr is None:
-            exclude_nutr = {
-                "601": "Cholesterol",
-                "307": "Sodium, Na",
-                "607": "4:0",
-                "609": "8:0",
-                "608": "6:0",
-            }
-            exclude_nutr.update(EXCLUDE_NUTR)
+#class MostSimilarFood(object):
+#    def __init__(self, ndb_no, category_to_search, exclude_nutr=None):
+#        self.food_base = Food(ndb_no, avg=False)
+#        self.category_to_search = category_to_search
+#        if exclude_nutr is None:
+#            exclude_nutr = {
+#                "601": "Cholesterol",
+#                "307": "Sodium, Na",
+#                "607": "4:0",
+#                "609": "8:0",
+#                "608": "6:0",
+#            }
+#            exclude_nutr.update(EXCLUDE_NUTR)
 
-        vector_base = self.food_base.vector_features(
-            self.food_base.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr), 
-            self.food_base.nutrients)
-        self.vector_base_items = [(k, v) for k, v in vector_base.items() if v > 0]
-        ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
-        self.matrix = create_matrix(ndb_nos, only=[k for k, _ in self.vector_base_items], weight=25)
-        self.matrix_dict = self.matrix.to_dict(nutr_no=True)
-        self.max_total_food = 8
-        self.total_nutr = len(self.vector_base_items)
+#        vector_base = self.food_base.vector_features(
+#            self.food_base.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr), 
+#            self.food_base.nutrients)
+#        self.vector_base_items = [(k, v) for k, v in vector_base.items() if v > 0]
+#        ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
+#        self.matrix = create_matrix(ndb_nos, only=[k for k, _ in self.vector_base_items], weight=25)
+#        self.matrix_dict = self.matrix.to_dict(nutr_no=True)
+#        self.max_total_food = 8
+#        self.total_nutr = len(self.vector_base_items)
 
 
-    def search_steps(self, base_size, low_grow, data, extra_data=[], min_diff=10):
-        down_vectors = []
-        every = 5
-        count = 0
-        for foods in data:
-            foods_extra = foods+extra_data
-            rows = [self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra]
-            sum_nutr = [(sublist[0][0], sum(e[1] for e in sublist)) for sublist in zip(*rows)]
-            diff = [(b[0], t[1]-b[1]) for t, b in zip(sum_nutr, self.vector_base_items)]
-            up_diff = list(filter(lambda x: x[1] >= 0, diff))
-            low_diff = list(filter(lambda x: x[1] < 0, diff))
-            if len(low_diff) <= min_diff:
-                return EvalSimilarFood(foods_extra, low_diff, sum_nutr, self.total_nutr)
+#    def search_steps(self, base_size, low_grow, data, extra_data=[], min_diff=10):
+#        down_vectors = []
+#        every = 5
+#        count = 0
+#        for foods in data:
+#            foods_extra = foods+extra_data
+#            rows = [self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra]
+#            sum_nutr = [(sublist[0][0], sum(e[1] for e in sublist)) for sublist in zip(*rows)]
+#            diff = [(b[0], t[1]-b[1]) for t, b in zip(sum_nutr, self.vector_base_items)]
+#            up_diff = list(filter(lambda x: x[1] >= 0, diff))
+#            low_diff = list(filter(lambda x: x[1] < 0, diff))
+#            if len(low_diff) <= min_diff:
+#                return EvalSimilarFood(foods_extra, low_diff, sum_nutr, self.total_nutr)
 
-            down_vectors.append(low_diff)
-            if count == every:
-                null_grow = self.grown(down_vectors)
-                down_vectors = []
-                count = 0
-                low_grow.append(null_grow)
-            count += 1
-        return None
+#            down_vectors.append(low_diff)
+#            if count == every:
+#                null_grow = self.grown(down_vectors)
+#                down_vectors = []
+#                count = 0
+#                low_grow.append(null_grow)
+#            count += 1
+#        return None
 
-    def grown(self, vectors):
-        null_grow = set([])
-        for sublist in zip(*vectors):
-            if sublist[0][1] != 0:
-                grow_ = abs((((sublist[-1][1] / sublist[0][1])**(1./len(sublist))) - 1) * 100)
+#    def grown(self, vectors):
+#        null_grow = set([])
+#        for sublist in zip(*vectors):
+#            if sublist[0][1] != 0:
+#                grow_ = abs((((sublist[-1][1] / sublist[0][1])**(1./len(sublist))) - 1) * 100)
                 #print grow_, sublist[0][1], sublist[-1][1]
-                if grow_ <= 1: #1%
-                    null_grow.add(sublist[0][0])
+#                if grow_ <= 1: #1%
+#                    null_grow.add(sublist[0][0])
 
-        return null_grow
+#        return null_grow
 
-    def random_select(self, size):
-        import random
-        indexes = set([])
+#    def random_select(self, size):
+#        import random
+#        indexes = set([])
         #keys = self.matrix.keys()
-        for i in range(100):
-            blocks = []
-            while len(blocks) < size:
+#        for i in range(100):
+#            blocks = []
+#            while len(blocks) < size:
                 #i = random.randint(0, len(keys) - 1)
-                i = random.randint(0, len(self.matrix.rows) - 1)
-                if not i in indexes:
-                    indexes.add(i)
+#                i = random.randint(0, len(self.matrix.rows) - 1)
+#                if not i in indexes:
+#                    indexes.add(i)
                     #blocks.append((keys[i], None))
-                    blocks.append((self.matrix.rows[i][0], None))
-            indexes = set([])
-            yield blocks
+#                    blocks.append((self.matrix.rows[i][0], None))
+#            indexes = set([])
+#            yield blocks
 
-    def random(self, extra_food=[], min_amount_food=2, max_amount_food=5, min_diff=10):
-        counting = {}
-        for food_size in range(min_amount_food, max_amount_food):
-            data = self.random_select(food_size)
-            low = []
-            foods = self.search_steps(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
-            for s in low:
-                for nutr_no in s:
-                    counting[nutr_no] = counting.get(nutr_no, 0) + 1
-            if foods is not None:
-                return foods, True
-        return sorted(counting.items(), key=lambda x: x[1], reverse=True), False
+#    def random(self, extra_food=[], min_amount_food=2, max_amount_food=5, min_diff=10):
+#        counting = {}
+#        for food_size in range(min_amount_food, max_amount_food):
+#            data = self.random_select(food_size)
+#            low = []
+#            foods = self.search_steps(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
+#            for s in low:
+#                for nutr_no in s:
+#                    counting[nutr_no] = counting.get(nutr_no, 0) + 1
+#            if foods is not None:
+#                return foods, True
+#        return sorted(counting.items(), key=lambda x: x[1], reverse=True), False
 
-    def search(self):
-        _, cursor = conection()
-        step_best = 1
-        count = {}
-        nutrs_no = {}
-        max_amount_food = 5
-        min_amount_food = 2
-        min_diff = 10
-        results_best = []
-        best_extra_food = []
-        while True:
-            results, ok = self.random(
-                extra_food=best_extra_food[:step_best], 
-                min_amount_food=min_amount_food, 
-                max_amount_food=max_amount_food,
-                min_diff=min_diff)
+#    def search(self):
+#        _, cursor = conection()
+#        step_best = 1
+#        count = {}
+#        nutrs_no = {}
+#        max_amount_food = 5
+#        min_amount_food = 2
+#        min_diff = 10
+#        results_best = []
+#        best_extra_food = []
+#        while True:
+#            results, ok = self.random(
+#                extra_food=best_extra_food[:step_best], 
+#                min_amount_food=min_amount_food, 
+#                max_amount_food=max_amount_food,
+#                min_diff=min_diff)
 
-            if ok:
-                results_best.append(results)
-                min_diff -= 1
-                step_best = 1
-                continue
-            elif not ok and max_amount_food + len(best_extra_food[:step_best]) >= self.max_total_food + 1:
-                break
-            elif step_best > 10:
-                max_amount_food += 1
-                step_best = 1
-            else:
-                step_best += 1
+#            if ok:
+#                results_best.append(results)
+#                min_diff -= 1
+#                step_best = 1
+#                continue
+#            elif not ok and max_amount_food + len(best_extra_food[:step_best]) >= self.max_total_food + 1:
+#                break
+#            elif step_best > 10:
+#                max_amount_food += 1
+#                step_best = 1
+#            else:
+#                step_best += 1
 
-            new = False
-            for nutr_no, _ in results:
-                if not nutr_no in nutrs_no:
-                    nutrs_no.setdefault(nutr_no, set([]))
-                    new = True
-                    query = query_build(nutr_no, self.category_to_search, order_by="DESC")
-                    cursor.execute(query)
-                    for r in cursor.fetchall()[:10]:
-                        count[r[0]] = count.get(r[0], 0) + 1
-                        nutrs_no[nutr_no].add(r[0]) 
-            if new:
-                best_extra_food = sorted(count.items(), key=lambda x: x[1], reverse=True)
+#            new = False
+#            for nutr_no, _ in results:
+#                if not nutr_no in nutrs_no:
+#                    nutrs_no.setdefault(nutr_no, set([]))
+#                    new = True
+#                    query = query_build(nutr_no, self.category_to_search, order_by="DESC")
+#                    cursor.execute(query)
+#                    for r in cursor.fetchall()[:10]:
+#                        count[r[0]] = count.get(r[0], 0) + 1
+#                        nutrs_no[nutr_no].add(r[0]) 
+#            if new:
+#                best_extra_food = sorted(count.items(), key=lambda x: x[1], reverse=True)
 
-        return results_best
+#        return results_best
 
-class EvalSimilarFood(object):
-    def __init__(self, result, low_nutr, sum_nutr, total_nutr):
-        self.result = self.sum_equals(result)
-        self.low_nutr = low_nutr
-        self.sum_nutr = sum_nutr
-        if total_nutr > 0:
-            self.total = 100 - (len(low_nutr) * 100 / total_nutr)
-        else:
-            self.total = 0
-        self.transform_data = None
+#class EvalSimilarFood(object):
+#    def __init__(self, result, low_nutr, sum_nutr, total_nutr):
+#        self.result = self.sum_equals(result)
+#        self.low_nutr = low_nutr
+#        self.sum_nutr = sum_nutr
+#        if total_nutr > 0:
+#            self.total = 100 - (len(low_nutr) * 100 / total_nutr)
+#        else:
+#            self.total = 0
+#        self.transform_data = None
 
-    def sum_equals(self, result):
-        base = {}
-        for ndb_no, _ in result:
-            base.setdefault(ndb_no, 0)
-            base[ndb_no] += 25
-        return base.items()
+#    def sum_equals(self, result):
+#        base = {}
+#        for ndb_no, _ in result:
+#            base.setdefault(ndb_no, 0)
+#            base[ndb_no] += 25
+#        return base.items()
 
-    def ids2name(self, similar_food):
-        ndb_nos = [ndb_no for ndb_no, _ in self.result]
-        not_ndb_not_found = [ndb_no for ndb_no, _ in self.low_nutr]
-        o_foods = [similar_food.matrix_dict[ndb_no] for ndb_no in ndb_nos]
-        nutrs_ids = nutr_features_ids(similar_food.matrix.column)
-        nutrs_ids = {k: v for k, v in nutrs_ids}
-        total_nutrients = [(nutrs_ids[nutr_no], total) for nutr_no, total in self.sum_nutr]
-        nutrs_ids_base = nutr_features_ids([k for k, _ in similar_food.vector_base_items])
-        nutrs_ids_base = {k: v for k, v in nutrs_ids_base}
-        food_base_nutrients = [(nutrs_ids_base[k], v) for k, v in similar_food.vector_base_items]
-        food_not_found_nutr = [nutrs_ids[e] for e in not_ndb_not_found]
-        foods = []
-        ndb_nos_name = [(data[1][0], data[1][1], data[0][1]) for data in zip(self.result, get_many_food(ndb_nos))]
-        for ndb_no, name, _ in ndb_nos_name:
-            for nutr_no, v in similar_food.matrix_dict[ndb_no]:
-                foods.append((name, nutrs_ids[nutr_no], v))
+#    def ids2name(self, similar_food):
+#        ndb_nos = [ndb_no for ndb_no, _ in self.result]
+#        not_ndb_not_found = [ndb_no for ndb_no, _ in self.low_nutr]
+#        o_foods = [similar_food.matrix_dict[ndb_no] for ndb_no in ndb_nos]
+#        nutrs_ids = nutr_features_ids(similar_food.matrix.column)
+#        nutrs_ids = {k: v for k, v in nutrs_ids}
+#        total_nutrients = [(nutrs_ids[nutr_no], total) for nutr_no, total in self.sum_nutr]
+#        nutrs_ids_base = nutr_features_ids([k for k, _ in similar_food.vector_base_items])
+#        nutrs_ids_base = {k: v for k, v in nutrs_ids_base}
+#        food_base_nutrients = [(nutrs_ids_base[k], v) for k, v in similar_food.vector_base_items]
+#        food_not_found_nutr = [nutrs_ids[e] for e in not_ndb_not_found]
+#        foods = []
+#        ndb_nos_name = [(data[1][0], data[1][1], data[0][1]) for data in zip(self.result, get_many_food(ndb_nos))]
+#        for ndb_no, name, _ in ndb_nos_name:
+#            for nutr_no, v in similar_food.matrix_dict[ndb_no]:
+#                foods.append((name, nutrs_ids[nutr_no], v))
 
-        self.transform_data = {
-            "food_base_nutrients": food_base_nutrients,
-            "foods": foods,
-            "total_nutrients": total_nutrients,
-            "food_not_found_nutr": ", ".join(food_not_found_nutr),
-            "o_foods": ndb_nos_name,
-            "total_porcentaje": self.total
-        }
-        return self.transform_data
+#        self.transform_data = {
+#            "food_base_nutrients": food_base_nutrients,
+#            "foods": foods,
+#            "total_nutrients": total_nutrients,
+#            "food_not_found_nutr": ", ".join(food_not_found_nutr),
+#            "o_foods": ndb_nos_name,
+#            "total_porcentaje": self.total
+#        }
+#        return self.transform_data
 
 class MatrixNutr(object):
     def __init__(self, name=None, rows=None):
@@ -1918,86 +1923,113 @@ def search_menu():
                 gc.collect(0)
     print(sorted(results, key=lambda x:x[0], reverse=True))
 
-def nutrients_to_matrix():
-    from nutrientes.weights import WEIGHT_NUTRS
-    from nutrientes.models import FoodDescImg
-    
-    nutr_row = OrderedDict(((k, 0) for k, v in WEIGHT_NUTRS.items() if v <= 1))
-    for food in (Food(food_img.ndb_no_t) for food_img in FoodDescImg.objects.all()):
-        nutr_row_c = nutr_row.copy()
-        for nutr in food.nutrients:#.top_nutrients_avg():
-            nutr_no, _, v, u = nutr
-            if nutr_no in nutr_row:
-                nutr_row_c[nutr_no] = v
-        yield food.ndb_no, nutr_row_c.values()
 
-def search_complete_foods():
-    def probability(active_positions):
+class SearchCompleteFoods(object):
+    def __init__(self, batch_size=50):
+        from nutrientes.models import FoodDescImg
+
+        self.min_data_g = 50
+        self.candidates = []
+        self.batch_size = batch_size
+        self.selector = None
+        self.universe = [food.ndb_no_t for food in FoodDescImg.objects.all()]
+
+    def probability(self, active_positions_values):
         import collections
-        total = float(len(active_positions))
-        c = collections.Counter()
-        for indexes in active_positions:
-            c.update(indexes)
-        return {k: v/total for k, v in c.items()}
+        total = float(len(active_positions_values))
+        counter = collections.Counter()
+        for indexes in active_positions_values:
+            counter.update(indexes)
+        return {k: v/total for k, v in counter.items()}
 
-    def difference(v1, v2):
+    def difference(self, v1, v2):
         return sum((e1 > 0) ^ (e2 > 0) for e1, e2 in zip(v1, v2))
 
-    def merge(v1, v2):
+    def merge(self, v1, v2):
         return [e1 + e2 for e1, e2 in zip(v1, v2)]
 
-    d = dict(nutrients_to_matrix())
-    active_positions = {ndb_no: [i for i, e in enumerate(vector) if e > 0] 
-                        for ndb_no, vector in d.items()}
-    counter = 0
-    min_data_g = 50
-    candidates = []
-    while counter < 15:
-        probabilities = probability(filter(lambda x: len(x) > 0, active_positions.values()))
-        #print(probabilities.items())
-        score = {}
-        for ndb_no, vector in active_positions.items():
-            score[ndb_no] = sum(1 - probabilities[index] for index in vector)
+    def nutrients_to_map(self, foods, selector):        
+        for food in (Food(ndb_no) for ndb_no in foods):
+            nutr_row_c = OrderedDict(((k, 0) for k, v in WEIGHT_NUTRS.items() if v <= 1))
+            for nutr in food.nutrients_selector(selector):
+                nutr_no, _, v, u = nutr
+                if nutr_no in nutr_row_c:
+                    nutr_row_c[nutr_no] = v
+            yield food.ndb_no, nutr_row_c.values()
 
-        t = sorted(score.items(), key=lambda x:x[1], reverse=True)
-        m1 = t[:len(score)/2]
-        m2 = t[len(score)/2:]
-        distance = []
-        for ndb_no1, v1 in m1:
-            for ndb_no2, v2 in m2:
-                distance.append((ndb_no1, ndb_no2, difference(d[ndb_no1], d[ndb_no2])))
+    def all_is_1(self, data):
+        return all((v == 1 for _, v in data.items()))
 
-        best = sorted(distance, key=lambda x:x[2], reverse=True)[:50]
-        for_delete = set([])
-        data_len = []
-        minimum_data = []
-        for v in best:
-            vector_merged = merge(d[v[0]], d[v[1]])
-            for_delete.add(v[1])
-            min_data_l = len([x for x in vector_merged if x == 0])
-            if min_data_l < min_data_g:
-                for_delete.add(v[0])
-                n_key = v[0]+"-"+v[1]
-                active_positions[n_key] = [i for i, e in enumerate(vector_merged) if e > 0]
-                d[n_key] = vector_merged
-                minimum_data.append(min_data_l)
-                candidates.append((n_key, min_data_l))
+    def search(self, selector="nutrients"):
+        self.selector = selector
+        nutrient_map = dict(self.nutrients_to_map(self.universe, selector))
+        active_positions = {ndb_no: [i for i, e in enumerate(vector) if e > 0] 
+                            for ndb_no, vector in nutrient_map.items()}
+        while True:
+            probabilities = self.probability(
+                filter(lambda x: len(x) > 0, active_positions.values()))
+            if self.all_is_1(probabilities):
+                break
+            score = {ndb_no: sum(1 - probabilities[index] for index in vector)
+                        for ndb_no, vector in active_positions.items()}
 
-        if len(minimum_data) > 0:
-            tmp_min = min(minimum_data)
-            if tmp_min < min_data_g:
-                min_data_g = tmp_min
+            best_distribution = sorted(score.items(), key=lambda x:x[1], reverse=True)
+            upper_best = best_distribution[:len(score)/2]
+            lower_best = best_distribution[len(score)/2:]
+            distance = []
+            for ndb_no1, v1 in upper_best:
+                for ndb_no2, v2 in lower_best:
+                    distance.append((
+                        ndb_no1, 
+                        ndb_no2, 
+                        self.difference(nutrient_map[ndb_no1], nutrient_map[ndb_no2])))
 
-        for e in for_delete:
-            del active_positions[e]
-            del d[e]
+            best_distance = sorted(distance, key=lambda x:x[2], reverse=True)[:self.batch_size]
+            for_delete = set([])
+            data_len = []
+            for ndb_no_v1, ndb_no_v2, _ in best_distance:
+                vector_merged = self.merge(nutrient_map[ndb_no_v1], nutrient_map[ndb_no_v2])
+                for_delete.add(ndb_no_v2)
+                min_data_l = len([x for x in vector_merged if x == 0])
+                if min_data_l < self.min_data_g:
+                    for_delete.add(ndb_no_v1)
+                    n_key = ndb_no_v1 + "-" + ndb_no_v2
+                    active_positions[n_key] = [i for i, v in enumerate(vector_merged) if v > 0]
+                    nutrient_map[n_key] = vector_merged
+                    self.candidates.append((min_data_l, n_key))
+                elif min_data_l == self.min_data_g:
+                    pass
+                    #print(ndb_no_v1 + "-" + ndb_no_v2)
 
-        counter += 1
-    for key, distance in sorted(candidates, key=lambda x:x[1], reverse=False):
-        print(key, "-", distance)
-        print(d[key])
-        break
-            
+            if len(self.candidates) > 0:
+                tmp_min = min(self.candidates)[0]
+                if tmp_min < self.min_data_g:
+                    self.min_data_g = tmp_min
+
+            for e in for_delete:
+                #print("DEL", e)
+                del active_positions[e]
+                del nutrient_map[e]
+
+        return sorted(self.candidates, key=lambda x:x[0])
+
+    def candidates_vector(self, limit=5):
+        for _, candidates_key in sorted(self.candidates, key=lambda x:x[0])[:limit]:
+            candidates = candidates_key.split("-")
+            nutrient_map = dict(self.nutrients_to_map(candidates, self.selector))
+            vector = [0 for _ in nutrient_map[candidates[0]]]
+            while len(candidates) > 0:
+                candidate = candidates.pop()
+                vector = self.merge(vector, nutrient_map[candidate])
+        return vector
+
+    def print_(self, l):
+        from nutrientes.utils import Food
+        for _ , e in l:
+            for ndb_no in e.split("-"):
+                print(Food(ndb_no).name)
+            print("****")
+
 
 def categories_calif(data, cache):
     import random

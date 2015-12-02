@@ -390,17 +390,18 @@ def result_long_search(request):
 
 
 def equivalents(request, ndb_no):
-    from nutrientes.utils import MostSimilarFood, nutr_features_ids, get_many_food
-    similar_food = MostSimilarFood(ndb_no, "1100")
-    food_base = similar_food.food_base
-    results = similar_food.search()
-    if results is not None and len(results) > 0:
-        last_result = results.pop()
-        data_result = last_result.ids2name(similar_food)
-    else:
-        data_result = {}
-    data_result["food_base"] = food_base
-    return render(request, "equivalents.html", data_result)
+    #from nutrientes.utils import MostSimilarFood, nutr_features_ids, get_many_food
+    #similar_food = MostSimilarFood(ndb_no, "1100")
+    #food_base = similar_food.food_base
+    #results = similar_food.search()
+    #if results is not None and len(results) > 0:
+    #    last_result = results.pop()
+    #    data_result = last_result.ids2name(similar_food)
+    #else:
+    #    data_result = {}
+    #data_result["food_base"] = food_base
+    return render(request, "equivalents.html", {})
+    #pass
 
 
 @perfil
