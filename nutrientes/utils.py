@@ -1711,7 +1711,7 @@ class Recipe(object):
         return self.insuficient_intake
 
     def principals_nutrients(self, percentage=False):
-        nutrientes = [(nutrdesc, avg, units) for nutrdesc, (total, units) in self.total_nutr_names.items()]
+        nutrientes = [(nutrdesc, total, units) for nutrdesc, (total, units) in self.total_nutr_names.items()]
         nutrientes_units_converted = convert_units_scale((avg, units) for _, avg, units in nutrientes)
         totals = [(nc, n[0]) for n, nc in zip(nutrientes, nutrientes_units_converted) if nc != None]
         totals.sort(reverse=True, key=lambda x:x[0])
@@ -1980,20 +1980,21 @@ class SearchCompleteFoods(object):
             for ndb_no1, v1 in upper_best:
                 for ndb_no2, v2 in lower_best:
                     distance.append((
+                        self.difference(nutrient_map[ndb_no1], nutrient_map[ndb_no2]),
                         ndb_no1, 
-                        ndb_no2, 
-                        self.difference(nutrient_map[ndb_no1], nutrient_map[ndb_no2])))
-
-            best_distance = sorted(distance, key=lambda x:x[2], reverse=True)[:self.batch_size]
+                        ndb_no2))
+            max_distance = max(distance)[0]
+            best_distance = (e for e in distance if e[0] == max_distance)
+            #best_distance = sorted(distance, key=lambda x:x[0], reverse=True)[:self.batch_size]
             for_delete = set([])
             data_len = []
-            for ndb_no_v1, ndb_no_v2, _ in best_distance:
+            for _, ndb_no_v1, ndb_no_v2 in best_distance:
                 vector_merged = self.merge(nutrient_map[ndb_no_v1], nutrient_map[ndb_no_v2])
                 for_delete.add(ndb_no_v2)
                 min_data_l = len([x for x in vector_merged if x == 0])
                 if min_data_l < self.min_data_g:
                     for_delete.add(ndb_no_v1)
-                    n_key = ndb_no_v1 + "-" + ndb_no_v2
+                    n_key = "-".join(set(ndb_no_v1.split("-"))) + "-" + "-".join(set(ndb_no_v2.split("-")))
                     active_positions[n_key] = [i for i, v in enumerate(vector_merged) if v > 0]
                     nutrient_map[n_key] = vector_merged
                     self.candidates.append((min_data_l, n_key))
@@ -2007,27 +2008,35 @@ class SearchCompleteFoods(object):
                     self.min_data_g = tmp_min
 
             for e in for_delete:
-                #print("DEL", e)
                 del active_positions[e]
                 del nutrient_map[e]
 
         return sorted(self.candidates, key=lambda x:x[0])
 
-    def candidates_vector(self, limit=5):
-        for _, candidates_key in sorted(self.candidates, key=lambda x:x[0])[:limit]:
+    def candidates_vector(self):
+        for candidates_key in self.get_bests_candidates():
             candidates = candidates_key.split("-")
             nutrient_map = dict(self.nutrients_to_map(candidates, self.selector))
             vector = [0 for _ in nutrient_map[candidates[0]]]
             while len(candidates) > 0:
                 candidate = candidates.pop()
                 vector = self.merge(vector, nutrient_map[candidate])
-        return vector
+            yield candidates_key, vector
 
-    def print_(self, l):
+    def get_bests_candidates(self):
+        candidates = sorted(self.candidates, key=lambda x:x[0])
+        self.min_distance = min(candidates)[0]
+        for d, candidate in candidates:
+            if d == self.min_distance:
+                yield candidate
+            else:
+                break
+
+    def print_(self):
         from nutrientes.utils import Food
-        for _ , e in l:
-            for ndb_no in e.split("-"):
-                print(Food(ndb_no).name)
+        for candidates, v in sorted(self.candidates_vector(), key=lambda x:sum(x[1]), reverse=True):
+            for ndb_no in candidates.split("-"):
+                print(Food(ndb_no).name, ndb_no)
             print("****")
 
 
