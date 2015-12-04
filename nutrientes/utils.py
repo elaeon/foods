@@ -451,10 +451,13 @@ class Rank(object):
                 index += 1
             yield index, d
     
-    def order(self, limit):
-        import itertools as it
+    def order(self, limit=None):
         self.weight_order()
-        return it.takewhile(lambda x: x[0] < limit, self.results)
+        if limit is None:
+            return self.results
+        else:
+            import itertools as it
+            return it.takewhile(lambda x: x[0] < limit, self.results)
     
     def weight_order(self, omegas=None, limit=None, natural=True):
         total = {food["attr"][0]: {"global": food["i"], "name": food["attr"][1], "val": food["val"]} 
@@ -1933,7 +1936,7 @@ class SearchCompleteFoods(object):
         self.candidates = []
         self.batch_size = batch_size
         self.selector = None
-        self.universe = [food.ndb_no_t for food in FoodDescImg.objects.all()]
+        self.universe = (food.ndb_no_t for food in FoodDescImg.objects.all())
 
     def probability(self, active_positions_values):
         import collections
@@ -1990,6 +1993,7 @@ class SearchCompleteFoods(object):
             for_delete = set([])
             data_len = []
             for _, ndb_no_v1, ndb_no_v2 in best_distance:
+                #print(_, ndb_no_v1, ndb_no_v2)
                 vector_merged = self.merge(nutrient_map[ndb_no_v1], nutrient_map[ndb_no_v2])
                 for_delete.add(ndb_no_v2)
                 min_data_l = len([x for x in vector_merged if x == 0])
@@ -2000,8 +2004,10 @@ class SearchCompleteFoods(object):
                     nutrient_map[n_key] = vector_merged
                     self.candidates.append((min_data_l, n_key))
                 elif min_data_l == self.min_data_g:
-                    pass
+                    n_key = "-".join(set(ndb_no_v1.split("-"))) + "-" + "-".join(set(ndb_no_v2.split("-")))
+                    #pass
                     #print(ndb_no_v1 + "-" + ndb_no_v2)
+                    self.candidates.append((min_data_l, n_key))
 
             if len(self.candidates) > 0:
                 tmp_min = min(self.candidates)[0]
@@ -2040,6 +2046,13 @@ class SearchCompleteFoods(object):
                 print(Food(ndb_no).name, ndb_no)
             print("****")
 
+
+    def not_found(self):
+        nutr_row_c = OrderedDict(((k, 0) for k, v in WEIGHT_NUTRS.items() if v <= 1))
+        for _, vector in self.candidates_vector():
+            for v, k in zip(vector, nutr_row_c.keys()):
+                if v == 0:
+                    print(k, v)
 
 def categories_calif(data, cache):
     import random
