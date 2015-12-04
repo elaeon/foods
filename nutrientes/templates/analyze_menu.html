@@ -62,13 +62,6 @@
 </div>
 </div>
 
-<h3>Recomendaciones</h3>
-<ol>
-{% for _, food_name in menu.best %}
-<li><a href="{% url 'view_food' food_name.attr.0 %}">{{ food_name.attr.1 }}</a></li>
-{% endfor %}
-</ol>
-
 </div>
 </div>
 {% endblock %}

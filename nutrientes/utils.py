@@ -451,9 +451,10 @@ class Rank(object):
                 index += 1
             yield index, d
     
-    def order(self):
+    def order(self, limit):
+        import itertools as it
         self.weight_order()
-        return self.results
+        return it.takewhile(lambda x: x[0] < limit, self.results)
     
     def weight_order(self, omegas=None, limit=None, natural=True):
         total = {food["attr"][0]: {"global": food["i"], "name": food["attr"][1], "val": food["val"]} 
@@ -1429,7 +1430,7 @@ def recipes_list(max_number, perfil, ordered="score", visible=True):
     perfil_intake = intake(
         perfil["edad"], 
         perfil["genero"], 
-        perfil["unidad_edad"],#.encode("utf8", "replace"), 
+        perfil["unidad_edad"], 
         perfil["rnv_type"])
     features = Recipe.create_generic_features()
     for recipe_id_name, foods in recipes.items():
@@ -1445,9 +1446,9 @@ def recipes_list(max_number, perfil, ordered="score", visible=True):
         recipes_l.append(recipe)
 
     if ordered == "score":
-        return sorted(recipes_l, key=lambda x:x.score, reverse=True)
+        return sorted(recipes_l, key=lambda x:x.score, reverse=True)[:max_number]
     else:
-        return sorted(recipes_l, key=lambda x:x.score_best(), reverse=True)
+        return sorted(recipes_l, key=lambda x:x.score_best(), reverse=True)[:max_number]
 
 
 def recipes_list_users(max_number):
@@ -1847,7 +1848,7 @@ class Recipe(object):
                     foods[ndb_no] = foods_ndb_no.pop()
             recipe_merge.foods = foods
             recipe_merge.total_nutr_data()
-            return intake_total
+            return recipe_merge
         else:
             return intake_list_list[0]
 
