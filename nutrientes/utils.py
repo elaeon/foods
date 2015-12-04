@@ -1929,14 +1929,15 @@ def search_menu():
 
 
 class SearchCompleteFoods(object):
-    def __init__(self, batch_size=50):
+    def __init__(self, min_distance=0):
         from nutrientes.models import FoodDescImg
 
         self.min_data_g = 50
         self.candidates = []
-        self.batch_size = batch_size
+        self.min_distance = min_distance
         self.selector = None
         self.universe = (food.ndb_no_t for food in FoodDescImg.objects.all())
+        self.min_distance_calculated = None
 
     def probability(self, active_positions_values):
         import collections
@@ -1977,9 +1978,12 @@ class SearchCompleteFoods(object):
             score = {ndb_no: sum(1 - probabilities[index] for index in vector)
                         for ndb_no, vector in active_positions.items()}
 
+            local_score = min((v, k) for k, v in probabilities.items())
+            #print(local_score)
+            #print(probabilities.items())
             best_distribution = sorted(score.items(), key=lambda x:x[1], reverse=True)
-            upper_best = best_distribution[:len(score)/2]
-            lower_best = best_distribution[len(score)/2:]
+            upper_best = best_distribution[:int(len(score)*.8)]
+            lower_best = best_distribution[int(len(score)*.2):]
             distance = []
             for ndb_no1, v1 in upper_best:
                 for ndb_no2, v2 in lower_best:
@@ -1987,13 +1991,14 @@ class SearchCompleteFoods(object):
                         self.difference(nutrient_map[ndb_no1], nutrient_map[ndb_no2]),
                         ndb_no1, 
                         ndb_no2))
+            if len(distance) == 0:
+                break
             max_distance = max(distance)[0]
             best_distance = (e for e in distance if e[0] == max_distance)
             #best_distance = sorted(distance, key=lambda x:x[0], reverse=True)[:self.batch_size]
             for_delete = set([])
             data_len = []
             for _, ndb_no_v1, ndb_no_v2 in best_distance:
-                #print(_, ndb_no_v1, ndb_no_v2)
                 vector_merged = self.merge(nutrient_map[ndb_no_v1], nutrient_map[ndb_no_v2])
                 for_delete.add(ndb_no_v2)
                 min_data_l = len([x for x in vector_merged if x == 0])
@@ -2005,8 +2010,6 @@ class SearchCompleteFoods(object):
                     self.candidates.append((min_data_l, n_key))
                 elif min_data_l == self.min_data_g:
                     n_key = "-".join(set(ndb_no_v1.split("-"))) + "-" + "-".join(set(ndb_no_v2.split("-")))
-                    #pass
-                    #print(ndb_no_v1 + "-" + ndb_no_v2)
                     self.candidates.append((min_data_l, n_key))
 
             if len(self.candidates) > 0:
@@ -2032,9 +2035,9 @@ class SearchCompleteFoods(object):
 
     def get_bests_candidates(self):
         candidates = sorted(self.candidates, key=lambda x:x[0])
-        self.min_distance = min(candidates)[0]
+        self.min_distance_calculated = min(candidates)[0]
         for d, candidate in candidates:
-            if d == self.min_distance:
+            if d == self.min_distance_calculated:
                 yield candidate
             else:
                 break
