@@ -1937,6 +1937,7 @@ class SearchCompleteFoods(object):
         self.min_distance = min_distance
         self.selector = None
         self.universe = (food.ndb_no_t for food in FoodDescImg.objects.all())
+        #self.universe =  (food.ndb_no_t for food in FoodDescImg.objects.exclude(ndb_no_t="09062"))
         self.min_distance_calculated = None
 
     def probability(self, active_positions_values):

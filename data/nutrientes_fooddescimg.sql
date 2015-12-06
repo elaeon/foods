@@ -12,7 +12,7 @@ SET client_min_messages = warning;
 SET search_path = public, pg_catalog;
 
 --
--- Data for Name: nutrientes_fooddescimg; Type: TABLE DATA; Schema: public; Owner: agmartinez
+-- Data for Name: nutrientes_fooddescimg; Type: TABLE DATA; Schema: public; Owner: alejandro
 --
 
 COPY nutrientes_fooddescimg (id, ndb_no_t, img, ref_img, name) FROM stdin;
@@ -187,14 +187,15 @@ COPY nutrientes_fooddescimg (id, ndb_no_t, img, ref_img, name) FROM stdin;
 169	11993	food/Eikhaas.JPG	https://commons.wikimedia.org/wiki/File:Eikhaas.JPG	Setas, maitake
 170	02028	food/Pimenton.jpg	https://commons.wikimedia.org/wiki/File:Piment%C3%B3n_Tap_de_Cort%C3%AD.jpg	Pimentón (Paprika)
 171	09062	food/Cherimoya_fruit_hg_m5UZin3.jpg		Chirimoya
+172	25000	food/Popcorn_bag_unpopped.jpg	https://en.wikipedia.org/wiki/File:Popcorn_bag_unpopped.jpg	Palomitas de maiz naturales (microondas)
 \.
 
 
 --
--- Name: nutrientes_fooddescimg_id_seq; Type: SEQUENCE SET; Schema: public; Owner: agmartinez
+-- Name: nutrientes_fooddescimg_id_seq; Type: SEQUENCE SET; Schema: public; Owner: alejandro
 --
 
-SELECT pg_catalog.setval('nutrientes_fooddescimg_id_seq', 171, true);
+SELECT pg_catalog.setval('nutrientes_fooddescimg_id_seq', 172, true);
 
 
 --
