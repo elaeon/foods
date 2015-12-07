@@ -12,10 +12,17 @@ SET client_min_messages = warning;
 SET search_path = public, pg_catalog;
 
 --
--- Data for Name: nutrientes_fooddescimg; Type: TABLE DATA; Schema: public; Owner: alejandro
+-- Data for Name: nutrientes_fooddescimg; Type: TABLE DATA; Schema: public; Owner: agmartinez
 --
 
 COPY nutrientes_fooddescimg (id, ndb_no_t, img, ref_img, name) FROM stdin;
+173	05168	food/pavo.jpg	https://commons.wikimedia.org/wiki/File:Hindu%C5%9Fka_q%C4%B1zartmas%C4%B1.jpg	Carne de pavo
+175	02045	food/Aneth_FR_2012.jpg	https://commons.wikimedia.org/wiki/File:Aneth_FR_2012.jpg	Eneldo
+174	05112	food/Rosemary_chicken.jpg	https://commons.wikimedia.org/wiki/File:Rosemary_chicken.jpg	Pollo asado
+176	02017	food/Dill_seed_tilli_siemen.jpg	https://commons.wikimedia.org/wiki/File:Dill_seed_tilli_siemen.jpg	Semillas de eneldo, secas
+76	09042	food/Blackberry_close-up.JPG		Moras azules
+79	09079	food/Dried-Cranberries.png		Arandanos rojos, secos, endulzados
+77	09050	food/PattsBlueberries.jpg		Arándanos, crudos
 36	09167	food/Rubus_loganobaccus.jpg		Loganberry
 47	09089	food/Fig.jpg		Higos
 53	11355	food/Patates.jpg		Papas, rojas
@@ -39,9 +46,6 @@ COPY nutrientes_fooddescimg (id, ndb_no_t, img, ref_img, name) FROM stdin;
 84	14352	food/Black-tea_97tBhLw.jpg	https://commons.wikimedia.org/wiki/File:Black-tea.jpg	Té negro descafeinado
 80	09163	food/11ace48794005056ae6729.jpg		Arándanos, secos, endulzados
 83	14106	food/White_Wine_Glas.jpg	https://commons.wikimedia.org/wiki/File:White_Wine_Glas.jpg	Vino de mesa, blanco
-76	09042	food/Blackberry_close-up.JPG		Moras azules
-79	09079	food/Dried-Cranberries.png		Arandanos rojos, secos, endulzados
-77	09050	food/PattsBlueberries.jpg		Arándanos, crudos
 78	09078	food/Cranberries20101210.jpg		Arándanos rojos, crudos
 75	09112	food/Grapefruit-Whole--Split.jpg		Toronja
 74	09150	food/lemon.JPG		Limón
@@ -192,10 +196,10 @@ COPY nutrientes_fooddescimg (id, ndb_no_t, img, ref_img, name) FROM stdin;
 
 
 --
--- Name: nutrientes_fooddescimg_id_seq; Type: SEQUENCE SET; Schema: public; Owner: alejandro
+-- Name: nutrientes_fooddescimg_id_seq; Type: SEQUENCE SET; Schema: public; Owner: agmartinez
 --
 
-SELECT pg_catalog.setval('nutrientes_fooddescimg_id_seq', 172, true);
+SELECT pg_catalog.setval('nutrientes_fooddescimg_id_seq', 176, true);
 
 
 --
