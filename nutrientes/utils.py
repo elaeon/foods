@@ -617,24 +617,6 @@ class Food(object):
         except KeyError:
             return None
 
-    def ranking(self):
-        _, cursor = conection()
-        query = """SELECT position 
-                    FROM ranking 
-                    WHERE ndb_no = '{ndb_no}'
-                    AND type_position='global'""".format(ndb_no=self.ndb_no)
-        cursor.execute(query)
-        global_ = cursor.fetchall()
-        query = """SELECT position 
-                    FROM ranking 
-                    WHERE ndb_no = '{ndb_no}'
-                    AND type_position='category'""".format(ndb_no=self.ndb_no)
-        cursor.execute(query)
-        category = cursor.fetchall()
-        if len(global_) > 0:
-            return {"global": global_[0][0], "category": category[0][0]}
-        return None
-
     def radio(self):
         if self.radio_omega_raw == 0 and self.omegas.get("omega3", [0,0])[1] == 0:
             return "%s:0" % (round(self.omegas.get("omega6", [0,0])[1], 2),)
@@ -933,6 +915,37 @@ class Food(object):
             return self.nutrients
         else:
             return self.top_nutrients_avg()
+
+    def most_similar(self):
+        matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.csv')
+        data = matrix.to_dict(True)
+        data_nutr = {}
+        for ndb_no, nutrients in data.items():
+            for nutr_no, v in nutrients:
+                if v > 0:
+                    data_nutr.setdefault(nutr_no, {})
+                    data_nutr[nutr_no][ndb_no] = v
+
+        data_s  = None
+        for nutr_no, _, v, u in self.nutrients:
+            try:
+                tmp = set(data_nutr[nutr_no].keys())
+            except KeyError:
+                pass
+            if data_s is None:
+                data_s = tmp
+            else:
+                data_s = data_s.intersection(tmp)
+
+        v_base = [e for _, e in data[self.ndb_no]]
+        v_base_0 = [e for _, e in data[self.ndb_no] if e > 0]
+        vectors = []
+        for ndb_no in data_s:
+            vector_other_0 = [e for _, e in data[ndb_no] if e > 0]
+            if len(vector_other_0) == len(v_base_0):
+                vectors.append((ndb_no, [e for _, e in data[ndb_no]]))
+        foods = self.min_distance((self.ndb_no, v_base), vectors, top=5)
+        return ((ndb_no, self.get_food(ndb_no), v) for ndb_no, v in foods)
 
 def create_common_table(dicts):
     common_keys = set(dicts[0].keys())
@@ -1929,15 +1942,15 @@ def search_menu():
 
 
 class SearchCompleteFoods(object):
-    def __init__(self, min_distance=0):
+    def __init__(self):
         from nutrientes.models import FoodDescImg
 
         self.min_data_g = 50
         self.candidates = []
-        self.min_distance = min_distance
         self.selector = None
-        self.universe = (food.ndb_no_t for food in FoodDescImg.objects.all())
+        #self.universe = (food.ndb_no_t for food in FoodDescImg.objects.all())
         #self.universe =  (food.ndb_no_t for food in FoodDescImg.objects.exclude(ndb_no_t="09062"))
+        self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
         self.min_distance_calculated = None
 
     def probability(self, active_positions_values):
@@ -1980,8 +1993,6 @@ class SearchCompleteFoods(object):
                         for ndb_no, vector in active_positions.items()}
 
             local_score = min((v, k) for k, v in probabilities.items())
-            #print(local_score)
-            #print(probabilities.items())
             best_distribution = sorted(score.items(), key=lambda x:x[1], reverse=True)
             upper_best = best_distribution[:int(len(score)*.8)]
             lower_best = best_distribution[int(len(score)*.2):]
@@ -1996,7 +2007,6 @@ class SearchCompleteFoods(object):
                 break
             max_distance = max(distance)[0]
             best_distance = (e for e in distance if e[0] == max_distance)
-            #best_distance = sorted(distance, key=lambda x:x[0], reverse=True)[:self.batch_size]
             for_delete = set([])
             data_len = []
             for _, ndb_no_v1, ndb_no_v2 in best_distance:
@@ -2045,9 +2055,19 @@ class SearchCompleteFoods(object):
 
     def print_(self):
         from nutrientes.utils import Food
+        light_format = {
+            "perfil": {"edad": 40, "genero": "H", "unidad_edad": u"años", "rnv_type": 1},
+            "foods": None,
+            "name": ""   
+        }
         for candidates, v in sorted(self.candidates_vector(), key=lambda x:sum(x[1]), reverse=True):
+            foods = {}
             for ndb_no in candidates.split("-"):
                 print(Food(ndb_no).name, ndb_no)
+                foods[ndb_no] = 100
+            light_format["foods"] = foods
+            recipe = Recipe.from_light_format(light_format, data=True)
+            print recipe.calc_score()
             print("****")
 
 

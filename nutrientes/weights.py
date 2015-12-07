@@ -270,4 +270,5 @@ WEIGHT_NUTRS = {
     "639": .1, #Campesterol
     "636": .1, #Phytosterols
     "511": .1, #Arginine
+    "454": .1, #Betaine
 }
