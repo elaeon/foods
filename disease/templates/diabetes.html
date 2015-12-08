@@ -76,7 +76,7 @@
             <div class="panel panel-default">
                 <div class="panel-heading list-group-item" style="text-align:justify;">
                     <h4>¿Hay cura?</h4>
-         Si se detecta la prediabetes, debe de actuarse de inmediato (hacer ejercicio, mejor alimentación, dejar de fumar, evitar el estrés) para llegar a los niveles normales de glucosa en la sangre. Si se llega a tener diabetes, <a href="http://www.ncl.ac.uk/magres/research/diabetes/reversal.htm">puede revertirse esta condición</a>, aunque esto depende del tiempo de manifestación, la severidad del caso y de la genética.
+         Si se detecta la prediabetes, para llegar a los niveles normales de glucosa en la sangre, debe de actuarse de inmediato (hacer ejercicio, mejor alimentación, dejar de fumar, evitar el estrés). Si se llega a tener diabetes, <a href="http://www.ncl.ac.uk/magres/research/diabetes/reversal.htm">puede revertirse esta condición</a> (<a href="http://link.springer.com/article/10.1007%2Fs00125-011-2204-7">artículo</a>), aunque esto depende del tiempo de manifestación, la severidad del caso y de la genética.
                 </div>
             </div>
         </div>
@@ -128,7 +128,7 @@
 <td>* Enfermedades asociadas con la diabetes.</td>
 </tr>
 <tr>
-<td>Fuente: <a href="http://www.inegi.org.mx/est/contenidos/Proyectos/registros/vitales/mortalidad/">Inegi</a></td>
+<td>Fuente: <a href="http://www.inegi.org.mx/est/contenidos/proyectos/registros/vitales/mortalidad/tabulados/PC.asp?t=14&c=11817">Inegi</a></td>
 </tr>
 </tfoot>
 </table>
@@ -216,6 +216,32 @@
     </div>
 </div>
 
+<div class="col-sm-6 col-md-4">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+        <h4>Calcula tu índide de masa corporal (IMC)</h4>
+        <form name="bmiForm">
+        <table class="table table-striped table-hover table-condensed">
+        <tr>
+            <td style="width:150px;">Tu peso(kg):</td><td><input type="text" name="weight" style="width:100px;"></td>
+        </tr>
+        <tr>
+            <td>Tu altura(cm):</td><td><input type="text" name="height" style="width:100px;"></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align:right;"><input type="button" value="Calcula IMC" onClick="calculateBmi();"></td>
+        </tr>
+        <tr>
+            <td colspan="2"><span id="imc-result"></span></td>
+        </tr>
+        <tr>
+            <td colspan="2"><span id="imc-meaning"></span></td>
+        </tr>
+        </table>
+        </form>
+        </div>
+    </div>
+    </div>
 
 <div class="starter-template2">
     <div id="graphContainer" style="width:auto;"></div>
@@ -340,5 +366,29 @@ svg.append("text", "g")
    .text("imc normal");
 });
 
+
+function calculateBmi() {
+    var weight = document.bmiForm.weight.value
+    var height = document.bmiForm.height.value
+    if(weight > 0 && height > 0){	
+        var finalBmi = weight/(height/100*height/100)
+        $("#imc-result").html("Tu IMC es: " + finalBmi);
+        if(finalBmi < 18.5){
+            $("#imc-meaning").html("<b style='color:orange;'>Estas en un nivel bajo de IMC.</b>")
+        }
+        if(finalBmi > 18.5 && finalBmi < 25){
+            $("#imc-meaning").html("<b style='color:green;'>Estás en un nivel adecuado de IMC.</b>")
+        }
+        if(finalBmi > 25 && finalBmi < 30){
+            $("#imc-meaning").html("<b style='color:orange;'>Tienes sobrepeso.</b>")
+        }
+        if(finalBmi > 30){
+            $("#imc-meaning").html("<b style='color:red;'>Tienes obesidad.</b>")
+        }
+    }
+    else {
+        alert("Please Fill in everything correctly")
+    }
+}
 </script>
 {% endblock %}
