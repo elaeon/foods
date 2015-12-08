@@ -302,14 +302,14 @@ def set_comparation(request, ndb_no, operation):
 @perfil
 def list_food_category(request, category_id, order, intake_params={}):
     from nutrientes.utils import alimentos_category_name, get_range
-    from nutrientes.utils import ranking_nutr, ranking_nutr_perfil
+    from nutrientes.utils import alfabetic_food, ranking_nutr_perfil
 
     categoria = alimentos_category_name(category_id)[0][0]
     if order == u"perfil":
         edad_range = get_range(intake_params["edad"], intake_params["unidad_edad"])
         foods = ranking_nutr_perfil(intake_params, edad_range, category_food=category_id)
     else:
-        foods = ranking_nutr(category_food=category_id)
+        foods = alfabetic_food(category_food=category_id)
 
     return render(request, "food_category.html", {
         "foods": foods, 

@@ -325,13 +325,32 @@ def ranking_nutr(category_food=None):
                 AND type_position = 'global'
                 ORDER BY position"""
     else:
-        query = """SELECT position, food_des.ndb_no, food_des.long_desc_es, food_des.long_desc
+        query = """SELECT food_des.ndb_no, food_des.long_desc_es, food_des.long_desc
                 FROM food_des, ranking, fd_group
                 WHERE food_des.ndb_no=ranking.ndb_no
                 AND fd_group.fdgrp_cd=food_des.fdgrp_cd
                 AND type_position = 'category'
                 AND fd_group.fdgrp_cd='{category}'
                 ORDER BY position""".format(category=category_food)
+
+    cursor.execute(query)
+    return cursor.fetchall()
+
+
+def alfabetic_food(category_food=None):
+    _, cursor = conection()
+    
+    if category_food is None:
+        query = """SELECT food_des.ndb_no, long_desc_es, fd_group.fdgrp_cd, fdgrp_desc_es, food_des.long_desc
+                FROM food_des, fd_group
+                WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+                ORDER BY long_desc_es"""
+    else:
+        query = """SELECT food_des.ndb_no, food_des.long_desc_es, food_des.long_desc
+                FROM food_des, fd_group
+                WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+                AND fd_group.fdgrp_cd='{category}'
+                ORDER BY long_desc_es""".format(category=category_food)
 
     cursor.execute(query)
     return cursor.fetchall()
@@ -916,7 +935,7 @@ class Food(object):
         else:
             return self.top_nutrients_avg()
 
-    def most_similar(self):
+    def nutrients_twins(self):
         matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.csv')
         data = matrix.to_dict(True)
         data_nutr = {}
@@ -926,17 +945,15 @@ class Food(object):
                     data_nutr.setdefault(nutr_no, {})
                     data_nutr[nutr_no][ndb_no] = v
 
-        data_s  = None
-        for nutr_no, _, v, u in self.nutrients:
+        nutr_no, _, _, _ = self.nutrients[0]
+        data_s = set(data_nutr.get(nutr_no, []).keys())
+        for nutr_no, _, _, _ in self.nutrients[1:]:
             try:
                 tmp = set(data_nutr[nutr_no].keys())
+                data_s = data_s.intersection(tmp)
             except KeyError:
                 pass
-            if data_s is None:
-                data_s = tmp
-            else:
-                data_s = data_s.intersection(tmp)
-
+        
         v_base = [e for _, e in data[self.ndb_no]]
         v_base_0 = [e for _, e in data[self.ndb_no] if e > 0]
         vectors = []
