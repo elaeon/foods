@@ -1959,15 +1959,14 @@ def search_menu():
 
 
 class SearchCompleteFoods(object):
-    def __init__(self):
+    def __init__(self, universe=None):
         from nutrientes.models import FoodDescImg
 
-        self.min_data_g = 50
-        self.candidates = []
         self.selector = None
-        #self.universe = (food.ndb_no_t for food in FoodDescImg.objects.all())
-        #self.universe =  (food.ndb_no_t for food in FoodDescImg.objects.exclude(ndb_no_t="09062"))
-        self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
+        if universe is None:
+            self.universe = FoodDescImg.objects.values_list('ndb_no_t', flat=True)
+            #self.universe =  FoodDescImg.objects.exclude(ndb_no_t="09062").values_list('ndb_no_t', flat=True)
+            #self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
         self.min_distance_calculated = None
 
     def probability(self, active_positions_values):
@@ -1996,11 +1995,13 @@ class SearchCompleteFoods(object):
     def all_is_1(self, data):
         return all((v == 1 for _, v in data.items()))
 
-    def search(self, selector="nutrients"):
+    def search(self, selector="nutrients", upper=0.8, lower=0.2):
         self.selector = selector
         nutrient_map = dict(self.nutrients_to_map(self.universe, selector))
         active_positions = {ndb_no: [i for i, e in enumerate(vector) if e > 0] 
                             for ndb_no, vector in nutrient_map.items()}
+        min_data_g = 50
+        counter = 0
         while True:
             probabilities = self.probability(
                 filter(lambda x: len(x) > 0, active_positions.values()))
@@ -2011,8 +2012,8 @@ class SearchCompleteFoods(object):
 
             local_score = min((v, k) for k, v in probabilities.items())
             best_distribution = sorted(score.items(), key=lambda x:x[1], reverse=True)
-            upper_best = best_distribution[:int(len(score)*.8)]
-            lower_best = best_distribution[int(len(score)*.2):]
+            upper_best = best_distribution[:int(len(score)*upper)]
+            lower_best = best_distribution[int(len(score)*lower):]
             distance = []
             for ndb_no1, v1 in upper_best:
                 for ndb_no2, v2 in lower_best:
@@ -2022,34 +2023,36 @@ class SearchCompleteFoods(object):
                         ndb_no2))
             if len(distance) == 0:
                 break
+            print(counter, len(distance))
             max_distance = max(distance)[0]
             best_distance = (e for e in distance if e[0] == max_distance)
             for_delete = set([])
             data_len = []
+            tmp_min = min_data_g
             for _, ndb_no_v1, ndb_no_v2 in best_distance:
                 vector_merged = self.merge(nutrient_map[ndb_no_v1], nutrient_map[ndb_no_v2])
                 for_delete.add(ndb_no_v2)
                 min_data_l = len([x for x in vector_merged if x == 0])
-                if min_data_l < self.min_data_g:
+                if min_data_l < min_data_g:
                     for_delete.add(ndb_no_v1)
                     n_key = "-".join(set(ndb_no_v1.split("-"))) + "-" + "-".join(set(ndb_no_v2.split("-")))
                     active_positions[n_key] = [i for i, v in enumerate(vector_merged) if v > 0]
                     nutrient_map[n_key] = vector_merged
-                    self.candidates.append((min_data_l, n_key))
-                elif min_data_l == self.min_data_g:
+                elif min_data_l == min_data_g:
                     n_key = "-".join(set(ndb_no_v1.split("-"))) + "-" + "-".join(set(ndb_no_v2.split("-")))
-                    self.candidates.append((min_data_l, n_key))
+                else:
+                    continue
+                if min_data_l < tmp_min:
+                    tmp_min = min_data_l
+                yield (min_data_l, n_key)
 
-            if len(self.candidates) > 0:
-                tmp_min = min(self.candidates)[0]
-                if tmp_min < self.min_data_g:
-                    self.min_data_g = tmp_min
+            if tmp_min < min_data_g:
+                min_data_g = tmp_min
 
             for e in for_delete:
                 del active_positions[e]
                 del nutrient_map[e]
-
-        return sorted(self.candidates, key=lambda x:x[0])
+            counter += 1
 
     def candidates_vector(self):
         for candidates_key in self.get_bests_candidates():
@@ -2062,7 +2065,7 @@ class SearchCompleteFoods(object):
             yield candidates_key, vector
 
     def get_bests_candidates(self):
-        candidates = sorted(self.candidates, key=lambda x:x[0])
+        candidates = sorted(self.search(), key=lambda x:x[0])
         self.min_distance_calculated = min(candidates)[0]
         for d, candidate in candidates:
             if d == self.min_distance_calculated:
@@ -2294,3 +2297,54 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
                     self.nutr_detail.get(nutr_no, ''),  
                     self.weights_best_for.get(nutr_no) > 1)
                 for nutr_no in self.weights_best_for])
+
+
+class ExamineFoodVariants(object):
+    def __init__(self):
+        self.data = self.data_food()
+        self.nutr = {nutr_no: nutrdesc for nutr_no, nutrdesc in nutr_features()}
+
+    def data_food(self):
+        matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.csv')
+        return matrix.to_dict(True)
+
+    def data_set_fish_moist_heat(self):
+        raw = ["15177", "15242", "15136", "15144", "15143", "15139", "15164", "15171", "15166"]
+        moist_heat = ["15178", "15243", "15137", "15227", "15226", "15140", "15165", "15231", "15230"]
+        if len(raw) == len(moist_heat):
+            return zip(raw, moist_heat)
+        else:
+            print("Error: raw and moist_heat have distinct length")
+
+    def data_set_fish_dry_heat(self):
+        raw = ["15245", "15028", "15110", "15115", "15114", "15039", "15043", "15015", "15045", "15074", "15019", "15022", "15007", "15046", "15051", "15050", "15008", "15053", "15104", "15036", "15070", "15072", "15107", "15044", "15112"]
+        dry_heat = ["15246", "15029", "15111", "15116", "15219", "15040", "15197", "15016", "15199", "15208", "15192", "15193", "15191", "15047", "15052", "15201", "15009", "15202", "15105", "15037", "15071", "15207", "15217", "15198", "15113"]
+        if len(raw) == len(dry_heat):
+            return zip(raw, dry_heat)
+        else:
+            print("Error: raw and dry_heat have distinct length")
+
+    def compare(self, no_ndb1, no_ndb2):
+        increased = []
+        decreased = []
+        for v1, v2 in zip(self.data[no_ndb1], self.data[no_ndb2]):
+            diff = v1[1] - v2[1]
+            if diff < 0:
+                increased.append(self.nutr.get(v1[0], v1[0]))
+            elif diff > 0:
+                decreased.append(self.nutr.get(v1[0], v1[0]))
+        return increased, decreased
+
+    def basic_test(self):
+        total_i= set([])
+        total_d = set([])
+        #for no_ndb1, no_ndb2 in self.data_set_fish_moist_heat():
+        for no_ndb1, no_ndb2 in self.data_set_fish_dry_heat():
+            increased, decreased = self.compare(no_ndb1, no_ndb2)
+            total_i = total_i.union(set(increased))
+            total_d = total_d.union(set(decreased))
+        #print("***********", total_i)
+        #print("***********", total_d)
+        #print("***********", total_i.intersection(total_d))
+        print("***********", total_i.difference(total_d))
+        print("***********", total_d.difference(total_i))
