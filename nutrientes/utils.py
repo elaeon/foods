@@ -1995,7 +1995,7 @@ class SearchCompleteFoods(object):
     def all_is_1(self, data):
         return all((v == 1 for _, v in data.items()))
 
-    def search(self, selector="nutrients", upper=0.8, lower=0.2):
+    def search(self, selector="nutrients", upper=0.8, lower=0.8):
         self.selector = selector
         nutrient_map = dict(self.nutrients_to_map(self.universe, selector))
         active_positions = {ndb_no: [i for i, e in enumerate(vector) if e > 0] 
@@ -2299,10 +2299,31 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
                 for nutr_no in self.weights_best_for])
 
 
+class FoodVariant(object):
+    def __init__(self, ndb_no, category=None):
+        self.ndb_no = ndb_no
+        self.category = category
+
+class FoodGroup(object):
+    def __init__(self, fv1, fv2, count):
+        self.fv1 = fv1
+        self.fv2 = fv2
+        self.count = count
+        self.increased = []
+        self.decreased = []
+
+    def set_data(self, increased, decreased):
+        self.increased = increased
+        self.decreased = decreased
+        
+
 class ExamineFoodVariants(object):
     def __init__(self):
         self.data = self.data_food()
         self.nutr = {nutr_no: nutrdesc for nutr_no, nutrdesc in nutr_features()}
+        self.increased_100 = None
+        self.decreased_100 = None
+        self.cases = {}
 
     def data_food(self):
         matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.csv')
@@ -2317,34 +2338,74 @@ class ExamineFoodVariants(object):
             print("Error: raw and moist_heat have distinct length")
 
     def data_set_fish_dry_heat(self):
-        raw = ["15245", "15028", "15110", "15115", "15114", "15039", "15043", "15015", "15045", "15074", "15019", "15022", "15007", "15046", "15051", "15050", "15008", "15053", "15104", "15036", "15070", "15072", "15107", "15044", "15112"]
-        dry_heat = ["15246", "15029", "15111", "15116", "15219", "15040", "15197", "15016", "15199", "15208", "15192", "15193", "15191", "15047", "15052", "15201", "15009", "15202", "15105", "15037", "15071", "15207", "15217", "15198", "15113"]
+        raw = ["15245", "15028", "15110", "15115", "15114", "15039", "15043", "15015", "15045", "15074", "15019", "15022", "15007", "15046", "15051", "15050", "15008", "15053", "15104", "15036", "15070", "15072", "15107", "15044", "15112", "15064", "15033", "15132", "15031", "15101", "15057", "15005", "15130", "15062", "15066", "15065", "15068", "15006", "15054", "15129", "15073", "15094", "15055", "15090", "15059", "15097"]
+        dry_heat = ["15246", "15029", "15111", "15116", "15219", "15040", "15197", "15016", "15199", "15208", "15192", "15193", "15191", "15047", "15052", "15201", "15009", "15202", "15105", "15037", "15071", "15207", "15217", "15198", "15113", "15204", "15034", "15133", "15032", "15102", "15058", "15189", "15223", "15063", "15067", "15205", "15069", "15190", "15203", "15222", "15232", "15215", "15056", "15213", "15206", "15098"]
         if len(raw) == len(dry_heat):
             return zip(raw, dry_heat)
         else:
             print("Error: raw and dry_heat have distinct length")
 
-    def compare(self, no_ndb1, no_ndb2):
-        increased = []
-        decreased = []
+    def compare(self, no_ndb1, no_ndb2, count):
+        increased = set([])
+        decreased = set([])
         for v1, v2 in zip(self.data[no_ndb1], self.data[no_ndb2]):
             diff = v1[1] - v2[1]
             if diff < 0:
-                increased.append(self.nutr.get(v1[0], v1[0]))
+                increased.add(self.nutr.get(v1[0], v1[0]))
             elif diff > 0:
-                decreased.append(self.nutr.get(v1[0], v1[0]))
-        return increased, decreased
+                decreased.add(self.nutr.get(v1[0], v1[0]))
+        f = FoodGroup(FoodVariant(no_ndb1, 0), FoodVariant(no_ndb2, 1), count)
+        f.set_data(increased, decreased)
+        return f
 
-    def basic_test(self):
+    def process(self):
         total_i= set([])
         total_d = set([])
+        foods = {}
         #for no_ndb1, no_ndb2 in self.data_set_fish_moist_heat():
+        count = 1
         for no_ndb1, no_ndb2 in self.data_set_fish_dry_heat():
-            increased, decreased = self.compare(no_ndb1, no_ndb2)
-            total_i = total_i.union(set(increased))
-            total_d = total_d.union(set(decreased))
-        #print("***********", total_i)
-        #print("***********", total_d)
-        #print("***********", total_i.intersection(total_d))
-        print("***********", total_i.difference(total_d))
-        print("***********", total_d.difference(total_i))
+            food_group = self.compare(no_ndb1, no_ndb2, count)
+            total_i = total_i.union(food_group.increased)
+            total_d = total_d.union(food_group.decreased)
+            foods[count] = food_group
+            count += 1
+
+        variants = total_i.intersection(total_d)
+        self.csv(foods, variants)
+        self.increased_100 = total_i.difference(total_d)
+        self.decreased_100 = total_d.difference(total_i)
+        return foods
+
+    def evaluate_inc_dec(self):
+        foods = self.process()
+        nutr = {}
+        for nutrdesc in self.nutr.values():
+            total = 0
+            count = 1
+            for count, food in foods.items():
+                if nutrdesc in food.increased:
+                    total += 1
+                #elif nutrdesc in f.decreased:
+                #    self.cases.setdefault(count, )
+            nutr[nutrdesc] = total/float(count)
+        return nutr
+            
+    def prepare_variants(self, foods, variants):
+        for food_group in foods.values():
+            for fv in [food_group.fv1, food_group.fv2]:
+                ndb_no = fv.ndb_no
+                nutrs = {self.nutr.get(nutr_no, nutr_no).encode('utf-8'): v 
+                    for nutr_no, v in self.data[ndb_no] if self.nutr.get(nutr_no, nutr_no) in variants}
+                yield fv, food_group.count, nutrs
+
+    def csv(self, foods, variants):
+        import csv
+        with open('variants.csv', 'w') as csvfile:
+            fieldnames = [e.encode('utf-8') for e in variants]
+            writer = csv.DictWriter(csvfile, fieldnames=["count", "ndb_no", "desc", "category"] + fieldnames)
+            writer.writeheader()
+            for fv, count, nutrs in self.prepare_variants(foods, variants):
+                dict_ = {"ndb_no": fv.ndb_no, "category": fv.category, "count": count}
+                dict_.update(nutrs)
+                writer.writerow(dict_)
