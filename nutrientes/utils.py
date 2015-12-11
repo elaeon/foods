@@ -2309,8 +2309,8 @@ class FoodGroup(object):
         self.fv1 = fv1
         self.fv2 = fv2
         self.count = count
-        self.increased = []
-        self.decreased = []
+        self.increased = None
+        self.decreased = None
 
     def set_data(self, increased, decreased):
         self.increased = increased
@@ -2335,38 +2335,41 @@ class ExamineFoodVariants(object):
             print("Error: raw and moist_heat have distinct length")
 
     def data_set_fish_dry_heat(self):
-        raw = ["15245", "15028", "15110", "15115", "15114", "15039", "15043", "15015", "15045", "15074", "15019", "15022", "15007", "15046", "15051", "15050", "15008", "15053", "15104", "15036", "15070", "15072", "15107", "15044", "15112", "15064", "15033", "15132", "15031", "15101", "15057", "15005", "15130", "15062", "15066", "15065", "15068", "15006", "15054", "15129", "15073", "15094", "15055", "15090", "15059", "15097"]
-        dry_heat = ["15246", "15029", "15111", "15116", "15219", "15040", "15197", "15016", "15199", "15208", "15192", "15193", "15191", "15047", "15052", "15201", "15009", "15202", "15105", "15037", "15071", "15207", "15217", "15198", "15113", "15204", "15034", "15133", "15032", "15102", "15058", "15189", "15223", "15063", "15067", "15205", "15069", "15190", "15203", "15222", "15232", "15215", "15056", "15213", "15206", "15098"]
+        raw = ["15245", "15028", "15110", "15115", "15114", "15039", "15043", "15015", "15045", "15074", "15019", "15022", "15007", "15046", "15051", "15050", "15008", "15053", "15104", "15036", "15070", "15072", "15107", "15044", "15112", "15064", "15033", "15132", "15031", "15101", "15057", "15005", "15130", "15062", "15066", "15065", "15068", "15006", "15054", "15129", "15073", "15094", "15055", "15090", "15059", "15097", "15091", "15134", "15103", "15079", "15083", "15085", "15108", "15024", "15261"]
+        dry_heat = ["15246", "15029", "15111", "15116", "15219", "15040", "15197", "15016", "15199", "15208", "15192", "15193", "15191", "15047", "15052", "15201", "15009", "15202", "15105", "15037", "15071", "15207", "15217", "15198", "15113", "15204", "15034", "15133", "15032", "15102", "15058", "15189", "15223", "15063", "15067", "15205", "15069", "15190", "15203", "15222", "15232", "15215", "15056", "15213", "15206", "15098", "15092", "15224", "15216", "15211", "15212", "15086", "15218", "15195", "15262"]
         if len(raw) == len(dry_heat):
             return zip(raw, dry_heat)
         else:
             print("Error: raw and dry_heat have distinct length")
 
     def compare(self, no_ndb1, no_ndb2, count):
-        increased = set([])
-        decreased = set([])
+        increased = {}
+        decreased = {}
         for v1, v2 in zip(self.data[no_ndb1], self.data[no_ndb2]):
             diff = v1[1] - v2[1]
+            try:
+                v = ((v2[1] * 100) / v1[1])
+            except ZeroDivisionError:
+                v = 0
             if diff < 0:
-                increased.add(self.nutr.get(v1[0], v1[0]))
+                increased[self.nutr.get(v1[0], v1[0])] = v - 100
             elif diff > 0:
-                decreased.add(self.nutr.get(v1[0], v1[0]))
+                decreased[self.nutr.get(v1[0], v1[0])] = -v
         fg = FoodGroup(FoodVariant(no_ndb1, 0), FoodVariant(no_ndb2, 1), count)
         fg.set_data(increased, decreased)
         return fg
 
-    def process(self):
+    def process(self, function_dataset):
         foods = {}
-        #for no_ndb1, no_ndb2 in self.data_set_fish_moist_heat():
-        for i, (no_ndb1, no_ndb2) in enumerate(self.data_set_fish_dry_heat(), 1):
+        for i, (no_ndb1, no_ndb2) in enumerate(function_dataset(), 1):
             foods[i] = self.compare(no_ndb1, no_ndb2, i)
 
         #variants = total_i.intersection(total_d)
         #self.csv(foods, variants)
         return foods
 
-    def evaluate_inc_dec(self):
-        foods = self.process()
+    def evaluate_inc_dec(self, function_):
+        foods = self.process(function_)
         nutr = {}
         k = self.data.keys()[0]
         nutr_list = [nutr_no for nutr_no, _ in self.data[k]]
@@ -2374,15 +2377,41 @@ class ExamineFoodVariants(object):
             count = 0
             nutrdesc = self.nutr.get(nutr_no, nutr_no)
             count_null = 0
+            prom_v = 0
             for food in foods.values():
                 if nutrdesc in food.increased:
                     count += 1
+                    prom_v += food.increased[nutrdesc]
                 elif not nutrdesc in food.decreased:
                     count_null += 1
             if count_null != len(foods):
-                nutr[nutrdesc] = count/float(len(foods))
+                nutr[nutrdesc] = (count/float(len(foods)), prom_v/float(len(foods)))
         return nutr
             
+    def test(self, option):
+        if option == 0:
+            function_ = self.data_set_fish_dry_heat
+        elif option == 1:
+            function_ = self.data_set_fish_moist_heat
+
+        nutr = self.evaluate_inc_dec(function_)
+        for k, (v, p) in nutr.items():
+            if v == 1:
+                print("OK", k, v, p)
+
+        for k, (v, p) in nutr.items():
+            if .90 <= v < 1:
+                print("90%", k, v, p)
+
+        for k, (v, p) in nutr.items():
+            if .0 < v < .90:
+                print("<90%", k, v, p)
+
+        for k, (v, p) in nutr.items():
+            if v == 0:
+                print("BAD", k, v, p)
+
+
     def prepare_variants(self, foods, variants):
         for food_group in foods.values():
             for fv in [food_group.fv1, food_group.fv2]:
