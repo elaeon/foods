@@ -2321,9 +2321,6 @@ class ExamineFoodVariants(object):
     def __init__(self):
         self.data = self.data_food()
         self.nutr = {nutr_no: nutrdesc for nutr_no, nutrdesc in nutr_features()}
-        self.increased_100 = None
-        self.decreased_100 = None
-        self.cases = {}
 
     def data_food(self):
         matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.csv')
@@ -2354,41 +2351,36 @@ class ExamineFoodVariants(object):
                 increased.add(self.nutr.get(v1[0], v1[0]))
             elif diff > 0:
                 decreased.add(self.nutr.get(v1[0], v1[0]))
-        f = FoodGroup(FoodVariant(no_ndb1, 0), FoodVariant(no_ndb2, 1), count)
-        f.set_data(increased, decreased)
-        return f
+        fg = FoodGroup(FoodVariant(no_ndb1, 0), FoodVariant(no_ndb2, 1), count)
+        fg.set_data(increased, decreased)
+        return fg
 
     def process(self):
-        total_i= set([])
-        total_d = set([])
         foods = {}
         #for no_ndb1, no_ndb2 in self.data_set_fish_moist_heat():
-        count = 1
-        for no_ndb1, no_ndb2 in self.data_set_fish_dry_heat():
-            food_group = self.compare(no_ndb1, no_ndb2, count)
-            total_i = total_i.union(food_group.increased)
-            total_d = total_d.union(food_group.decreased)
-            foods[count] = food_group
-            count += 1
+        for i, (no_ndb1, no_ndb2) in enumerate(self.data_set_fish_dry_heat(), 1):
+            foods[i] = self.compare(no_ndb1, no_ndb2, i)
 
-        variants = total_i.intersection(total_d)
-        self.csv(foods, variants)
-        self.increased_100 = total_i.difference(total_d)
-        self.decreased_100 = total_d.difference(total_i)
+        #variants = total_i.intersection(total_d)
+        #self.csv(foods, variants)
         return foods
 
     def evaluate_inc_dec(self):
         foods = self.process()
         nutr = {}
-        for nutrdesc in self.nutr.values():
-            total = 0
-            count = 1
-            for count, food in foods.items():
+        k = self.data.keys()[0]
+        nutr_list = [nutr_no for nutr_no, _ in self.data[k]]
+        for nutr_no in nutr_list:
+            count = 0
+            nutrdesc = self.nutr.get(nutr_no, nutr_no)
+            count_null = 0
+            for food in foods.values():
                 if nutrdesc in food.increased:
-                    total += 1
-                #elif nutrdesc in f.decreased:
-                #    self.cases.setdefault(count, )
-            nutr[nutrdesc] = total/float(count)
+                    count += 1
+                elif not nutrdesc in food.decreased:
+                    count_null += 1
+            if count_null != len(foods):
+                nutr[nutrdesc] = count/float(len(foods))
         return nutr
             
     def prepare_variants(self, foods, variants):
