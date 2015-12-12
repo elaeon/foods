@@ -908,25 +908,41 @@ class Food(object):
             return None 
 
     def is_weight_nutrients(self, weights_good):
-        MIN_PORCENTAJE_EXIST = .5 if len(weights_good) <= 20 else .7
+        def MIN_PORCENTAJE_EXIST(l_weights):
+            if l_weights <= 5:
+                v = l_weights * .8
+            elif 5 <= l_weights <= 10:
+                v = l_weights * .6
+            elif 10 <= l_weights:
+                v = l_weights * .5
+            else:
+                v = 0
+            return round(v, 0)
+            
         WEIGHT_AVG_NUTR = .3
-        nutr_weight = []
+        nutr_weight = {}
         nutrients = {nutr_no: (v, u) for nutr_no, _, v, u in self.nutrients}
-        for w_nutr_no, _ in weights_good:
-            val_min = self.nutr_avg.get(w_nutr_no, [0,0])[1] * WEIGHT_AVG_NUTR
+        for w_nutr_no, weight in weights_good:
+            if weight == 1:
+                val_min = self.nutr_avg.get(w_nutr_no, [0,0])[1] * (WEIGHT_AVG_NUTR * .3) 
+            else:
+                val_min = self.nutr_avg.get(w_nutr_no, [0,0])[1] * WEIGHT_AVG_NUTR
             v_u = nutrients.get(w_nutr_no, [-1, None])
             if val_min <= v_u[0]:
-                nutr_weight.append((w_nutr_no, 
+                nutr_weight[w_nutr_no] = (
+                    weight,
                     v_u,
-                    self.nutr_avg.get(w_nutr_no, "")[0], 
-                    self.nutr_detail.get(w_nutr_no, "")))
+                    self.nutr_avg[w_nutr_no][0], 
+                    self.nutr_detail.get(w_nutr_no, ""))
 
-        approved = (int(len(weights_good) * MIN_PORCENTAJE_EXIST)) <= len(nutr_weight)
+        len_w = len([w for w, _, _, _ in nutr_weight.values() if w < 1])
+        len_weights_good_w = len([w for n, w in weights_good if w < 1])
+        approved = MIN_PORCENTAJE_EXIST(len_weights_good_w) <= len_w
         if approved:
-            nutrientes_units_converted = convert_units_scale((v, u) for _, (v, u), _, _ in nutr_weight)
-            totals = [(n[0], nc, n[2], n[3]) 
-                for n, nc in zip(nutr_weight, nutrientes_units_converted) if nc != None]
-            self.weights_nutrients_approved = sorted(totals, key=lambda x:x[1], reverse=True)
+            nutrientes_units_converted = convert_units_scale((v, u) for _, (v, u), _, _ in nutr_weight.values())
+            totals = [(nc, n[2], n[3]) 
+                for n, nc in zip(nutr_weight.values(), nutrientes_units_converted) if nc != None]
+            self.weights_nutrients_approved = sorted(totals, key=lambda x:x[0], reverse=True)
         return approved
 
     def nutrients_selector(self, seleccion):
@@ -2243,7 +2259,8 @@ class OptionSearch(object):
             u"Ayuda a la memoria y concentración": weights.WEIGHT_NUTRS_BRAIN_MEMORY,
             "Ayuda a la vista": weights.WEIGHT_NUTRS_EYES,
             "Ayuda a la piel": weights.WEIGHT_NUTRS_SKIN,
-            "Necesarios durante el embarazo": weights.WEIGHT_NUTRS_PREGNANCY,}
+            "Necesarios durante el embarazo": weights.WEIGHT_NUTRS_PREGNANCY,
+            "Ayuda a incrementar la masa muscular": weights.WEIGHT_BODY_MASS}
         return weights
 
     def extra_nutr_detail(self):

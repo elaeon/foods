@@ -201,6 +201,16 @@ WEIGHT_NUTRS_PREGNANCY = {
     "205": 1.0, #Carbohydrate, by difference
 }
 
+WEIGHT_BODY_MASS = {
+    "203": .1, #Protein
+    "205": .1, #Carbohydrate, by difference
+    "204": .1, #Total lipid (fat)
+    "307": 1, #Sodium, Na
+    "401": 1, #Vitamin C
+    "317": 1, #Selenium, Se
+    "291": 1, #Fiber, total dietary
+    "309": 1, #Zinc
+}
 
 WEIGHT_NUTRS = {
     "601": 10.0, #Cholesterol

@@ -47,47 +47,47 @@ $('#select_all_cat').click(function(event) {
 {% csrf_token %}
 {{ type_food_formset.management_form }}
 {{ weight_formset.management_form }}
+<div class="btn-group" role="group">
+    <div class="btn-group" role="group">
+        <button class="btn btn-info dropdown-toggle" type="button" 
+        id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" 
+        data-placement="top" title="Eligeme" aria-haspopup="true">
+        Categorias de alimentos
+        <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+        <li><p style="background-color:#ddd">
+            <input type="checkbox" id="select_all_cat">&nbsp;<b>Elegir todas las categorias</b></p></li>
+        {% for form in type_food_formset.forms %}
+        <li><p>{{ form.key }}{{ form.check }}&nbsp;{{ form.food_type.category }}</p></li>
+        {% endfor %}
+        </ul>
+    </div>
 
-<div class="btn-group" role="group">
-<div class="btn-group" role="group">
-    <button class="btn btn-info dropdown-toggle" type="button" 
-    id="dropdownMenu1" data-toggle="dropdown" data-placement="top" title="Eligeme" aria-haspopup="true" aria-expanded="true">
-    Categorias de alimentos
-    <span class="caret"></span>
-    </button>
-    <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-    <li><p style="background-color:#ddd">
-        <input type="checkbox" id="select_all_cat">&nbsp;<b>Elegir todas las categorias</b></p></li>
-    {% for form in type_food_formset.forms %}
-    <li><p>{{ form.key }}{{ form.check }}&nbsp;{{ form.food_type.category }}</p></li>
-    {% endfor %}
-    </ul>
+    <div class="btn-group" role="group">
+        <button class="btn btn-warning dropdown-toggle" type="button" 
+        id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+        Elegir beneficios
+        <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+        {% for form in  weight_formset %}
+        <li><p>{{ form.key }}{{ form.check }}&nbsp;{{ form.name }}</p></li>
+        {% endfor %}
+        </ul>
+    </div>
+    <button type="submit" class="btn btn-default" >Buscar</button>
 </div>
 
-<div class="btn-group" role="group">
-    <button class="btn btn-warning dropdown-toggle" type="button" 
-    id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-    Elegir beneficios
-    <span class="caret"></span>
-    </button>
-    <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-    {% for form in  weight_formset %}
-    <li><p>{{ form.key }}{{ form.check }}&nbsp;{{ form.name }}</p></li>
-    {% endfor %}
-    </ul>
-</div>
+<div>
+    <div class="btn-group" role="group">
+        <div id="data_size" data-placement="bottom" title="# de Resultados" style="margin:0;padding:7px 0px;width:150px;">Resultados: {{ radio_omega_form.data_size }}</div>
+    </div>
 
-<div class="btn-group" role="group">
-<div class="btn-info" style="margin:0;padding:6px 12px;width:150px;text-align: center;">
-{{ radio_omega_form.radio_omega }} Radio Omega
-</div>
-</div>
-
-<div class="btn-group" role="group">
-<div id="data_size" class="btn-info" data-placement="top" title="# de Resultados" style="margin:0;padding:7px 0px;width:50px;color:#000;">{{ radio_omega_form.data_size }}</div>
-</div>
-
-<button type="submit" class="btn btn-default" >Buscar</button>
+    <div class="btn-group" role="group">
+        <div style="margin:0;padding: 6px 12px;width:150px;text-align: center;">
+    {{ radio_omega_form.radio_omega }} Radio Omega</div>
+    </div>
 </div>
 </form>
 
