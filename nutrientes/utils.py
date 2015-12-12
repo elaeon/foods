@@ -935,9 +935,9 @@ class Food(object):
                     self.nutr_avg[w_nutr_no][0], 
                     self.nutr_detail.get(w_nutr_no, ""))
 
-        len_w = len([w for w, _, _, _ in nutr_weight.values() if w < 1])
+        GOOD_LEVEL_OF_NUTR = len([w for w, _, _, _ in nutr_weight.values() if w < 1])
         len_weights_good_w = len([w for n, w in weights_good if w < 1])
-        approved = MIN_PORCENTAJE_EXIST(len_weights_good_w) <= len_w
+        approved = MIN_PORCENTAJE_EXIST(len_weights_good_w) <= GOOD_LEVEL_OF_NUTR
         if approved:
             nutrientes_units_converted = convert_units_scale((v, u) for _, (v, u), _, _ in nutr_weight.values())
             totals = [(nc, n[2], n[3]) 
@@ -2367,7 +2367,7 @@ class ExamineFoodVariants(object):
             try:
                 v = ((v2[1] * 100) / v1[1])
             except ZeroDivisionError:
-                v = 0
+                continue
             if diff < 0:
                 increased[self.nutr.get(v1[0], v1[0])] = v - 100
             elif diff > 0:
@@ -2394,15 +2394,19 @@ class ExamineFoodVariants(object):
             count = 0
             nutrdesc = self.nutr.get(nutr_no, nutr_no)
             count_null = 0
-            prom_v = 0
+            prom_i = 0
+            prom_d = 0
             for food in foods.values():
                 if nutrdesc in food.increased:
                     count += 1
-                    prom_v += food.increased[nutrdesc]
+                    prom_i += food.increased[nutrdesc]
                 elif not nutrdesc in food.decreased:
                     count_null += 1
+                else:
+                    prom_d += food.decreased[nutrdesc]
             if count_null != len(foods):
-                nutr[nutrdesc] = (count/float(len(foods)), prom_v/float(len(foods)))
+                total = float(len(foods)) - count_null
+                nutr[nutrdesc] = (count/total, prom_i/total, prom_d/total)
         return nutr
             
     def test(self, option):
@@ -2412,21 +2416,21 @@ class ExamineFoodVariants(object):
             function_ = self.data_set_fish_moist_heat
 
         nutr = self.evaluate_inc_dec(function_)
-        for k, (v, p) in nutr.items():
+        for k, (v, p, o) in nutr.items():
             if v == 1:
-                print("OK", k, v, p)
+                print("OK", k, v, p, o)
 
-        for k, (v, p) in nutr.items():
+        for k, (v, p, o) in nutr.items():
             if .90 <= v < 1:
-                print("90%", k, v, p)
+                print("90%", k, v, p, o)
 
-        for k, (v, p) in nutr.items():
+        for k, (v, p, o) in nutr.items():
             if .0 < v < .90:
-                print("<90%", k, v, p)
+                print("<90%", k, v, p, o)
 
-        for k, (v, p) in nutr.items():
+        for k, (v, p, o) in nutr.items():
             if v == 0:
-                print("BAD", k, v, p)
+                print("BAD", k, v, p, o)
 
 
     def prepare_variants(self, foods, variants):

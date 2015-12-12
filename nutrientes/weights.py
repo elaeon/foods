@@ -153,18 +153,18 @@ WEIGHT_NUTRS_SKIN = {
 }
 
 WEIGHT_NUTRS_EYES = {
-    "omega3": .1,
     "338": .1, #Lutein + zeaxanthin
     "320": .1, #Vitamin A
     "321": .1, #Carotene, beta
     "322": .1, #Carotene, alpha
-    "401": .1, #Vitamin C
     "309": .1, #Zinc, Zn
     "337": .1, #Lycopene
     "454": .1, #Betaine
     "319": .1, #Retinol
     "334": .1, #Cryptoxanthin, beta
 
+    "omega3": 1,
+    "401": 1, #Vitamin C
     "omega6": 5,
     "omega9": 5,
 }
