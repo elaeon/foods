@@ -2359,6 +2359,14 @@ class ExamineFoodVariants(object):
         else:
             print("Error: raw and dry_heat have distinct length")
 
+    def data_set_vegetable_boled(self):
+        raw = []
+        boiled = []
+        if len(raw) == len(boiled):
+            return zip(raw, boiled)
+        else:
+            print("Error: raw and dry_heat have distinct length")
+
     def compare(self, no_ndb1, no_ndb2, count):
         increased = {}
         decreased = {}
