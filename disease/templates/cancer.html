@@ -1,0 +1,34 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+{% load humanize %}
+
+{% block contenido_base %}
+<style>
+.section {
+    line-height:1.5;
+    max-width:35em;
+    margin:auto;
+    padding:0 1em;
+    
+}
+</style>
+<div class="jumbotron" style="background: url(/static/cancer.jpg) no-repeat center center fixed; background-size: 100% 100%;margin-bottom:0px;">
+    <div class="container">
+    <h1 class="text_image_over">¡Cáncer!</h1>
+    <p class="text_image_over">Este sitio te ayudará a analizar e informarte sobre el Cáncer.</p>
+    </div> 
+</div>
+
+<div class="container">
+    <div class="starter-template2">
+    <div class="section">
+        Cancer is caused by one of the body's own stem cells going rogue and dividing out of control
+
+        El material genético que se encuentra en cada uno de nosotros (ADN), es propenso a desarrollar mutaciones. Las causas pueden ser factores ambientales (incluyendo enfermedades), así como también a factores internos (errores de codificación en la reproducción celular, etc). Sin embargo, las células tienen varios mecanismos que reparan los errores de codificación, evitando desarrollar mutaciones que puedan causar tumores. Incluso si se logra desarrollar el tumor el mismo sistema inmunológico actua para eliminarlo.
+ 
+        Cuando nuestro cuerpo, no puede responder positivamente a la agresión de factores externos, ya sea por enfermedad, malos habitos, mala alimentación, es cuando los tumores crecen en el cuerpo, sin que el sistema inmunologico pueda hacer algo al respecto. La efectividad de los tratamientos para combatir el cancer, es muy baja debido a la diversidad del cáncer. Cada célula cancerosa es muy distinta a las demás, aun dentro del mismo tejido.
+    </div>
+
+    </div>
+</div>
+{% endblock %}
