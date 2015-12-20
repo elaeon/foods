@@ -2251,7 +2251,7 @@ class OptionSearch(object):
             "Ayuda a combatir la osteoporosis": weights.WEIGHT_NUTRS_OSTEOPOROSIS, 
             "Bajo en carbohidratos y azucar": weights.WEIGHT_NUTRS_LOW_SUGAR,
             "Anti oxidantes": weights.WEIGHT_NUTRS_FREE_RADICALS_AO,
-            "Anti colesterol": weights.WEIGHT_NUTRS_ANTI_CHOLESTEROL,
+            "Reduce el colesterol": weights.WEIGHT_NUTRS_ANTI_CHOLESTEROL,
             "Bajo en grasas": weights.WEIGHT_NUTR_LOW_FAT,
             "Ayuda al sistema nervioso": weights.WEIGHT_NUTRS_NEURAL,
             "Ayuda a la prostata": weights.WEIGHT_NUTR_PROSTATE_CARE,

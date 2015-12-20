@@ -18,7 +18,6 @@ from django.contrib.sitemaps.views import sitemap
 
 from nutrientes import views as nutr_views
 from news import views as news_views
-from disease import views as disease_views
 from news.api import router
 from news.sitemap import NewsSitemap
 
@@ -60,10 +59,13 @@ urlpatterns = [
         name="complex_intake_nutrients"),
     url(r'^best_menu/$', nutr_views.best_menu, name="best_menu"),
     url(r'^news/$', nutr_views.news, name="nutr_news"),
-    url(r'^diabetes/$', disease_views.diabetes, name="diabetes"),
     url(r'^recommended_food/$', nutr_views.recomended_food, name="recommended_food"),
     url(r'^admin/', include(admin.site.urls)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns += [
+    url(r'^enfermedades/', include('disease.urls')),
+]
 
 urlpatterns += [
     url(r'^sitemap\.xml$', sitemap, {'sitemaps': {"news": NewsSitemap}},
