@@ -2259,7 +2259,8 @@ class OptionSearch(object):
             "Ayuda a la vista": weights.WEIGHT_NUTRS_EYES,
             "Ayuda a la piel": weights.WEIGHT_NUTRS_SKIN,
             "Necesarios durante el embarazo": weights.WEIGHT_NUTRS_PREGNANCY,
-            "Ayuda a incrementar la masa muscular": weights.WEIGHT_BODY_MASS}
+            "Ayuda a incrementar la masa muscular": weights.WEIGHT_BODY_MASS,
+            "Ayuda al sistema inmune": weights.WEIGHT_IMMUNE_SYSTEM}
         return weights
 
     def extra_nutr_detail(self):
@@ -2358,18 +2359,18 @@ class ExamineFoodVariants(object):
         else:
             print("Error: raw and dry_heat have distinct length")
 
-    def data_set_vegetable_boled(self):
-        raw = []
-        boiled = []
+    def data_set_vegetable_boiled(self):
+        raw = ["11147", "11007", "11143", "11209", "11203", "11613", "11088", "11090", "11026", "11522", "11492", "11477", "11467", "11641", "11475", "11191", "11201", "11197", "11282", "11244", "11149", "11298", "11114", "11109", "11135", "11241", "11161", "11157", "11207", "11011", "11457", "11416", "11447", "11096", "11452", "11653", "11029", "11052", "11300", "11304", "11003", "11418", "11086", "11238", "11233", "11622", "11616", "11564", "11963", "11601", "11258", "11278", "11354", "11355", "11350", "11005", "11430", "11104", "11254", "11080", "11112", "11435", "11260", "11265"]
+        boiled = ["11148", "11008", "11144", "11210", "11204", "11614", "11089", "11091", "11027", "11523", "11493", "11478", "11468", "11642", "11476", "11192", "11202", "11198", "11283", "11245", "11150", "11299", "11115", "11751", "11136", "11242", "11162", "11158", "11208", "11012", "11458", "11417", "11448", "11097", "11453", "11654", "11030", "11053", "11301", "11305", "11004", "11419", "11087", "11269", "11234", "11623", "11617", "11565", "11964", "11602", "11259", "11279", "11357", "11358", "11351", "11006", "11431", "11105", "11255", "11081", "11113", "11436", "11261", "11243"]
         if len(raw) == len(boiled):
             return zip(raw, boiled)
         else:
             print("Error: raw and dry_heat have distinct length")
 
-    def compare(self, no_ndb1, no_ndb2, count):
+    def compare(self, ndb_no1, ndb_no2, count):
         increased = {}
         decreased = {}
-        for v1, v2 in zip(self.data[no_ndb1], self.data[no_ndb2]):
+        for v1, v2 in zip(self.data[ndb_no1], self.data[ndb_no2]):
             diff = v1[1] - v2[1]
             try:
                 v = ((v2[1] * 100) / v1[1])
@@ -2379,21 +2380,26 @@ class ExamineFoodVariants(object):
                 increased[self.nutr.get(v1[0], v1[0])] = v - 100
             elif diff > 0:
                 decreased[self.nutr.get(v1[0], v1[0])] = -v
-        fg = FoodGroup(FoodVariant(no_ndb1, 0), FoodVariant(no_ndb2, 1), count)
+        fg = FoodGroup(FoodVariant(ndb_no1, 0), FoodVariant(ndb_no2, 1), count)
         fg.set_data(increased, decreased)
         return fg
 
-    def process(self, function_dataset):
+    def process(self, function_dataset, ndb_no):
         foods = {}
-        for i, (no_ndb1, no_ndb2) in enumerate(function_dataset(), 1):
-            foods[i] = self.compare(no_ndb1, no_ndb2, i)
+        if ndb_no is not None:
+            for i, (ndb_no1, ndb_no2) in enumerate(function_dataset(), 1):
+                if ndb_no == ndb_no1:
+                    foods[i] = self.compare(ndb_no1, ndb_no2, i)
+        else:
+            for i, (ndb_no1, ndb_no2) in enumerate(function_dataset(), 1):
+                foods[i] = self.compare(ndb_no1, ndb_no2, i)
 
         #variants = total_i.intersection(total_d)
         #self.csv(foods, variants)
         return foods
 
-    def evaluate_inc_dec(self, function_):
-        foods = self.process(function_)
+    def evaluate_inc_dec(self, function_, ndb_no=None):
+        foods = self.process(function_, ndb_no=ndb_no)
         nutr = {}
         k = self.data.keys()[0]
         nutr_list = [nutr_no for nutr_no, _ in self.data[k]]
@@ -2414,15 +2420,18 @@ class ExamineFoodVariants(object):
             if count_null != len(foods):
                 total = float(len(foods)) - count_null
                 nutr[nutrdesc] = (count/total, prom_i/total, prom_d/total)
+                #print(nutrdesc, nutr[nutrdesc], count, total)
         return nutr
             
-    def test(self, option):
+    def test(self, option, ndb_no=None):
         if option == 0:
             function_ = self.data_set_fish_dry_heat
         elif option == 1:
             function_ = self.data_set_fish_moist_heat
+        elif option == 2:
+            function_ = self.data_set_vegetable_boiled
 
-        nutr = self.evaluate_inc_dec(function_)
+        nutr = self.evaluate_inc_dec(function_, ndb_no=ndb_no)
         for k, (v, p, o) in nutr.items():
             if v == 1:
                 print("OK", k, v, p, o)

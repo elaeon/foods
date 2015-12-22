@@ -212,6 +212,23 @@ WEIGHT_BODY_MASS = {
     "309": 1, #Zinc
 }
 
+WEIGHT_IMMUNE_SYSTEM = {
+    "309": .1, #Zinc
+    "317": .1, #Selenium, Se
+    "303": .1, #Iron, Fe
+    "415": .1, #Vitamin B6
+    "405": .1, #Riboflavin
+    "312": .1, #Copper, Cu
+    "omega3": .1,
+    "435": .8, #Folate DFE
+    "304": .8, #Magnesium,
+
+    "324": 1, #Vitamin D
+    "421": 1, #Choline,
+    "291": 1, #Fiber, total dietary
+    "320": 1, #Vitamin A
+}
+
 WEIGHT_NUTRS = {
     "601": 10.0, #Cholesterol
     "269": 8.0, #Sugars, total
