@@ -1,0 +1,8 @@
+from django.conf.urls import include, url
+
+from disease import views as disease_views
+
+urlpatterns = [
+    url(r'^diabetes/$', disease_views.diabetes, name="diabetes"),
+    url(r'^cancer/$', disease_views.cancer, name="cancer"),
+]
