@@ -15,9 +15,22 @@
 <canvas id="displayCanvas" height="15px">
     Your browser does not support HTML5 canvas.
 </canvas>
-<div style="border:1px solid #eee;">
-Noticias
+
+<div class="col-sm-6 col-md-4">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+            <h3>Índice</h3>
+            <ul>
+                <li><a href="">Categorias de alimentos.</a></li>
+                <li><a href="#vitaminas">Las vitaminas.</a></li>
+                <li><a href="">Los omegas y el radio omega.</a></li>
+                <li><a href="#carne-procesada">La carne procesada.</a></li>
+                <li><a href="#carne-roja">La carne roja.</a></li>
+            </ul>
+        </div>
+    </div>
 </div>
+
 <p class="text-muted" style="margin-left: 10px;">En esta tabla se muestran las categorias de los alimentos, junto con los nutrientes más comunes causantes de enfermedades.</p>
 
 <div class="color-swatches">
@@ -111,7 +124,7 @@ Noticias
 </div>
 {% endif %}
 
-<h2 style="margin-left: 20px;">Las Vitaminas</h2>
+<h2 style="margin-left: 20px;" id="vitaminas">Las Vitaminas</h2>
 <div class="col-sm-6 col-md-4">
     <div class="panel panel-default">
         <div class="panel-heading list-group-item">
@@ -246,7 +259,7 @@ Noticias
             </tbody>
             <tfoot>
             <tr>
-            <td colspan="3">Las vitaminas resistentes al calor son adecuadas para la cocción.</td>
+            <td colspan="3">Las vitaminas aún cuando sean resistentes al calor, pueden perderse con facilidad, esto depende del ambiente en el que esten, por ejemplo: las vitaminas en frutas y verduras son muy suceptibles a perderse si se calientan, en cambio, en las carnes se concervan mejor.</td>
             </tr>
             <tr>
             <td colspan="3">Los alimentos que son licuados, deben de consumirse el mismo dia. Al licuar la degradación de las vitaminas se acelera.</td>
@@ -257,25 +270,60 @@ Noticias
         </div>
     </div>
 </div>
-This definition of red meat includes:
 
-    beef
-    lamb
-    pork
-    veal
-    venison
-    goat
+<h2 style="margin-left: 20px;">Las Carnes</h2>
+<div class="col-sm-6 col-md-4">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+            <h3 id="carne-procesada">La carne procesada.</h3>
+            <p>La carne procesada recientemente ha sido clasificada por la <a href="http://monographs.iarc.fr/">Agencia Internacional para la Investigación en Cáncer</a> como un agente cancerigeno tipo 1 (con suficiente evidencia de ser causa de cáncer en humanos). Especificamente comer más de 50g diarios de <b>carne procesada</b>, aumenta el riesgo de desarrollar cáncer de tipo colo-rectal.</p>
+            <h3>La carne procesada incluye.</h3>
+            Carne preservada por el ahumado, salada, fermentada o agregarle preservativos para mejorar la preservación o el sabor.
+            <ul>
+                <li>Carne enlatada</li>
+                <li>Jamón</li>
+                <li>Pâtés</li>
+                <li>Salchichas</li>
+                <li>Salsas con carne</li>
+                <li>Salami</li>
+                <li>Tocino</li>
+            </ul>
+            <h3>Recomendaciones</h3>
+            <p>Consumir menos de 40g diarios de carne procesada, es adecuado para reducir el riesgo de desarrollar cancer, sin embargo, se recomienda limitar el consumo diario de esta carne, de preferencia a dos veces por semana.</p>
+        </div>
+    </div>
+</div>
 
-It does not include:
-
-    turkey meat
-    duck
-    goose
-    game birds
-    chicken
-    rabbit 
-
-Processed meat refers to meat that has been preserved by smoking, curing, salting or adding preservatives. This includes sausages, bacon, ham, salami and pâtés.
+<div class="col-sm-6 col-md-4">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+            <h3 id="carne-roja">La carne roja</h3>
+            <p>La carne roja, ha sido clasificada como un cancerigeno tipo 2A</a> (es decir, se tiene limitada evidencia científica como causa de cáncer en humanos)</p>
+            <h3>La carne roja incluye.</h3>
+            <ul>
+                <li>Avestruz</li>
+                <li>Cabra</li>
+                <li>Cordero</li>
+                <li>Puerco</li>
+                <li>Res</li>
+                <li>Ternera</li>
+                <li>Venado</li>
+                <li>En general, carne de mamíferos</li>
+            </ul>
+            <h3>La carne roja no incluye.</h3>
+            <ul>
+                <li>Aves de caza</li>
+                <li>Conejo</li>
+                <li>Ganso</li>
+                <li>Pato</li>
+                <li>Pavo</li>
+                <li>Pollo</li>
+            </ul>
+            <h3>Recomendaciones</h3>
+            <p>Se recomienda un consumo máximo de 70g diarios de carne roja para reducir riesgos de desarrollar una enfermedad del corazón o un tipo de cáncer.</p>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block js %}
