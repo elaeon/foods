@@ -11,7 +11,7 @@
 </h2>
 <a href="{% url 'list_food_category' food.group.id 'normal' %}">{{ food.group.name }}</a>
 
-<p>Radio omega 3|omega 6:
+<p>Radio omega 6|omega 3:
 {% if food.radio_omega_raw > 4 %}
     <span style="color: red;">
 {% else %}
