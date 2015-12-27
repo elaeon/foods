@@ -2367,6 +2367,15 @@ class ExamineFoodVariants(object):
         else:
             print("Error: raw and dry_heat have distinct length")
 
+
+    def data_set_vegetable_frozen(self):
+        raw = ["11007", "11477", "11485", "11467", "11191", "11282", "11495", "11135", "11457", "11722", "11090", "11011", "11052", "11568", "11300", "11304", "11995", "11270", "11233", "11564", "11278", "11821", "11333", "11124"]
+        frozen = ["11009", "11479", "11487", "11473", "11195", "11289", "11501", "11137", "11463", "11730", "11092", "11018", "11060", "11574", "11302", "11312", "11996", "11272", "11235", "11566", "11280", "11917", "11337", "11130"]
+        if len(raw) == len(frozen):
+            return zip(raw, frozen)
+        else:
+            print("Error: raw and dry_heat have distinct length")
+        
     def compare(self, ndb_no1, ndb_no2, count):
         increased = {}
         decreased = {}
@@ -2430,6 +2439,8 @@ class ExamineFoodVariants(object):
             function_ = self.data_set_fish_moist_heat
         elif option == 2:
             function_ = self.data_set_vegetable_boiled
+        elif option == 3:
+            function_ = self.data_set_vegetable_frozen
 
         nutr = self.evaluate_inc_dec(function_, ndb_no=ndb_no)
         for k, (v, p, o) in nutr.items():
