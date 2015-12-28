@@ -1,0 +1,41 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+{% load humanize %}
+
+{% block contenido_base %}
+<style>
+.section {
+    line-height:1.5;
+    max-width:35em;
+    margin:auto;
+    padding:0 1em;
+    
+}
+</style>
+<div class="jumbotron" style="background: url(/static/cancer.jpg) no-repeat center center fixed; background-size: 100% 100%;margin-bottom:0px;">
+    <div class="container">
+    <h1 class="text_image_over">¡Enfermedades!</h1>
+    <p class="text_image_over">Este sitio te ayudará a analizar e informarte las enfermedades más letales para los humanos.</p>
+    </div> 
+</div>
+
+<div class="container">
+    <div class="starter-template2">
+    <div class="section" style="text-align:justify;">
+        <h3>Enfermedades no transmisibles.</h3>
+        <ol>
+        <li>Enfermedades cardiovasculares</li>
+        <li><a href="{% url 'cancer' %}">Cáncer</a></li>
+        <li>Enfermedades crónico respiratorias</li>
+        <li>Enfermedades del sistema digestivo</li>
+        <li><a href="{% url 'diabetes' %}">Diabetes</a></li>
+        </ol>
+        <p>Estas las <a href="http://www.who.int/nmh/publications/ncd_report_chapter1.pdf">enfermedades</a> que causarán la muerte de 52 millones de personas en todo el mundo para el 2030, y la principal causa de muerte.</p>
+        <h3>Factores de riesgo.</h3>
+        <p>La enfermedades no transmisibles estan fuertemente influenciadas por cuatro factores de riesgo: uso del tabaco, insuficiente actividad física, exceso en el consumo de alcohol y una mala dieta. Que resulta en presión alta, elevación de la azucar y colesterol en la sangre, y exceso de peso.</p>
+        <h3>Recomendaciones.</h3>
+    </div>
+
+    </div>
+</div>
+{% endblock %}

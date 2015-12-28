@@ -2,6 +2,10 @@
 from django.shortcuts import render
 from disease import models as models_disease
 
+
+def index(request):
+    return render(request, "enfermedades.html", {})
+
 def diabetes(request):
     from collections import OrderedDict
     mortality_years = models_disease.MortalityYears.objects.all().order_by("-year", "-amount")
