@@ -961,7 +961,7 @@ class Food(object):
                     data_nutr[nutr_no][ndb_no] = v
 
         nutr_no, _, _, _ = self.nutrients[0]
-        data_s = set(data_nutr.get(nutr_no, []).keys())
+        data_s = set(data_nutr.get(nutr_no, {}).keys())
         for nutr_no, _, _, _ in self.nutrients[1:]:
             try:
                 tmp = set(data_nutr[nutr_no].keys())
@@ -1979,9 +1979,9 @@ class SearchCompleteFoods(object):
 
         self.selector = None
         if universe is None:
-            #self.universe = FoodDescImg.objects.values_list('ndb_no_t', flat=True)
+            self.universe = FoodDescImg.objects.values_list('ndb_no_t', flat=True)
             #self.universe =  FoodDescImg.objects.exclude(ndb_no_t="09062").values_list('ndb_no_t', flat=True)
-            self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
+            #self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
         self.min_distance_calculated = None
 
     def probability(self, active_positions_values):
