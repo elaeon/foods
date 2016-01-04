@@ -221,6 +221,7 @@ def food_compare(request, intake_params):
             from nutrientes.utils import create_common_table
             dicts = []
             names = []
+            nutr = []
             if len(food_list.keys()) >= 2:
                 from nutrientes.utils import Food
                 for ndb_no in food_list.keys():
@@ -229,8 +230,18 @@ def food_compare(request, intake_params):
                     dicts.append({v[0]: v for v in food.nutrients})
                     names.append(food.name)
                 common_table = create_common_table(dicts)
+                if len(food_list) == 2:
+                    from nutrientes.utils import ExamineFoodVariants
+                    v = ExamineFoodVariants()
+                    data = []
+                    for k, v in v.evaluate_inc_dec(lambda: [food_list.keys()], ndb_no=food_list.keys()[0]).items():
+                        if v[0] == 0 and v[1] == 0 and v[2] == 0:
+                            pass
+                        else:
+                            data.append((k, v))
+                    nutr = sorted(data, key=lambda x: x[1])
             return render(request, "compare_food.html", 
-                {"foods": foods, "common_table": common_table, "names": names})
+                {"foods": foods, "common_table": common_table, "names": names, "nutr": nutr})
     else:
         return redirect("index")
 

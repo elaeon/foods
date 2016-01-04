@@ -1979,9 +1979,9 @@ class SearchCompleteFoods(object):
 
         self.selector = None
         if universe is None:
-            self.universe = FoodDescImg.objects.values_list('ndb_no_t', flat=True)
+            #self.universe = FoodDescImg.objects.values_list('ndb_no_t', flat=True)
             #self.universe =  FoodDescImg.objects.exclude(ndb_no_t="09062").values_list('ndb_no_t', flat=True)
-            #self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
+            self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
         self.min_distance_calculated = None
 
     def probability(self, active_positions_values):
@@ -2098,7 +2098,8 @@ class SearchCompleteFoods(object):
         for candidates, v in sorted(self.candidates_vector(), key=lambda x:sum(x[1]), reverse=True):
             foods = {}
             for ndb_no in candidates.split("-"):
-                print(Food(ndb_no).name, ndb_no)
+                f = Food(ndb_no)
+                print(f.name, ndb_no) #list(f.nutrients_twins()))
                 foods[ndb_no] = 100
             light_format["foods"] = foods
             recipe = Recipe.from_light_format(light_format, data=True)
@@ -2436,8 +2437,8 @@ class ExamineFoodVariants(object):
                     prom_d += food.decreased[nutrdesc]
             if count_null != len(foods):
                 total = float(len(foods)) - count_null
-                nutr[nutrdesc] = (count/total, prom_i/total, prom_d/total)
-                #print(nutrdesc, nutr[nutrdesc], count, total)
+                nutr[nutrdesc] = (round(count/total, 2) * 100, 
+                    int(round(prom_i/total, 0)), int(round(prom_d/total, 0)))
         return nutr
             
     def test(self, option, ndb_no=None):
