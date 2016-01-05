@@ -2017,7 +2017,8 @@ class SearchCompleteFoods(object):
                             for ndb_no, vector in nutrient_map.items()}
         min_data_g = 50
         counter = 0
-        while True:
+        len_key = 0
+        while len_key < 11:
             probabilities = self.probability(
                 filter(lambda x: len(x) > 0, active_positions.values()))
             if self.all_is_1(probabilities):
@@ -2025,7 +2026,6 @@ class SearchCompleteFoods(object):
             score = {ndb_no: sum(1 - probabilities[index] for index in vector)
                         for ndb_no, vector in active_positions.items()}
 
-            local_score = min((v, k) for k, v in probabilities.items())
             best_distribution = sorted(score.items(), key=lambda x:x[1], reverse=True)
             upper_best = best_distribution[:int(len(score)*upper)]
             lower_best = best_distribution[int(len(score)*lower):]
@@ -2038,8 +2038,8 @@ class SearchCompleteFoods(object):
                         ndb_no2))
             if len(distance) == 0:
                 break
-            print(counter, len(distance))
             max_distance = max(distance)[0]
+            print(counter, len(distance), min_data_g)
             best_distance = (e for e in distance if e[0] == max_distance)
             for_delete = set([])
             data_len = []
@@ -2048,13 +2048,10 @@ class SearchCompleteFoods(object):
                 vector_merged = self.merge(nutrient_map[ndb_no_v1], nutrient_map[ndb_no_v2])
                 for_delete.add(ndb_no_v2)
                 min_data_l = len([x for x in vector_merged if x == 0])
-                if min_data_l < min_data_g:
-                    for_delete.add(ndb_no_v1)
+                if min_data_l <= min_data_g:
                     n_key = "-".join(set(ndb_no_v1.split("-"))) + "-" + "-".join(set(ndb_no_v2.split("-")))
                     active_positions[n_key] = [i for i, v in enumerate(vector_merged) if v > 0]
                     nutrient_map[n_key] = vector_merged
-                elif min_data_l == min_data_g:
-                    n_key = "-".join(set(ndb_no_v1.split("-"))) + "-" + "-".join(set(ndb_no_v2.split("-")))
                 else:
                     continue
                 if min_data_l < tmp_min:
@@ -2067,6 +2064,7 @@ class SearchCompleteFoods(object):
             for e in for_delete:
                 del active_positions[e]
                 del nutrient_map[e]
+            len_key = max(len(k.split("-")) for k in active_positions)
             counter += 1
 
     def candidates_vector(self):
@@ -2088,7 +2086,8 @@ class SearchCompleteFoods(object):
             else:
                 break
 
-    def print_(self):
+    def calc_results(self):
+        self.results = []
         from nutrientes.utils import Food
         light_format = {
             "perfil": {"edad": 40, "genero": "H", "unidad_edad": u"años", "rnv_type": 1},
@@ -2097,13 +2096,19 @@ class SearchCompleteFoods(object):
         }
         for candidates, v in sorted(self.candidates_vector(), key=lambda x:sum(x[1]), reverse=True):
             foods = {}
+            foods_obj = []
             for ndb_no in candidates.split("-"):
-                f = Food(ndb_no)
-                print(f.name, ndb_no) #list(f.nutrients_twins()))
                 foods[ndb_no] = 100
+                foods_obj.append(Food(ndb_no))
             light_format["foods"] = foods
             recipe = Recipe.from_light_format(light_format, data=True)
-            print recipe.calc_score()
+            self.results.append((recipe.calc_score(), foods_obj))
+
+    def print_(self):
+        for score, foods in self.results():
+            for food in foods:
+                print(food.name, food.ndb_no)
+            print score
             print("****")
 
 
@@ -2113,6 +2118,9 @@ class SearchCompleteFoods(object):
             for v, k in zip(vector, nutr_row_c.keys()):
                 if v == 0:
                     print(k, v)
+
+    def get_min_distance(self):
+        return self.min_distance_calculated
 
 def categories_calif(data, cache):
     import random
