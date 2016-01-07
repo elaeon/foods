@@ -2393,6 +2393,22 @@ class ExamineFoodVariants(object):
         else:
             print("Error: raw and dry_heat have distinct length")
 
+    def data_set_fruits_dehydrated(self):
+        raw = ["09021", "09279", "09236", "09077", "09040"]
+        dehydrated = ["09030", "09289", "09244", "09009", "09041"]
+        if len(raw) == len(dehydrated):
+            return zip(raw, dehydrated)
+        else:
+            print("Error: raw and dehydrated have distinct length")
+
+    def data_set_fruits_dried(self):
+        raw = ["09021", "09050", "09146", "09263", "09279", "09089", "09164", "09172", "09003", "09252"]
+        dried = ["09032", "09163", "09147", "09264", "09291", "09094", "09165", "09173", "09011", "09259"]
+        if len(raw) == len(dried):
+            return zip(raw, dried)
+        else:
+            print("Error: raw and dehydrated have distinct length")
+
     def compare(self, ndb_no1, ndb_no2, count):
         increased = {}
         decreased = {}
@@ -2460,18 +2476,22 @@ class ExamineFoodVariants(object):
             function_ = self.data_set_vegetable_frozen
         elif option == 4:
             function_ = self.data_set_vegetable_canned
+        elif option == 5:
+            function_ = self.data_set_fruits_dehydrated
+        elif option == 6:
+            function_ = self.data_set_fruits_dried
 
         nutr = self.evaluate_inc_dec(function_, ndb_no=ndb_no)
         for k, (v, p, o) in nutr.items():
-            if v == 1:
+            if v == 100:
                 print("OK", k, v, p, o)
 
         for k, (v, p, o) in nutr.items():
-            if .90 <= v < 1:
+            if 90 <= v < 100:
                 print("90%", k, v, p, o)
 
         for k, (v, p, o) in nutr.items():
-            if .0 < v < .90:
+            if 0 < v < 90:
                 print("<90%", k, v, p, o)
 
         for k, (v, p, o) in nutr.items():
