@@ -5,11 +5,23 @@
 <div class="container">
 <div class="starter-template">
 <h2>{{ categoria }}</h2>
+<div class="col-sm-6 col-md-8">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+        <h3>Descripción</h3>
+        {{ resume_text }}
+        <div id="barContainer"></div>
+        </div>
+    </div>
+</div>
 
+<div class="col-sm-6 col-md-8">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
 {% if order == "perfil" %}
 <p>Los alimentos están ordenados por el perfil. Desea cambiar el orden a <a role="button" class="btn btn-primary" href="{% url 'list_food_category' category_id 'best' %}">Mejores</a>
 {% else %}
-<p>Los alimentos están ordenados por sus beneficios alimenticios. Desea cambiar el orden a <a role="button" class="btn btn-primary" href="{% url 'list_food_category' category_id 'perfil' %}">Perfil</a></p>
+<p>Los alimentos están ordenados alfabéticamente. Desea cambiar el orden a <a role="button" class="btn btn-primary" href="{% url 'list_food_category' category_id 'perfil' %}">Perfil</a></p>
 {% for ndb_no, name, name_en in foods %}
 <div style="margin-top: 1px;"> 
 <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ name_en }}" data-content="{{ name_en }}">En</a>
@@ -17,7 +29,45 @@
 </div>
 {% endfor %}
 {% endif %}
+        </div>
+    </div>
+</div>
+
 </div>
 </div>
 {% endblock %}
 
+{% block js %}
+<script type="text/javascript" src="{% static 'd3.js' %}"></script>
+<script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
+
+<script type="text/javascript">
+var nutrients = [];
+{% for nutrdesc, value, type in variants %}
+nutrients.push({nutriente: '{{ nutrdesc }}', porcentaje: {{ value }}, type: '{{ type }}'});
+{% endfor %}
+
+var svg = dimple.newSvg("#barContainer", 600, 350);
+var barChart = new dimple.chart(svg, nutrients);
+barChart.assignColor("decremento", "#aa0000", null, .5);
+barChart.assignColor("incremento", "#00aacc", null, .5);
+barChart.setBounds(60, 50, 440, 220);
+var x = barChart.addCategoryAxis("x", "nutriente");
+x.showGridlines = true;
+var y = barChart.addMeasureAxis("y", "porcentaje");
+var l = barChart.addSeries("type", dimple.plot.bar);
+y.overrideMax = 100;
+y.showGridlines = false;
+x.addOrderRule("nutriente");
+barChart.draw();
+x.titleShape.text("Nutriente");
+y.tickFormat = ',.2f';
+/*svg.append("text")
+   .attr("x", barChart._xPixels() + barChart._widthPixels() / 2)
+   .attr("y", barChart._yPixels() - 20)
+   .style("text-anchor", "middle")
+   .style("font-family", "sans-serif")
+   .style("font-weight", "bold")
+   .text("Gráfica de nutrientes, porcentaje cubierto en base al perfil");*/
+</script>
+{% endblock js %}

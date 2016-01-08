@@ -2409,6 +2409,14 @@ class ExamineFoodVariants(object):
         else:
             print("Error: raw and dehydrated have distinct length")
 
+    def data_set_beans(self):
+        raw = ["16001", "16019", "16042", "16030", "16035", "16027", "16040", "16024", "16045", "16016", "16080", "16083", "16101", "16056", "16069"]
+        boiled = ["16002", "16020", "16043", "16031", "16036", "16028", "16041", "16025", "16046", "16017", "16081", "16084", "16102", "16057", "16070"]
+        if len(raw) == len(boiled):
+            return zip(raw, boiled)
+        else:
+            print("Error: raw and boiled have distinct length")
+
     def compare(self, ndb_no1, ndb_no2, count):
         increased = {}
         decreased = {}
@@ -2461,8 +2469,8 @@ class ExamineFoodVariants(object):
                     prom_d += food.decreased[nutrdesc]
             if count_null != len(foods):
                 total = float(len(foods)) - count_null
-                nutr[nutrdesc] = (round(count/total, 2) * 100, 
-                    int(round(prom_i/total, 0)), int(round(prom_d/total, 0)))
+                nutr[nutrdesc] = (round(count/total * 100, 2), 
+                    round(prom_i/total, 2), round(prom_d/total, 2))
         return nutr
             
     def test(self, option, ndb_no=None):
@@ -2480,6 +2488,8 @@ class ExamineFoodVariants(object):
             function_ = self.data_set_fruits_dehydrated
         elif option == 6:
             function_ = self.data_set_fruits_dried
+        elif option == 7:
+            function_ = self.data_set_beans
 
         nutr = self.evaluate_inc_dec(function_, ndb_no=ndb_no)
         for k, (v, p, o) in nutr.items():
@@ -2498,6 +2508,38 @@ class ExamineFoodVariants(object):
             if v == 0:
                 print("BAD", k, v, p, o)
 
+    def category(self, category, sub_category=None):
+        resume_text = ""
+        if category == "1500" and sub_category == "dry_heat":
+            function_ = self.data_set_fish_dry_heat
+        elif category == "1500" and sub_category == "moist_heat":
+            function_ = self.data_set_fish_moist_heat
+        elif category == "1100" and sub_category == "boiled":
+            function_ = self.data_set_vegetable_boiled
+        elif category == "1100" and sub_category == "frozen":
+            function_ = self.data_set_vegetable_frozen
+        elif category == "1100" and sub_category == "canned":
+            function_ = self.data_set_vegetable_canned
+        elif category == "0900" and sub_category == "dehydrated":
+            function_ = self.data_set_fruits_dehydrated
+        elif category == "0900" and sub_category == "dried":
+            function_ = self.data_set_fruits_dried
+        elif category == "1600":
+            function_ = self.data_set_beans
+            resume_text = "Especificamente los frijoles, lentejas, alubias, etc, al ser cocinadas o hervidas pierden un promedio de {avg_loss}% de sus nutrientes. Los nutrientes más afectados son el calcio, omega 3, cholina, fibra y vitamina k, con una perdida de su valor de entre 40% a 45%."
+
+        data = []
+        count = 0.0
+        avg_loss = 0
+        for k, v in self.evaluate_inc_dec(function_).items():
+            if v[0] == 0 and v[1] == 0 and v[2] == 0:
+                pass
+            else:
+                data.append((k, v))
+            if v[2] < 0 and v[0] < 50:
+                count += 1
+                avg_loss += v[2]
+        return data, resume_text.format(avg_loss=abs(round(avg_loss/count, 2)))
 
     def prepare_variants(self, foods, variants):
         for food_group in foods.values():

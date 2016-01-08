@@ -18,6 +18,7 @@ SET search_path = public, pg_catalog;
 COPY nutrientes_fooddescimg (id, ndb_no_t, img, ref_img, name) FROM stdin;
 173	05168	food/pavo.jpg	https://commons.wikimedia.org/wiki/File:Hindu%C5%9Fka_q%C4%B1zartmas%C4%B1.jpg	Carne de pavo
 175	02045	food/Aneth_FR_2012.jpg	https://commons.wikimedia.org/wiki/File:Aneth_FR_2012.jpg	Eneldo
+177	16005	food/BakedBeansAndEggOnToast.jpg	https://commons.wikimedia.org/wiki/File:BakedBeansAndEggOnToast.jpg	Alubias al horno
 174	05112	food/Rosemary_chicken.jpg	https://commons.wikimedia.org/wiki/File:Rosemary_chicken.jpg	Pollo asado
 176	02017	food/Dill_seed_tilli_siemen.jpg	https://commons.wikimedia.org/wiki/File:Dill_seed_tilli_siemen.jpg	Semillas de eneldo, secas
 76	09042	food/Blackberry_close-up.JPG		Moras azules
@@ -199,7 +200,7 @@ COPY nutrientes_fooddescimg (id, ndb_no_t, img, ref_img, name) FROM stdin;
 -- Name: nutrientes_fooddescimg_id_seq; Type: SEQUENCE SET; Schema: public; Owner: agmartinez
 --
 
-SELECT pg_catalog.setval('nutrientes_fooddescimg_id_seq', 176, true);
+SELECT pg_catalog.setval('nutrientes_fooddescimg_id_seq', 177, true);
 
 
 --
