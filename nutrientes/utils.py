@@ -2343,6 +2343,73 @@ class FoodGroup(object):
         self.decreased = decreased
         
 
+def data_set_fish_moist_heat(self):
+    raw = ["15177", "15242", "15136", "15144", "15143", "15139", "15164", "15171", "15166"]
+    moist_heat = ["15178", "15243", "15137", "15227", "15226", "15140", "15165", "15231", "15230"]
+    if len(raw) == len(moist_heat):
+        return zip(raw, moist_heat)
+    else:
+        print("Error: raw and moist_heat have distinct length")
+
+def data_set_fish_dry_heat():
+    raw = ["15245", "15028", "15110", "15115", "15114", "15039", "15043", "15015", "15045", "15074", "15019", "15022", "15007", "15046", "15051", "15050", "15008", "15053", "15104", "15036", "15070", "15072", "15107", "15044", "15112", "15064", "15033", "15132", "15031", "15101", "15057", "15005", "15130", "15062", "15066", "15065", "15068", "15006", "15054", "15129", "15073", "15094", "15055", "15090", "15059", "15097", "15091", "15134", "15103", "15079", "15083", "15085", "15108", "15024", "15261"]
+    dry_heat = ["15246", "15029", "15111", "15116", "15219", "15040", "15197", "15016", "15199", "15208", "15192", "15193", "15191", "15047", "15052", "15201", "15009", "15202", "15105", "15037", "15071", "15207", "15217", "15198", "15113", "15204", "15034", "15133", "15032", "15102", "15058", "15189", "15223", "15063", "15067", "15205", "15069", "15190", "15203", "15222", "15232", "15215", "15056", "15213", "15206", "15098", "15092", "15224", "15216", "15211", "15212", "15086", "15218", "15195", "15262"]
+    if len(raw) == len(dry_heat):
+        return zip(raw, dry_heat)
+    else:
+        print("Error: raw and dry_heat have distinct length")
+
+def data_set_vegetable_boiled():
+    raw = ["11147", "11007", "11143", "11209", "11203", "11613", "11088", "11090", "11026", "11522", "11492", "11477", "11467", "11641", "11475", "11191", "11201", "11197", "11282", "11244", "11149", "11298", "11114", "11109", "11135", "11241", "11161", "11157", "11207", "11011", "11457", "11416", "11447", "11096", "11452", "11653", "11029", "11052", "11300", "11304", "11003", "11418", "11086", "11238", "11233", "11622", "11616", "11564", "11963", "11601", "11258", "11278", "11354", "11355", "11350", "11005", "11430", "11104", "11254", "11080", "11112", "11435", "11260", "11265", "11450", "11518", "11525", "11529", "11427", "11603", "11231", "11124"]
+    boiled = ["11148", "11008", "11144", "11210", "11204", "11614", "11089", "11091", "11027", "11523", "11493", "11478", "11468", "11642", "11476", "11192", "11202", "11198", "11283", "11245", "11150", "11299", "11115", "11751", "11136", "11242", "11162", "11158", "11208", "11012", "11458", "11417", "11448", "11097", "11453", "11654", "11030", "11053", "11301", "11305", "11004", "11419", "11087", "11269", "11234", "11623", "11617", "11565", "11964", "11602", "11259", "11279", "11357", "11358", "11351", "11006", "11431", "11105", "11255", "11081", "11113", "11436", "11261", "11243", "11451", "11519", "11526", "11530", "11428", "11604", "11232", "11125"]
+    if len(raw) == len(boiled):
+        return zip(raw, boiled)
+    else:
+        print("Error: raw and dry_heat have distinct length")
+
+
+def data_set_vegetable_frozen():
+    raw = ["11007", "11477", "11485", "11467", "11191", "11282", "11495", "11135", "11457", "11722", "11090", "11011", "11052", "11568", "11300", "11304", "11995", "11270", "11233", "11564", "11278", "11821", "11333", "11124"]
+    frozen = ["11009", "11479", "11487", "11473", "11195", "11289", "11501", "11137", "11463", "11730", "11092", "11018", "11060", "11574", "11302", "11312", "11996", "11272", "11235", "11566", "11280", "11917", "11337", "11130"]
+    if len(raw) == len(frozen):
+        return zip(raw, frozen)
+    else:
+        print("Error: raw and dry_heat have distinct length")
+
+def data_set_vegetable_canned():
+    raw = ["11026", "11467", "11282", "11011", "11457", "11568", "11304", "11974", "11900", "11352", "11979", "11080", "11588", "11124"]
+    canned = ["11028", "11471", "11285", "11015", "11461", "11570", "11308", "11975", "11903", "11374", "11632", "11084", "11590", "11128"]
+    if len(raw) == len(canned):
+        return zip(raw, canned)
+    else:
+        print("Error: raw and dry_heat have distinct length")
+
+def data_set_fruits_dehydrated():
+    raw = ["09021", "09279", "09236", "09077", "09040"]
+    dehydrated = ["09030", "09289", "09244", "09009", "09041"]
+    if len(raw) == len(dehydrated):
+        return zip(raw, dehydrated)
+    else:
+        print("Error: raw and dehydrated have distinct length")
+
+def data_set_fruits_dried():
+    raw = ["09021", "09050", "09146", "09263", "09279", "09089", "09164", "09172", "09003", "09252"]
+    dried = ["09032", "09163", "09147", "09264", "09291", "09094", "09165", "09173", "09011", "09259"]
+    if len(raw) == len(dried):
+        return zip(raw, dried)
+    else:
+        print("Error: raw and dehydrated have distinct length")
+
+def data_set_beans():
+    raw = ["16001", "16019", "16042", "16030", "16035", "16027", "16040", "16024", "16045", "16016", "16080", "16083", "16101", "16056", "16069"]
+    boiled = ["16002", "16020", "16043", "16031", "16036", "16028", "16041", "16025", "16046", "16017", "16081", "16084", "16102", "16057", "16070"]
+    data_set_beans.resumen_text = "Especificamente los frijoles, lentejas, alubias, etc, al ser cocinadas o hervidas pierden un promedio de {avg_loss}% de sus nutrientes. Los nutrientes más afectados son el calcio, omega 3, cholina, fibra y vitamina k, con una perdida de su valor de entre 40% a 45%."
+    if len(raw) == len(boiled):
+        return zip(raw, boiled)
+    else:
+        print("Error: raw and boiled have distinct length")
+
+
 class ExamineFoodVariants(object):
     def __init__(self):
         self.data = self.data_food()
@@ -2351,71 +2418,6 @@ class ExamineFoodVariants(object):
     def data_food(self):
         matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.csv')
         return matrix.to_dict(True)
-
-    def data_set_fish_moist_heat(self):
-        raw = ["15177", "15242", "15136", "15144", "15143", "15139", "15164", "15171", "15166"]
-        moist_heat = ["15178", "15243", "15137", "15227", "15226", "15140", "15165", "15231", "15230"]
-        if len(raw) == len(moist_heat):
-            return zip(raw, moist_heat)
-        else:
-            print("Error: raw and moist_heat have distinct length")
-
-    def data_set_fish_dry_heat(self):
-        raw = ["15245", "15028", "15110", "15115", "15114", "15039", "15043", "15015", "15045", "15074", "15019", "15022", "15007", "15046", "15051", "15050", "15008", "15053", "15104", "15036", "15070", "15072", "15107", "15044", "15112", "15064", "15033", "15132", "15031", "15101", "15057", "15005", "15130", "15062", "15066", "15065", "15068", "15006", "15054", "15129", "15073", "15094", "15055", "15090", "15059", "15097", "15091", "15134", "15103", "15079", "15083", "15085", "15108", "15024", "15261"]
-        dry_heat = ["15246", "15029", "15111", "15116", "15219", "15040", "15197", "15016", "15199", "15208", "15192", "15193", "15191", "15047", "15052", "15201", "15009", "15202", "15105", "15037", "15071", "15207", "15217", "15198", "15113", "15204", "15034", "15133", "15032", "15102", "15058", "15189", "15223", "15063", "15067", "15205", "15069", "15190", "15203", "15222", "15232", "15215", "15056", "15213", "15206", "15098", "15092", "15224", "15216", "15211", "15212", "15086", "15218", "15195", "15262"]
-        if len(raw) == len(dry_heat):
-            return zip(raw, dry_heat)
-        else:
-            print("Error: raw and dry_heat have distinct length")
-
-    def data_set_vegetable_boiled(self):
-        raw = ["11147", "11007", "11143", "11209", "11203", "11613", "11088", "11090", "11026", "11522", "11492", "11477", "11467", "11641", "11475", "11191", "11201", "11197", "11282", "11244", "11149", "11298", "11114", "11109", "11135", "11241", "11161", "11157", "11207", "11011", "11457", "11416", "11447", "11096", "11452", "11653", "11029", "11052", "11300", "11304", "11003", "11418", "11086", "11238", "11233", "11622", "11616", "11564", "11963", "11601", "11258", "11278", "11354", "11355", "11350", "11005", "11430", "11104", "11254", "11080", "11112", "11435", "11260", "11265", "11450", "11518", "11525", "11529", "11427", "11603", "11231", "11124"]
-        boiled = ["11148", "11008", "11144", "11210", "11204", "11614", "11089", "11091", "11027", "11523", "11493", "11478", "11468", "11642", "11476", "11192", "11202", "11198", "11283", "11245", "11150", "11299", "11115", "11751", "11136", "11242", "11162", "11158", "11208", "11012", "11458", "11417", "11448", "11097", "11453", "11654", "11030", "11053", "11301", "11305", "11004", "11419", "11087", "11269", "11234", "11623", "11617", "11565", "11964", "11602", "11259", "11279", "11357", "11358", "11351", "11006", "11431", "11105", "11255", "11081", "11113", "11436", "11261", "11243", "11451", "11519", "11526", "11530", "11428", "11604", "11232", "11125"]
-        if len(raw) == len(boiled):
-            return zip(raw, boiled)
-        else:
-            print("Error: raw and dry_heat have distinct length")
-
-
-    def data_set_vegetable_frozen(self):
-        raw = ["11007", "11477", "11485", "11467", "11191", "11282", "11495", "11135", "11457", "11722", "11090", "11011", "11052", "11568", "11300", "11304", "11995", "11270", "11233", "11564", "11278", "11821", "11333", "11124"]
-        frozen = ["11009", "11479", "11487", "11473", "11195", "11289", "11501", "11137", "11463", "11730", "11092", "11018", "11060", "11574", "11302", "11312", "11996", "11272", "11235", "11566", "11280", "11917", "11337", "11130"]
-        if len(raw) == len(frozen):
-            return zip(raw, frozen)
-        else:
-            print("Error: raw and dry_heat have distinct length")
-
-    def data_set_vegetable_canned(self):
-        raw = ["11026", "11467", "11282", "11011", "11457", "11568", "11304", "11974", "11900", "11352", "11979", "11080", "11588", "11124"]
-        canned = ["11028", "11471", "11285", "11015", "11461", "11570", "11308", "11975", "11903", "11374", "11632", "11084", "11590", "11128"]
-        if len(raw) == len(canned):
-            return zip(raw, canned)
-        else:
-            print("Error: raw and dry_heat have distinct length")
-
-    def data_set_fruits_dehydrated(self):
-        raw = ["09021", "09279", "09236", "09077", "09040"]
-        dehydrated = ["09030", "09289", "09244", "09009", "09041"]
-        if len(raw) == len(dehydrated):
-            return zip(raw, dehydrated)
-        else:
-            print("Error: raw and dehydrated have distinct length")
-
-    def data_set_fruits_dried(self):
-        raw = ["09021", "09050", "09146", "09263", "09279", "09089", "09164", "09172", "09003", "09252"]
-        dried = ["09032", "09163", "09147", "09264", "09291", "09094", "09165", "09173", "09011", "09259"]
-        if len(raw) == len(dried):
-            return zip(raw, dried)
-        else:
-            print("Error: raw and dehydrated have distinct length")
-
-    def data_set_beans(self):
-        raw = ["16001", "16019", "16042", "16030", "16035", "16027", "16040", "16024", "16045", "16016", "16080", "16083", "16101", "16056", "16069"]
-        boiled = ["16002", "16020", "16043", "16031", "16036", "16028", "16041", "16025", "16046", "16017", "16081", "16084", "16102", "16057", "16070"]
-        if len(raw) == len(boiled):
-            return zip(raw, boiled)
-        else:
-            print("Error: raw and boiled have distinct length")
 
     def compare(self, ndb_no1, ndb_no2, count):
         increased = {}
@@ -2472,74 +2474,42 @@ class ExamineFoodVariants(object):
                 nutr[nutrdesc] = (round(count/total * 100, 2), 
                     round(prom_i/total, 2), round(prom_d/total, 2))
         return nutr
-            
-    def test(self, option, ndb_no=None):
-        if option == 0:
-            function_ = self.data_set_fish_dry_heat
-        elif option == 1:
-            function_ = self.data_set_fish_moist_heat
-        elif option == 2:
-            function_ = self.data_set_vegetable_boiled
-        elif option == 3:
-            function_ = self.data_set_vegetable_frozen
-        elif option == 4:
-            function_ = self.data_set_vegetable_canned
-        elif option == 5:
-            function_ = self.data_set_fruits_dehydrated
-        elif option == 6:
-            function_ = self.data_set_fruits_dried
-        elif option == 7:
-            function_ = self.data_set_beans
-
-        nutr = self.evaluate_inc_dec(function_, ndb_no=ndb_no)
-        for k, (v, p, o) in nutr.items():
-            if v == 100:
-                print("OK", k, v, p, o)
-
-        for k, (v, p, o) in nutr.items():
-            if 90 <= v < 100:
-                print("90%", k, v, p, o)
-
-        for k, (v, p, o) in nutr.items():
-            if 0 < v < 90:
-                print("<90%", k, v, p, o)
-
-        for k, (v, p, o) in nutr.items():
-            if v == 0:
-                print("BAD", k, v, p, o)
 
     def category(self, category, sub_category=None):
-        resume_text = ""
-        if category == "1500" and sub_category == "dry_heat":
-            function_ = self.data_set_fish_dry_heat
-        elif category == "1500" and sub_category == "moist_heat":
-            function_ = self.data_set_fish_moist_heat
-        elif category == "1100" and sub_category == "boiled":
-            function_ = self.data_set_vegetable_boiled
-        elif category == "1100" and sub_category == "frozen":
-            function_ = self.data_set_vegetable_frozen
-        elif category == "1100" and sub_category == "canned":
-            function_ = self.data_set_vegetable_canned
-        elif category == "0900" and sub_category == "dehydrated":
-            function_ = self.data_set_fruits_dehydrated
-        elif category == "0900" and sub_category == "dried":
-            function_ = self.data_set_fruits_dried
-        elif category == "1600":
-            function_ = self.data_set_beans
-            resume_text = "Especificamente los frijoles, lentejas, alubias, etc, al ser cocinadas o hervidas pierden un promedio de {avg_loss}% de sus nutrientes. Los nutrientes más afectados son el calcio, omega 3, cholina, fibra y vitamina k, con una perdida de su valor de entre 40% a 45%."
+        categories = {"1500": 
+                        {"dry_heat": data_set_fish_dry_heat,
+                        "moist_heat": data_set_fish_dry_heat},
+                    "1100": 
+                        {"boiled": data_set_vegetable_boiled,
+                        "frozen": data_set_vegetable_frozen,
+                        "canned": data_set_vegetable_canned},
+                    "0900":
+                        {"dehydrated": data_set_fruits_dehydrated,
+                        "dried": data_set_fruits_dried},
+                    "1600":
+                        {"heat": data_set_beans}
+                    }
+        functions = []
+        if sub_category is None:
+            for sub_category_f in categories[category].values():
+                functions.append(sub_category_f)
+        else:
+            functions.append(categories[category][sub_category])
 
-        data = []
-        count = 0.0
-        avg_loss = 0
-        for k, v in self.evaluate_inc_dec(function_).items():
-            if v[0] == 0 and v[1] == 0 and v[2] == 0:
-                pass
-            else:
-                data.append((k, v))
-            if v[2] < 0 and v[0] < 50:
-                count += 1
-                avg_loss += v[2]
-        return data, resume_text.format(avg_loss=abs(round(avg_loss/count, 2)))
+        for function_ in functions:
+            data = []
+            count = 0.0
+            avg_loss = 0
+            for k, v in self.evaluate_inc_dec(function_).items():
+                if v[0] == 0 and v[1] == 0 and v[2] == 0:
+                    pass
+                else:
+                    data.append((k, v))
+                if v[2] < 0 and v[0] < 50:
+                    count += 1
+                    avg_loss += v[2]
+            function_.resumen_text = function_.resumen_text.format(avg_loss=abs(round(avg_loss/count, 2)))
+            yield data, function_.resumen_text
 
     def prepare_variants(self, foods, variants):
         for food_group in foods.values():
@@ -2559,3 +2529,4 @@ class ExamineFoodVariants(object):
                 dict_ = {"ndb_no": fv.ndb_no, "category": fv.category, "count": count}
                 dict_.update(nutrs)
                 writer.writerow(dict_)
+

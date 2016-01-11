@@ -324,13 +324,14 @@ def list_food_category(request, category_id, order, intake_params={}):
         foods = alfabetic_food(category_food=category_id)
 
     food_variants = ExamineFoodVariants()
-    variants, resume_text = food_variants.category(category_id)
-    variants_esp = [(k, v[1], "incremento") for k, v in variants if v[0] >= 50]
-    variants_esp.extend([(k, v[2], "decremento") for k, v in variants if v[0] < 50 and v[2] < 0])
+    types_variants = []
+    for i, (variants, resumen_text) in enumerate(food_variants.category(category_id)):
+        variants_esp = [(k, v[1], "incremento") for k, v in variants if v[0] >= 50]
+        variants_esp.extend([(k, v[2], "decremento") for k, v in variants if v[0] < 50 and v[2] < 0])
+        types_variants.append((i, variants_esp, resumen_text))
 
     return render(request, "food_category.html", {
-        "resume_text": resume_text,
-        "variants": variants_esp,
+        "variants": types_variants,
         "foods": foods, 
         "categoria": categoria, 
         "order": order, 

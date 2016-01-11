@@ -5,15 +5,17 @@
 <div class="container">
 <div class="starter-template">
 <h2>{{ categoria }}</h2>
+{% for i, _, resumen_text in variants %}
 <div class="col-sm-6 col-md-8">
     <div class="panel panel-default">
         <div class="panel-heading list-group-item">
         <h3>Descripción</h3>
-        {{ resume_text }}
-        <div id="barContainer"></div>
+        {{ resumen_text }}
+        <div id="barContainer-{{ i }}"></div>
         </div>
     </div>
 </div>
+{% endfor %}
 
 <div class="col-sm-6 col-md-8">
     <div class="panel panel-default">
@@ -43,31 +45,29 @@
 
 <script type="text/javascript">
 var nutrients = [];
-{% for nutrdesc, value, type in variants %}
-nutrients.push({nutriente: '{{ nutrdesc }}', porcentaje: {{ value }}, type: '{{ type }}'});
+{% for i, data, resumen_text in variants %}
+{% for nutrdesc, value, type in data %}
+nutrients.push({index: {{ i }}, nutriente: '{{ nutrdesc }}', porcentaje: {{ value }}, type: '{{ type }}'});
+{% endfor %}
 {% endfor %}
 
-var svg = dimple.newSvg("#barContainer", 600, 350);
-var barChart = new dimple.chart(svg, nutrients);
-barChart.assignColor("decremento", "#aa0000", null, .5);
-barChart.assignColor("incremento", "#00aacc", null, .5);
-barChart.setBounds(60, 50, 440, 220);
-var x = barChart.addCategoryAxis("x", "nutriente");
-x.showGridlines = true;
-var y = barChart.addMeasureAxis("y", "porcentaje");
-var l = barChart.addSeries("type", dimple.plot.bar);
-y.overrideMax = 100;
-y.showGridlines = false;
-x.addOrderRule("nutriente");
-barChart.draw();
-x.titleShape.text("Nutriente");
-y.tickFormat = ',.2f';
-/*svg.append("text")
-   .attr("x", barChart._xPixels() + barChart._widthPixels() / 2)
-   .attr("y", barChart._yPixels() - 20)
-   .style("text-anchor", "middle")
-   .style("font-family", "sans-serif")
-   .style("font-weight", "bold")
-   .text("Gráfica de nutrientes, porcentaje cubierto en base al perfil");*/
+{% for i, _, resumen_text in variants %}
+var svg{{i}} = dimple.newSvg("#barContainer-{{ i }}", 600, 350);
+var data = dimple.filterData(nutrients, "index", ["{{i}}"])
+var barChart{{i}} = new dimple.chart(svg{{i}}, nutrients);
+barChart{{i}}.assignColor("decremento", "#aa0000", null, .5);
+barChart{{i}}.assignColor("incremento", "#00aacc", null, .5);
+barChart{{i}}.setBounds(60, 50, 440, 220);
+var x{{i}} = barChart{{i}}.addCategoryAxis("x", "nutriente");
+x{{i}}.showGridlines = true;
+var y{{i}} = barChart{{i}}.addMeasureAxis("y", "porcentaje");
+var l{{i}} = barChart{{i}}.addSeries("type", dimple.plot.bar);
+y{{i}}.overrideMax = 100;
+y{{i}}.showGridlines = false;
+x{{i}}.addOrderRule("nutriente");
+barChart{{i}}.draw();
+x{{i}}.titleShape.text("Nutriente");
+y{{i}}.tickFormat = ',.2f';
+{% endfor %}
 </script>
 {% endblock js %}
