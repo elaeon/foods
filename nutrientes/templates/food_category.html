@@ -53,8 +53,8 @@ nutrients.push({index: {{ i }}, nutriente: '{{ nutrdesc }}', porcentaje: {{ valu
 
 {% for i, _, resumen_text in variants %}
 var svg{{i}} = dimple.newSvg("#barContainer-{{ i }}", 600, 350);
-var data = dimple.filterData(nutrients, "index", ["{{i}}"])
-var barChart{{i}} = new dimple.chart(svg{{i}}, nutrients);
+var data{{i}} = dimple.filterData(nutrients, "index", ["{{i}}"])
+var barChart{{i}} = new dimple.chart(svg{{i}}, data{{i}});
 barChart{{i}}.assignColor("decremento", "#aa0000", null, .5);
 barChart{{i}}.assignColor("incremento", "#00aacc", null, .5);
 barChart{{i}}.setBounds(60, 50, 440, 220);
