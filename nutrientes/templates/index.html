@@ -12,10 +12,7 @@
     </p>
     </div> 
 </div>
-<canvas id="displayCanvas" height="15px">
-    Your browser does not support HTML5 canvas.
-</canvas>
-
+<div style="height:10px;background-color:#000;width:auto;"></div>
 <div class="col-sm-6 col-md-4">
     <div class="panel panel-default">
         <div class="panel-heading list-group-item">
@@ -37,8 +34,7 @@
     <div class="color-swatch bg-info" style="padding: 5px; text-align: center;">Excelente</div>
     <div class="color-swatch bg-success" style="padding: 5px; text-align: center;">Bueno</div>
     <div class="color-swatch bg-danger" style="padding: 5px; text-align: center;">Cuidado</div>
-    <a role="button" class="btn btn-sm btn-default" href="{% url 'complex_intake_nutrients' %}">Nutrientes...</a>
-    <a role="button" class="btn btn-sm btn-default" href="{% url 'graph_all_nutr' %}">Quiero ver más...</a>
+    <a role="button" class="btn btn-sm btn-default" href="{% url 'graph_all_nutr' %}">Más detalle...</a>
     {% if table_type == "perfil" %}
     <a role="button" class="btn btn-sm btn-default" href="{% url 'index' %}">Ver tabla por promedio</a>
     {% else %}
@@ -338,8 +334,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block js %}
-<script type="text/javascript" src="{% static 'cellular.js' %}"></script>
 {% endblock %}
