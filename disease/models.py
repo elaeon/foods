@@ -18,3 +18,32 @@ class MortalityYears(models.Model):
 
     class Meta:
         unique_together = ("causa_mortality", "year")
+
+class CancerAgent(models.Model):
+    name = models.CharField(max_length=100)
+    name_es = models.CharField(max_length=100, blank=True, null=True)
+    exposition_in = models.CharField(max_length=100, blank=True, null=True)
+    nivel = models.CharField(max_length=10)
+
+    def __unicode__(self):
+        return self.name
+
+class Cancer(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    name_es = models.CharField(max_length=100, blank=True, null=True)
+    organ = models.CharField(max_length=100, blank=True, null=True)
+
+    def __unicode__(self):
+        return self.name
+
+class CancerAgentRelation(models.Model):
+    cancer = models.ForeignKey(Cancer)
+    agent = models.ForeignKey(CancerAgent)
+
+class Cancer5yrSurvivalRate(models.Model):
+    period = models.CharField(max_length=100)
+    cancer = models.ForeignKey(Cancer)
+    percentaje = models.FloatField()
+
+    def __unicode__(self):
+        return self.period

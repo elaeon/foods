@@ -43,3 +43,14 @@ def cancer(request):
     return render(request, "cancer.html", {
         "years": years, 
         "mortality_list": mortality_list})
+
+def cancer_factor_risk(request):
+    from django.db.models import Count
+
+    if request.POST:
+        pass#cancer = 
+    cancers = models_disease.Cancer.objects.all()
+    models_disease.CancerAgent.objects.all().annotate(total=Count('canceragentrelation')).order_by('-total')
+    return render(request, "cancer_factor_risk.html", {
+        "years": years, 
+        "mortality_list": mortality_list})
