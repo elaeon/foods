@@ -1,0 +1,45 @@
+{% extends "busqueda.html" %}
+{% load staticfiles %}
+{% load humanize %}
+
+{% block contenido_base %}
+<div class="container">
+    <div class="starter-template">
+    <div class="row">
+    <h3>Factores  de riesgo.</h3>
+    <form action="." method="post">
+    {% csrf_token %}
+    <table>
+        {{ rf_form.as_table }}
+    </table>
+    <button type="submit">Filtrar</button>
+    </form>
+
+    {% if init_result %}
+    <p>Listado de agentes causantes de cancer (con suficiente evidencia científica) agrupado por los tipos de cáncer.</p>
+    <table class="table table-striped table-hover table-condensed">
+    <tr>
+    <th>Agente</th>
+    <th>Tipos de cáncer</th>
+    </tr>
+    {% for ca in cancer_resumen %}
+        <tr><td>{{ ca.name }}</td><td>{{ ca.total }}</td></tr>
+    {% endfor %}
+    </table>
+    {% else %}
+    <table class="table table-striped table-hover table-condensed">
+    <tr>
+    <th>Agente</th>
+    <th>Tipos de cáncer</th>
+    <th>Órgano</th>
+    </tr>
+    {% for ca_ag in result %}
+        <tr><td>{{ ca_ag.agent.name }}</td><td>{{ ca_ag.cancer.name }}</td><td>{{ ca_ag.cancer.organ}}</td></tr>
+    {% endfor %}
+    </table>
+    {% endif %}
+    </div>
+    </div>
+</div>
+<a href="http://monographs.iarc.fr/ENG/Classification/Table4.pdf">IARC</a>
+{% endblock %}

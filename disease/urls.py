@@ -6,4 +6,5 @@ urlpatterns = [
     url(r'^$', disease_views.index, name="disease_index"),
     url(r'^diabetes/$', disease_views.diabetes, name="diabetes"),
     url(r'^cancer/$', disease_views.cancer, name="cancer"),
+    url(r'^cancer/rf/$', disease_views.cancer_risk_factor, name="cancer_risk_factor"),
 ]

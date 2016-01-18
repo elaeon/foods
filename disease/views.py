@@ -44,13 +44,32 @@ def cancer(request):
         "years": years, 
         "mortality_list": mortality_list})
 
-def cancer_factor_risk(request):
+def cancer_risk_factor(request):
     from django.db.models import Count
+    from disease.forms import RiskFactorForm
+    
+    cancer_resumen = models_disease.CancerAgent.objects.all().annotate(
+            total=Count('canceragentrelation')).order_by('-total', 'name')
 
+    result = None
     if request.POST:
-        pass#cancer = 
-    cancers = models_disease.Cancer.objects.all()
-    models_disease.CancerAgent.objects.all().annotate(total=Count('canceragentrelation')).order_by('-total')
-    return render(request, "cancer_factor_risk.html", {
-        "years": years, 
-        "mortality_list": mortality_list})
+        rf_form = RiskFactorForm(request.POST)
+        if rf_form.is_valid():
+            agent = rf_form.cleaned_data["agent"]
+            cancer = rf_form.cleaned_data["cancer"]
+            if agent is not None:
+                result = agent.canceragentrelation_set.all()
+                init_result = False
+            else:
+                result = cancer.canceragentrelation_set.all()
+                init_result = False
+    else:
+        rf_form = RiskFactorForm()
+        init_result = True
+    
+    return render(request, "cancer_risk_factor.html", {
+        "rf_form": rf_form,
+        "cancer_resumen": cancer_resumen,
+        "init_result": init_result,
+        "result": result
+        })
