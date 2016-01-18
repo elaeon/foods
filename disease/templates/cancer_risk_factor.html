@@ -32,14 +32,24 @@
     <th>Agente</th>
     <th>Tipos de cáncer</th>
     <th>Órgano</th>
+    <th>Porcentaje de supervivencia en 5 años</th>
     </tr>
     {% for ca_ag in result %}
-        <tr><td>{{ ca_ag.agent.name }}</td><td>{{ ca_ag.cancer.name }}</td><td>{{ ca_ag.cancer.organ}}</td></tr>
+        <tr>
+            <td>{{ ca_ag.agent.name }}</td>
+            <td>{{ ca_ag.cancer.name }}</td>
+            <td>{{ ca_ag.cancer.organ}}</td>
+            <td>{{ ca_ag.cancer.actual_survival_rate }}</td>
+        </tr>
     {% endfor %}
     </table>
     {% endif %}
+    <p>Fuentes</p>
+    <ul>
+    <li><a href="http://monographs.iarc.fr/ENG/Classification/Table4.pdf">IARC</a></li>
+    <li><a href="http://onlinelibrary.wiley.com/doi/10.3322/caac.21332/full">Cancer Journal</a></li>
+    </ul>
     </div>
     </div>
 </div>
-<a href="http://monographs.iarc.fr/ENG/Classification/Table4.pdf">IARC</a>
 {% endblock %}

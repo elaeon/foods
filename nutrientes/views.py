@@ -509,9 +509,10 @@ def change_perfil(request, intake_params):
         nutrs.setdefault(nutrdesc, ["X", None])
         nutrs[nutrdesc][1] = nutr
 
+    print(nutrs.values())
     return render(request, "change_perfil.html", {
         "intake_form": intake_form, 
-        "nutrs_intake": sorted(nutrs.values(), key=lambda x: x[0].nutrdesc if x[0] != "X" else x[1].nutrdesc),
+        "nutrs_intake": sorted(nutrs.values(), key=lambda x: x[0].nutrdesc if x[0] != "X" else x[1]),
         "normas": RNV_TYPE.items()})
 
 

@@ -1984,6 +1984,24 @@ class SearchCompleteFoods(object):
             #self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
         self.min_distance_calculated = None
 
+    def score(self, selector="nutrients"):
+        self.selector = selector
+        nutrient_map = dict(self.nutrients_to_map(self.universe, selector))
+        active_positions = {ndb_no: [i for i, e in enumerate(vector) if e > 0] 
+                            for ndb_no, vector in nutrient_map.items()}
+        active_positions_v = {ndb_no: [v for v in vector if v > 0] 
+                            for ndb_no, vector in nutrient_map.items()}
+        probabilities = self.probability(
+            filter(lambda x: len(x) > 0, active_positions.values()))
+        for i, v in zip(active_positions.values(), active_positions_v.values()):
+            vector = zip(i,v)
+            for index, value in vector:
+                print(value * (1 - probabilities[index]))
+            break
+        #score = {ndb_no: sum(1 - probabilities[index] for index in vector)
+        #                for ndb_no, vector in active_positions.items()}
+        #print(probabilities)
+
     def probability(self, active_positions_values):
         import collections
         total = float(len(active_positions_values))

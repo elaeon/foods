@@ -18,26 +18,6 @@ def matrix_food():
     matrix.save_matrix(PREPROCESSED_DATA_DIR+'matrix.csv')
     return matrix
 
-def ordered_matrix():
-    from nutrientes.utils import create_order_matrix
-    foods = create_order_matrix()
-    import csv
-    foods_l = [Food(ndb_no, avg=False) for ndb_no in foods]
-    with open("order_matrix.csv", 'wb') as csvfile:
-        csvwriter = csv.writer(csvfile, delimiter=',',
-                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        for food in foods_l:
-            csvwriter.writerow([food.ndb_no, food.group["id"]])
-
-def ranking_global():
-    from nutrientes.utils import Rank
-    rank = best_of_general_2()
-    print("Ranking calculated")
-    ranking_list = rank.results
-    #calc_ranking_detail(rank)
-    global_ = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_list, f_index=lambda x: x[0])}
-    return global_
-
 def ranking_global_perfil():    
     from nutrientes.utils import Food, Recipe, perfiles, get_range
     import csv
@@ -57,13 +37,13 @@ def ranking_global_perfil():
         if key not in perfiles_dict:
             perfiles_dict[key] = {"edad": edad, "genero": genero, "unidad_edad": unidad_edad, "rnv_type": rnv_type}
 
-    with open(PREPROCESSED_DATA_DIR+'order_matrix.csv', 'rb') as csvfile:
+    with open(PREPROCESSED_DATA_DIR+'matrix.csv', 'rb') as csvfile:
         rows = list(csv.reader(csvfile, delimiter=',', quotechar='"'))
         for perfil in perfiles_dict.values():
             edad_range = get_range(perfil["edad"], perfil["unidad_edad"])
             print(perfil, edad_range)
             foods = []
-            for row in rows:
+            for row in rows[1:]:
                 food = Food(row[0])
                 score = food.score(perfil, features=features)
                 foods.append((
@@ -75,14 +55,6 @@ def ranking_global_perfil():
                     perfil["rnv_type"]))
             ranking_by_perfil(foods)
             #break
-
-def ranking_category(group):
-    from nutrientes.utils import Rank
-    rank = best_of_general_2(group)
-    ranking_cat_list = rank.results
-    category = {ndb_no: i for i, (_, ndb_no, _) in Rank.rank2natural(ranking_cat_list, f_index=lambda x: x[0])}
-    return category
-
 
 def calc_radio_omega_all():
     conn, cursor = conection()
@@ -116,39 +88,14 @@ def calc_radio_omega_all():
     conn.commit()
 
 
-def ranking_by_type(data, type_position):
-    conn, cursor = conection()
-    i = 0
-    for ndb_no, position in data.items():
-        print(i)
-        i += 1
-        query = """ SELECT COUNT(*) 
-                    FROM ranking 
-                    WHERE ndb_no='{ndb_no}'
-                    AND type_position='{type_position}'""".format(
-                ndb_no=ndb_no, 
-                type_position=type_position)
-        cursor.execute(query)
-        if cursor.fetchall()[0][0] == 1:
-            query = """UPDATE ranking 
-                        SET position={position}
-                        WHERE ndb_no='{ndb_no}'
-                        AND type_position='{type_position}'""".format(
-                ndb_no=ndb_no,
-                position=position,
-                type_position=type_position)
-        else:
-            query = """INSERT INTO ranking VALUES ('{ndb_no}', {position}, '{type_position}')""".format(
-            ndb_no=ndb_no, 
-            position=position, 
-            type_position=type_position)
-        cursor.execute(query)
-        conn.commit()
-
-
 def ranking_by_perfil(data):
     conn, cursor = conection()
     for ndb_no, score, edad_range, genero, unidad_edad, rnv_type in data:
+        if len(edad_range) > 1:
+            er = edad_range[0]
+        else:
+            er = edad_range[0]
+
         query = """SELECT COUNT(*) 
                     FROM ranking_perfil 
                     WHERE ndb_no='{ndb_no}'
@@ -157,7 +104,7 @@ def ranking_by_perfil(data):
                     AND unidad_edad='{unidad_edad}'
                     AND rnv_type={rnv_type}""".format(
                 ndb_no=ndb_no, 
-                edad_range=edad_range, 
+                edad_range=er, 
                 genero=genero, 
                 unidad_edad=unidad_edad, 
                 rnv_type=rnv_type)
@@ -173,7 +120,7 @@ def ranking_by_perfil(data):
                     AND rnv_type={rnv_type}""".format(
                 ndb_no=ndb_no,
                 score=score,
-                edad_range=edad_range, 
+                edad_range=er, 
                 genero=genero, 
                 unidad_edad=unidad_edad, 
                 rnv_type=rnv_type)
@@ -181,7 +128,7 @@ def ranking_by_perfil(data):
             query = """INSERT INTO ranking_perfil (ndb_no, score, edad_range, unidad_edad, genero, rnv_type) VALUES ('{ndb_no}', {score}, '{edad_range}', '{unidad_edad}', '{genero}', '{rnv_type}')""".format(
             ndb_no=ndb_no, 
             score=score,
-            edad_range=edad_range, 
+            edad_range=er, 
             genero=genero, 
             unidad_edad=unidad_edad, 
             rnv_type=rnv_type)
@@ -202,14 +149,6 @@ def calc_avg(force=False):
         Food.save_matrix(PREPROCESSED_DATA_DIR + "nutavg.p", nutavg_vector)
 
 def insert_update_db_ranking():
-    from nutrientes.utils import categories_foods
-    data = ranking_global()
-    ranking_by_type(data, "global")
-
-    for group, _ in categories_foods():
-        data = ranking_category(group)
-        ranking_by_type(data, "category")
-
     data = ranking_global_perfil()
 
 
@@ -232,8 +171,6 @@ def recalc_preprocessed_data():
     #calc_avg(force=True)
     #print "Generate Matrix"
     #matrix_food()
-    #print "Generate Ranks"
-    #insert_update_db_ranking()
-    #print "Generate Ordered Matrix"
-    #ordered_matrix()
-    calc_energy_density()
+    print "Generate Ranks"
+    insert_update_db_ranking()
+    #calc_energy_density()

@@ -33,8 +33,17 @@ class Cancer(models.Model):
     name_es = models.CharField(max_length=100, blank=True, null=True)
     organ = models.CharField(max_length=100, blank=True, null=True)
 
+    def actual_survival_rate(self):
+        try:
+            return self.cancer5yrsurvivalrate_set.get(period="2005-2011").percentaje
+        except Cancer5yrSurvivalRate.DoesNotExist:
+            return None
+
     def __unicode__(self):
         return self.name
+
+    class Meta:
+        ordering = ('name',)
 
 class CancerAgentRelation(models.Model):
     cancer = models.ForeignKey(Cancer)
