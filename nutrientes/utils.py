@@ -1979,9 +1979,9 @@ class SearchCompleteFoods(object):
 
         self.selector = None
         if universe is None:
-            self.universe = FoodDescImg.objects.values_list('ndb_no_t', flat=True)
+            #self.universe = FoodDescImg.objects.values_list('ndb_no_t', flat=True)
             #self.universe =  FoodDescImg.objects.exclude(ndb_no_t="09062").values_list('ndb_no_t', flat=True)
-            #self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
+            self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
         self.min_distance_calculated = None
 
     def score(self, selector="nutrients"):
@@ -1993,14 +1993,21 @@ class SearchCompleteFoods(object):
                             for ndb_no, vector in nutrient_map.items()}
         probabilities = self.probability(
             filter(lambda x: len(x) > 0, active_positions.values()))
+        nutr_row_c = OrderedDict(((k, 0) for k, v in WEIGHT_NUTRS.items() if v <= 1))
+        for nutr_no, _, v, _ in Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p"):
+            nutr_row_c[nutr_no] = v
+        avg_items = nutr_row_c.values()
+        totals = []
         for i, v in zip(active_positions.values(), active_positions_v.values()):
             vector = zip(i,v)
+            total = 0
             for index, value in vector:
-                print(value * (1 - probabilities[index]))
-            break
-        #score = {ndb_no: sum(1 - probabilities[index] for index in vector)
-        #                for ndb_no, vector in active_positions.items()}
-        #print(probabilities)
+                c = (value * 100) / avg_items[index]
+                total += c * (1 - probabilities[index])
+            totals.append(total)
+        result = sorted(zip(totals, active_positions), key=lambda x:x[0], reverse=True)
+        for e in result[:10]:
+           print(e)
 
     def probability(self, active_positions_values):
         import collections
