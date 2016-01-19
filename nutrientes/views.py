@@ -72,17 +72,11 @@ def graph_all_nutr(request):
 
 def principal_nutrients_graph(request):
     from nutrientes.utils import principal_nutrients, Food, categories_foods
-    
+    from nutrientes.utils import principal_nutrients_porcentage
     data = []
     limit = 5
     for category, category_des in categories_foods():
-        features, omegas = Food.subs_omegas(
-            [(e[0], e[0], e[1], None) 
-            for e in principal_nutrients(category=category)])
-        all_nutr = features + [(omega, omega, v, u) for omega, v, u in omegas.values()]
-        sorted_data = sorted(all_nutr, key=lambda x: x[2], reverse=True)
-        maximo = sum((d[2] for d in sorted_data))
-        porcentaje_data = [(round(d[2]*100./maximo, 3), d[0]) for d in sorted_data]
+        porcentaje_data = principal_nutrients_porcentage(category)
         for val, nutr in porcentaje_data[:limit]:
             data.append((category_des, val, nutr))
     return render(request, "principal_nutr_category.html", {"data": data, "limit": limit})

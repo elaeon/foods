@@ -1027,7 +1027,7 @@ def create_order_matrix():
     order = [food["attr"][0] for _, food in rank.order()]
     return order
 
-def principal_nutrients(category=None):
+def principal_nutrients(category=None, sorted_=True):
     _, cursor = conection()
     if category is None:
         query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
@@ -1046,7 +1046,19 @@ def principal_nutrients(category=None):
     nutrientes = [(nutrdesc, avg, units) for nutrdesc, avg, units in cursor.fetchall()]
     nutrientes_units_converted = convert_units_scale((avg, units) for _, avg, units in nutrientes)
     totals = [(n[0], nc) for n, nc in zip(nutrientes, nutrientes_units_converted) if nc != None]
-    return sorted(totals, key=lambda x: x[1], reverse=True)
+    if sorted_:
+        return sorted(totals, key=lambda x: x[1], reverse=True)
+    else:
+        return totals
+
+def principal_nutrients_porcentage(category):
+    features, omegas = Food.subs_omegas(
+        [(e[0], e[0], e[1], None) 
+        for e in principal_nutrients(category=category)])
+    all_nutr = features + [(omega, omega, v, u) for omega, v, u in omegas.values()]
+    sorted_data = sorted(all_nutr, key=lambda x: x[2], reverse=True)
+    maximo = sum((d[2] for d in sorted_data))
+    return [(round(d[2]*100./maximo, 3), d[0]) for d in sorted_data]
 
 def convert_units_scale(values):
     units_scale = {"g": 1, "mg": 1000, u"µg": 1000000} #gramo, miligramo, microgramo
@@ -1979,9 +1991,9 @@ class SearchCompleteFoods(object):
 
         self.selector = None
         if universe is None:
-            #self.universe = FoodDescImg.objects.values_list('ndb_no_t', flat=True)
+            self.universe = FoodDescImg.objects.values_list('ndb_no_t', flat=True)
             #self.universe =  FoodDescImg.objects.exclude(ndb_no_t="09062").values_list('ndb_no_t', flat=True)
-            self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
+            #self.universe = (ndb_no for ndb_no in Food.alimentos(limit="limit 9000"))
         self.min_distance_calculated = None
 
     def score(self, selector="nutrients"):
@@ -2003,6 +2015,8 @@ class SearchCompleteFoods(object):
             total = 0
             for index, value in vector:
                 c = (value * 100) / avg_items[index]
+                if c >= 500:
+                    c = 500
                 total += c * (1 - probabilities[index])
             totals.append(total)
         result = sorted(zip(totals, active_positions), key=lambda x:x[0], reverse=True)
