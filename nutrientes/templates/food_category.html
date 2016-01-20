@@ -5,6 +5,20 @@
 <div class="container">
 <div class="starter-template">
 <h2>{{ categoria }}</h2>
+<div class="col-sm-6 col-md-8">
+    <div class="panel panel-default">
+        <div class="panel-heading list-group-item">
+        <h3>Nutrientes relevantes en esta categoria</h3>
+        <div class="list-two-column">
+        {% for _, _, nutr in best_nutr %}
+        <p style="margin:0;padding:0;">{{ forloop.counter }}. {{ nutr }}</p>
+        {% endfor %}
+        </div>
+        <a href="{% url 'principal_nutrients_graph' %}">Ver gráfica global</a>
+        </div>
+    </div>
+</div>
+
 {% for i, _, resumen_text in variants %}
 <div class="col-sm-6 col-md-8">
     <div class="panel panel-default">

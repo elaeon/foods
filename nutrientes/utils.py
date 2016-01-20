@@ -1051,14 +1051,22 @@ def principal_nutrients(category=None, sorted_=True):
     else:
         return totals
 
-def principal_nutrients_porcentage(category):
+def principal_nutrients_percentaje(category=None):
     features, omegas = Food.subs_omegas(
         [(e[0], e[0], e[1], None) 
         for e in principal_nutrients(category=category)])
     all_nutr = features + [(omega, omega, v, u) for omega, v, u in omegas.values()]
     sorted_data = sorted(all_nutr, key=lambda x: x[2], reverse=True)
     maximo = sum((d[2] for d in sorted_data))
-    return [(round(d[2]*100./maximo, 3), d[0]) for d in sorted_data]
+    return [(d[2]*100./maximo, d[0]) for d in sorted_data if d[2]*100./maximo > 0]
+
+def principal_nutrients_avg_percentaje(category, all_food_avg=None):
+    if all_food_avg is None:
+        all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
+    category_avg = principal_nutrients_percentaje(category)
+    values = ((v, (v / all_food_avg.get(nutrdesc, 0)), nutrdesc)
+                for v, nutrdesc in category_avg if all_food_avg.get(nutrdesc, 0) <= v)
+    return sorted(values, key=lambda x:x[1], reverse=True)
 
 def convert_units_scale(values):
     units_scale = {"g": 1, "mg": 1000, u"µg": 1000000} #gramo, miligramo, microgramo

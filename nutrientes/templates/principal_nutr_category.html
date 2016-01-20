@@ -4,7 +4,7 @@
 {% block contenido_base %}
 <div>
 <div class="starter-template">
-<div>Nota: En esta gráfica se muestran los {{ limit }} principales nutrientes de cada categoria de alimentos</div>
+<div>Nota: En esta gráfica se muestran los {{ limit }} principales nutrientes de cada categoria de alimentos. La proporción es la cantidad de veces que supera al valor promedio de cada nutriente.</div>
 <div id="graph"></div>
 </div>
 </div>
@@ -13,19 +13,19 @@
 <script type="text/javascript">
     data = [];
     {% for category_des, value, nutr in data %}
-        data.push({categoria: '{{ category_des }}', porcentaje: {{ value }}, nutr: '{{ nutr }}'});
+        data.push({categoria: '{{ category_des }}', proporcion: {{ value }}, nutr: '{{ nutr }}'});
     {% endfor %}
     var svg = dimple.newSvg("#graph", 1000, 700);
     var myChart = new dimple.chart(svg, data);
-    myChart.setBounds(40, 20, 800, 300)
+    myChart.setBounds(50, 30, 800, 300)
     var x = myChart.addCategoryAxis("x", "categoria");
-    var y = myChart.addMeasureAxis("y", "porcentaje");
+    var y = myChart.addMeasureAxis("y", "proporcion");
     y.tickFormat = '1f';
-    var s = myChart.addSeries("nutr", dimple.plot.scatter);
-    s.addOrderRule("-porcentaje");
+    var s = myChart.addSeries("nutr", dimple.plot.bar);
+    s.addOrderRule("-proporcion");
     x.addOrderRule("categoria");
     //y.addOrderRule("porcentaje");
-    //s.stacked = true;
+    s.stacked = true;
     //myChart.addLegend(850, 10, 10, 600);
     myChart.draw();
 </script>

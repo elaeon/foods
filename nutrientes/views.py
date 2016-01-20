@@ -71,13 +71,16 @@ def graph_all_nutr(request):
 
 
 def principal_nutrients_graph(request):
-    from nutrientes.utils import principal_nutrients, Food, categories_foods
-    from nutrientes.utils import principal_nutrients_porcentage
+    from nutrientes.utils import categories_foods
+    from nutrientes.utils import principal_nutrients_avg_percentaje
+    from nutrientes.utils import principal_nutrients_percentaje
+
     data = []
-    limit = 5
+    limit = 10
+    all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
     for category, category_des in categories_foods():
-        porcentaje_data = principal_nutrients_porcentage(category)
-        for val, nutr in porcentaje_data[:limit]:
+        percentaje_data = principal_nutrients_avg_percentaje(category, all_food_avg=all_food_avg)
+        for _, val, nutr in percentaje_data[:limit]:
             data.append((category_des, val, nutr))
     return render(request, "principal_nutr_category.html", {"data": data, "limit": limit})
 
@@ -308,7 +311,7 @@ def set_comparation(request, ndb_no, operation):
 def list_food_category(request, category_id, order, intake_params={}):
     from nutrientes.utils import alimentos_category_name, get_range
     from nutrientes.utils import alfabetic_food, ranking_nutr_perfil
-    from nutrientes.utils import ExamineFoodVariants
+    from nutrientes.utils import ExamineFoodVariants, principal_nutrients_avg_percentaje
 
     categoria = alimentos_category_name(category_id)[0][0]
     if order == u"perfil":
@@ -329,6 +332,7 @@ def list_food_category(request, category_id, order, intake_params={}):
         "foods": foods, 
         "categoria": categoria, 
         "order": order, 
+        "best_nutr": principal_nutrients_avg_percentaje(category_id)[:20],
         "category_id": category_id})
 
 
