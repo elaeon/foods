@@ -21,9 +21,20 @@
     <tr>
     <th>Agente</th>
     <th>Tipos de cáncer</th>
+    <th>Categoria</th>
     </tr>
     {% for ca in cancer_resumen %}
-        <tr><td>{{ ca.name }}</td><td>{{ ca.total }}</td></tr>
+        <tr><td>{{ ca.name_es }}</td><td>{{ ca.total }}</td><td>{{ ca.type }}</td></tr>
+    {% endfor %}
+    </table>
+    <p>Tabla donde se muestra cuantos tipos de cancer estan asociados a determinada categoria.</p>
+    <table class="table table-striped table-hover table-condensed">
+    <tr>
+    <th>Categoria</th>
+    <th>Cancer asociados</th>
+    </tr>
+    {% for category, total in categories %}
+        <tr><td>{{ category }}</td><td>{{ total }}</td></tr>
     {% endfor %}
     </table>
     {% else %}
@@ -36,10 +47,10 @@
     </tr>
     {% for ca_ag in result %}
         <tr>
-            <td>{{ ca_ag.agent.name }}</td>
-            <td>{{ ca_ag.cancer.name }}</td>
+            <td>{{ ca_ag.agent.name_es }}</td>
+            <td>{{ ca_ag.cancer.name_es }}</td>
             <td>{{ ca_ag.cancer.organ}}</td>
-            <td>{{ ca_ag.cancer.actual_survival_rate }}</td>
+            <td>{{ ca_ag.cancer.actual_survival_rate|default_if_none:"-" }}</td>
         </tr>
     {% endfor %}
     </table>

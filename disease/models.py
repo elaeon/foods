@@ -22,11 +22,11 @@ class MortalityYears(models.Model):
 class CancerAgent(models.Model):
     name = models.CharField(max_length=100)
     name_es = models.CharField(max_length=100, blank=True, null=True)
-    exposition_in = models.CharField(max_length=100, blank=True, null=True)
+    type = models.CharField(max_length=100, blank=True, null=True)
     nivel = models.CharField(max_length=10)
 
     def __unicode__(self):
-        return self.name
+        return self.name_es
 
 class Cancer(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -40,7 +40,7 @@ class Cancer(models.Model):
             return None
 
     def __unicode__(self):
-        return self.name
+        return self.name_es
 
     class Meta:
         ordering = ('name',)

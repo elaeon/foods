@@ -45,6 +45,7 @@ def cancer(request):
         "mortality_list": mortality_list})
 
 def cancer_risk_factor(request):
+    from collections import Counter
     from django.db.models import Count
     from disease.forms import RiskFactorForm
     
@@ -71,5 +72,6 @@ def cancer_risk_factor(request):
         "rf_form": rf_form,
         "cancer_resumen": cancer_resumen,
         "init_result": init_result,
-        "result": result
+        "result": result,
+        "categories": sorted(Counter(models_disease.CancerAgent.objects.all().values_list('type', flat=True)).items(), key=lambda x: x[1], reverse=True)
         })
