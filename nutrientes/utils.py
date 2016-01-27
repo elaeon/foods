@@ -2584,3 +2584,49 @@ class ExamineFoodVariants(object):
                 dict_.update(nutrs)
                 writer.writerow(dict_)
 
+class PiramidFood(object):
+    def __init__(self):
+        self.categories = set(["0800", "1700", "0200", "0900", "2000", "0100", 
+                    "1600", "1200", "1500", "0500", "1000", "1800", "0700",
+                    "0600", "1100"])
+
+    def process(self):
+        all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
+        nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
+        nutr_avg = {nutr_desc: (avg, caution, nutr_no) 
+            for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
+        
+        limit = 20
+        categories_data = {}
+        for category in self.categories:
+            percentaje_data = principal_nutrients_avg_percentaje(category, all_food_avg=all_food_avg)
+            categories_data[category] = percentaje_data
+        
+        nutrients = {}
+        for category, values in categories_data.items():
+            for v, radio_v, nutrdesc in values:
+                if nutrdesc in nutr_avg:
+                    _, _, nutr_no = nutr_avg[nutrdesc]
+                    if nutr_no in WEIGHT_NUTRS:
+                        nutrients.setdefault(nutrdesc, [])
+                        nutrients[nutrdesc].append((v, category))
+
+        category_percentaje = {}
+        for category in categories_data:
+            category_percentaje[category] = 100.0 / len(self.categories)
+
+        total_percentaje_steep = (1.0 / len(nutrients)) * 100
+        for nutrdesc, categories_values in nutrients.items():
+            if nutrdesc in nutr_avg:
+                _, caution, nutr_no = nutr_avg[nutrdesc]
+                categories = sorted(categories_values, reverse=True)
+                set_c = set([c for _, c in categories])
+                if not caution:
+                    for v, category in categories:
+                        category_percentaje[category] += total_percentaje_steep
+                    for category in self.categories.difference(set_c):
+                        category_percentaje[category] -= total_percentaje_steep
+                else:
+                    base = -total_percentaje_steep
+        for c, v in category_percentaje.items():
+            print(c, v)
