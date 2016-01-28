@@ -216,17 +216,28 @@ def category_food_count(category):
     return cursor.fetchall()
 
 
-def category_avg_omegas():
+def category_avg_omegas(ids=False):
     _, cursor = conection()
-    query = """
-        SELECT fd_group.fdgrp_desc_es, AVG(omega.radio)
-        FROM food_des, fd_group, omega
-        WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
-        AND omega.omega3 > 0
-        AND omega.ndb_no=food_des.ndb_no GROUP BY fd_group.fdgrp_desc_es;
-    """
-    cursor.execute(query)
-    return {food_group:round(avg,1) for food_group, avg in cursor.fetchall()}
+    if ids:
+        query = """
+            SELECT fd_group.fdgrp_cd, fd_group.fdgrp_desc_es, AVG(omega.radio)
+            FROM food_des, fd_group, omega
+            WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+            AND omega.omega3 > 0
+            AND omega.ndb_no=food_des.ndb_no GROUP BY fd_group.fdgrp_cd, fd_group.fdgrp_desc_es;
+        """
+        cursor.execute(query)
+        return {food_id: (round(avg, 1), fdgrp_desc_es) for food_id, fdgrp_desc_es, avg in cursor.fetchall()}
+    else:
+        query = """
+            SELECT fd_group.fdgrp_desc_es, AVG(omega.radio)
+            FROM food_des, fd_group, omega
+            WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+            AND omega.omega3 > 0
+            AND omega.ndb_no=food_des.ndb_no GROUP BY fd_group.fdgrp_desc_es;
+        """
+        cursor.execute(query)
+        return {food_group: round(avg, 1) for food_group, avg in cursor.fetchall()}
 
 def category_food_list():
     nutr = avg_nutrients()
@@ -2610,23 +2621,39 @@ class PiramidFood(object):
                     if nutr_no in WEIGHT_NUTRS:
                         nutrients.setdefault(nutrdesc, [])
                         nutrients[nutrdesc].append((v, category))
+                else:
+                    nutrients.setdefault(nutrdesc, [])
+                    nutrients[nutrdesc].append((v, category))
 
-        category_percentaje = {}
-        for category in categories_data:
-            category_percentaje[category] = 100.0 / len(self.categories)
-
-        total_percentaje_steep = (1.0 / len(nutrients)) * 100
+        base_value = 100.0 / (len(self.categories) * len(nutrients))
+        nutrs_value_good = []
         for nutrdesc, categories_values in nutrients.items():
             if nutrdesc in nutr_avg:
-                _, caution, nutr_no = nutr_avg[nutrdesc]
-                categories = sorted(categories_values, reverse=True)
-                set_c = set([c for _, c in categories])
-                if not caution:
-                    for v, category in categories:
-                        category_percentaje[category] += total_percentaje_steep
-                    for category in self.categories.difference(set_c):
-                        category_percentaje[category] -= total_percentaje_steep
-                else:
-                    base = -total_percentaje_steep
-        for c, v in category_percentaje.items():
-            print(c, v)
+                _, caution, _ = nutr_avg[nutrdesc]
+            else:
+                caution = WEIGHT_NUTRS.get(nutrdesc, 2) > 1
+            categories = sorted(categories_values, reverse=True)
+            max_value = float(categories[0][0])
+            if not caution:
+                nutrs_value_good.extend([(base_value * (v / max_value), category) for v, category in categories])
+            else:
+                nutrs_value_good.extend([(base_value * (-v / max_value), category) for v, category in categories])
+
+        def create_values(nutrs_value, total_categories):
+            category_new_values = {}
+            for value, category in nutrs_value:
+                category_new_values.setdefault(category, 0)
+                category_new_values[category] += value
+
+            diff = (100.0 - sum(category_new_values.values())) / total_categories
+            for category in category_new_values:
+                category_new_values[category] += diff
+            return category_new_values.items()
+
+        good = sorted(create_values(nutrs_value_good, len(self.categories)), key=lambda x:x[1])
+        for v in good:
+            print(v)
+        omegas = category_avg_omegas(ids=True)
+        for omega in omegas.items():
+            print(omega)
+        #return create_values(nutrs_value_good, len(self.categories))
