@@ -233,12 +233,12 @@ WEIGHT_NUTRS = {
     "601": 10.0, #Cholesterol
     "269": 8.0, #Sugars, total
     "262": 5.5, #Caffeine
-    "307": 8.0, #Sodium, Na
+    "307": 10.0, #Sodium, Na
     "605": 9.6, #Fatty acids, total trans
     "606": 9.5, #Fatty acids, total saturated
-    "693": 8.0, #Fatty acids, total trans-monoenoic
-    "695": 8.0, #Fatty acids, total trans-polyenoic
-    "204": 1.5, #Total lipid (fat)
+    "693": 9.0, #Fatty acids, total trans-monoenoic
+    "695": 9.0, #Fatty acids, total trans-polyenoic
+    "204": 2.5, #Total lipid (fat)
     "205": 1.5, #Carbohydrate, by difference
     "211": 5.0, #Glucose (dextrose)
     "212": 6.0, #Fructose
@@ -248,12 +248,12 @@ WEIGHT_NUTRS = {
     "287": 4.0, #Galactose
     "214": 3.0, #Maltose    
     "429": 5.0, #Dihydrophylloquinone
-    "613": 3.0, #16:0
-    "614": 3.0, #18:0
-    "687": 3.0, #17:1
-    "653": 3.0, #17:0
-    "607": 3.0, #4:0
-    "652": 3.0, #15:0
+    "613": 9.0, #16:0
+    "614": 9.0, #18:0
+    "687": 9.0, #17:1
+    "653": 9.0, #17:0
+    "607": 9.0, #4:0
+    "652": 9.0, #15:0
     "omega6": 1.8,
 
     "203": 1.0, #Protein

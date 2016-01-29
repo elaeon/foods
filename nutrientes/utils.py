@@ -2617,27 +2617,32 @@ class PiramidFood(object):
         for category, values in categories_data.items():
             for v, radio_v, nutrdesc in values:
                 if nutrdesc in nutr_avg:
-                    _, _, nutr_no = nutr_avg[nutrdesc]
+                    _, caution, nutr_no = nutr_avg[nutrdesc]
                     if nutr_no in WEIGHT_NUTRS:
                         nutrients.setdefault(nutrdesc, [])
-                        nutrients[nutrdesc].append((v, category))
+                        nutrients[nutrdesc].append((v, category, caution))
                 else:
+                    caution = WEIGHT_NUTRS.get(nutrdesc, 2) > 1
                     nutrients.setdefault(nutrdesc, [])
-                    nutrients[nutrdesc].append((v, category))
+                    nutrients[nutrdesc].append((v, category, caution))
+
+        omegas = category_avg_omegas(ids=True)
+        nutrients["radio"] = []
+        for category, (radio_raw, category_desc) in omegas.items():
+            if category in self.categories:
+                nutrients["radio"].append((radio_raw, category, True if radio_raw > 4 else False))
 
         base_value = 100.0 / (len(self.categories) * len(nutrients))
         nutrs_value_good = []
         for nutrdesc, categories_values in nutrients.items():
-            if nutrdesc in nutr_avg:
-                _, caution, _ = nutr_avg[nutrdesc]
-            else:
-                caution = WEIGHT_NUTRS.get(nutrdesc, 2) > 1
             categories = sorted(categories_values, reverse=True)
-            max_value = float(categories[0][0])
-            if not caution:
-                nutrs_value_good.extend([(base_value * (v / max_value), category) for v, category in categories])
-            else:
-                nutrs_value_good.extend([(base_value * (-v / max_value), category) for v, category in categories])
+            max_value = float(categories[0][0]) * (1 / WEIGHT_NUTRS.get(nutrdesc, 1) * .15)
+            nutrs_value_good.extend([
+                (base_value * (v / max_value), category) 
+                for v, category, caution in categories if not caution])
+            nutrs_value_good.extend([
+                (base_value * (-v / max_value), category) 
+                for v, category, caution in categories if caution])
 
         def create_values(nutrs_value, total_categories):
             category_new_values = {}
@@ -2651,9 +2656,8 @@ class PiramidFood(object):
             return category_new_values.items()
 
         good = sorted(create_values(nutrs_value_good, len(self.categories)), key=lambda x:x[1])
+        print(sum(v[1] for v in good))
         for v in good:
             print(v)
-        omegas = category_avg_omegas(ids=True)
-        for omega in omegas.items():
-            print(omega)
+        
         #return create_values(nutrs_value_good, len(self.categories))
