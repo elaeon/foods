@@ -254,6 +254,11 @@ WEIGHT_NUTRS = {
     "653": 9.0, #17:0
     "607": 9.0, #4:0
     "652": 9.0, #15:0
+    "610": 9.0, #10:0
+    "611": 9.0, #12:0
+    "696": 9.0, #13:0
+    "221": 10.0, #Alcohol, ethyl
+
     "omega6": 1.8,
 
     "203": 1.0, #Protein
@@ -263,12 +268,12 @@ WEIGHT_NUTRS = {
     "omega9": 1,
 
     "omega3": 0.05,
-    "301": .1, #Calcium
-    "435": .5, #Folate DFE
+    "301": .8, #Calcium
+    "435": .8, #Folate DFE
     "291": .8, #Fiber, total dietary
-    "313": .9, #Fluoride, F
+    "313": .8, #Fluoride, F
     "309": .8, #Zinc
-    "430": .1, #Vitamin K (phylloquinone)
+    "430": .8, #Vitamin K (phylloquinone)
     "323": .8, #Vitamin E (alpha)
     "401": .8, #Vitamin C
     "415": .8, #Vitamin B6
@@ -280,30 +285,30 @@ WEIGHT_NUTRS = {
     "304": .8, #Magnesium,
     "306": .8, #Potassium,
     "317": .8, #Selenium,
-    "435": .8, #Folate,
     "421": .8, #Choline,
     "315": .8, #Manganese,    
     "405": .8, #Riboflavin
     "404": .8, #Thiamin
     "324": .8, #Vitamin D
-    "505": .1, #Lysine
-    "517": .1, #Proline
-    "428": .1, #Menaquinone-4    
-    "325": .1, #Vitamin D2 (ergocalciferol)
-    "312": .1, #Copper, Cu
-    "641": .1, #Beta-sitosterol
-    "638": .1, #Stigmasterol
-    "337": .1, #Lycopene
-    "341": .1, #Tocopherol, beta
-    "343": .1, #Tocopherol, delta
-    "342": .1, #Tocopherol, gamma
-    "344": .1, #Tocotrienol, alpha
-    "345": .1, #Tocotrienol, beta
-    "347": .1, #Tocotrienol, delta
-    "346": .1, #Tocotrienol, gamma
-    "323": .1, #Vitamin E (alpha-tocopherol)
-    "639": .1, #Campesterol
-    "636": .1, #Phytosterols
-    "511": .1, #Arginine
-    "454": .1, #Betaine
+    "505": .8, #Lysine
+    "517": .8, #Proline
+    "428": .8, #Menaquinone-4    
+    "325": .8, #Vitamin D2 (ergocalciferol)
+    "312": .8, #Copper, Cu
+    "641": .8, #Beta-sitosterol
+    "638": .8, #Stigmasterol
+    "337": .8, #Lycopene
+    "341": .8, #Tocopherol, beta
+    "343": .8, #Tocopherol, delta
+    "342": .8, #Tocopherol, gamma
+    "344": .8, #Tocotrienol, alpha
+    "345": .8, #Tocotrienol, beta
+    "347": .8, #Tocotrienol, delta
+    "346": .8, #Tocotrienol, gamma
+    "323": .8, #Vitamin E (alpha-tocopherol)
+    "639": .8, #Campesterol
+    "636": .8, #Phytosterols
+    "511": .8, #Arginine
+    "454": .8, #Betaine
+    "514": .8, #Aspartic acid
 }

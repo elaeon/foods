@@ -216,13 +216,23 @@ def category_food_count(category):
     return cursor.fetchall()
 
 
-def category_avg_omegas(ids=False):
+def category_avg_omegas(ids=False, dataset=None):
     _, cursor = conection()
     if ids:
-        query = """
+        if dataset is None:
+            query = """
+                SELECT fd_group.fdgrp_cd, fd_group.fdgrp_desc_es, AVG(omega.radio)
+                FROM food_des, fd_group, omega
+                WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+                AND omega.omega3 > 0
+                AND omega.ndb_no=food_des.ndb_no GROUP BY fd_group.fdgrp_cd, fd_group.fdgrp_desc_es;
+            """
+        else:
+            query = """
             SELECT fd_group.fdgrp_cd, fd_group.fdgrp_desc_es, AVG(omega.radio)
-            FROM food_des, fd_group, omega
+            FROM food_des, fd_group, omega, nutrientes_fooddescimg
             WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+            AND nutrientes_fooddescimg.ndb_no_t=food_des.ndb_no
             AND omega.omega3 > 0
             AND omega.ndb_no=food_des.ndb_no GROUP BY fd_group.fdgrp_cd, fd_group.fdgrp_desc_es;
         """
@@ -1038,15 +1048,25 @@ def create_order_matrix():
     order = [food["attr"][0] for _, food in rank.order()]
     return order
 
-def principal_nutrients(category=None, sorted_=True):
+def principal_nutrients(category=None, sorted_=True, dataset=None):
     _, cursor = conection()
     if category is None:
-        query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
+            query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
                 FROM nut_data, nutr_def 
                 WHERE nut_data.nutr_no=nutr_def.nutr_no 
                 GROUP BY nutrdesc,units ORDER BY avg desc"""
     else:
-        query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
+        if dataset == "foodimg":
+            query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
+                FROM nut_data, nutr_def, food_des, fd_group, nutrientes_fooddescimg
+                WHERE nut_data.nutr_no=nutr_def.nutr_no 
+                AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
+                AND food_des.fdgrp_cd='{category}'
+                AND food_des.ndb_no=nutrientes_fooddescimg.ndb_no_t
+                AND nutrientes_fooddescimg.ndb_no_t=nut_data.ndb_no
+                GROUP BY nutrdesc,units ORDER BY avg desc""".format(category=category)
+        else:
+            query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
                 FROM nut_data, nutr_def, food_des, fd_group 
                 WHERE nut_data.nutr_no=nutr_def.nutr_no 
                 AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
@@ -1062,21 +1082,21 @@ def principal_nutrients(category=None, sorted_=True):
     else:
         return totals
 
-def principal_nutrients_percentaje(category=None):
+def principal_nutrients_percentaje(category=None, dataset=None):
     features, omegas = Food.subs_omegas(
         [(e[0], e[0], e[1], None) 
-        for e in principal_nutrients(category=category)])
+        for e in principal_nutrients(category=category, dataset=dataset)])
     all_nutr = features + [(omega, omega, v, u) for omega, v, u in omegas.values()]
     sorted_data = sorted(all_nutr, key=lambda x: x[2], reverse=True)
     maximo = sum((d[2] for d in sorted_data))
     return [(d[2]*100./maximo, d[0]) for d in sorted_data if d[2]*100./maximo > 0]
 
-def principal_nutrients_avg_percentaje(category, all_food_avg=None):
+def principal_nutrients_avg_percentaje(category, all_food_avg=None, dataset=None):
     if all_food_avg is None:
-        all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
-    category_avg = principal_nutrients_percentaje(category)
+        all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje(dataset=dataset)}
+    category_avg = principal_nutrients_percentaje(category, dataset=dataset)
     values = ((v, (v / all_food_avg.get(nutrdesc, 0)), nutrdesc)
-                for v, nutrdesc in category_avg if all_food_avg.get(nutrdesc, 0) <= v)
+                for v, nutrdesc in category_avg if 0 < all_food_avg.get(nutrdesc, 0) <= v)
     return sorted(values, key=lambda x:x[1], reverse=True)
 
 def convert_units_scale(values):
@@ -1089,184 +1109,6 @@ def convert_units_scale(values):
         else:
             converted.append(None)
     return converted
-
-#class MostSimilarFood(object):
-#    def __init__(self, ndb_no, category_to_search, exclude_nutr=None):
-#        self.food_base = Food(ndb_no, avg=False)
-#        self.category_to_search = category_to_search
-#        if exclude_nutr is None:
-#            exclude_nutr = {
-#                "601": "Cholesterol",
-#                "307": "Sodium, Na",
-#                "607": "4:0",
-#                "609": "8:0",
-#                "608": "6:0",
-#            }
-#            exclude_nutr.update(EXCLUDE_NUTR)
-
-#        vector_base = self.food_base.vector_features(
-#            self.food_base.create_vector_fields_nutr(exclude_nutr_l=exclude_nutr), 
-#            self.food_base.nutrients)
-#        self.vector_base_items = [(k, v) for k, v in vector_base.items() if v > 0]
-#        ndb_nos = (ndb_no for ndb_no, _ in alimentos_category(category=category_to_search, limit="limit 9000"))
-#        self.matrix = create_matrix(ndb_nos, only=[k for k, _ in self.vector_base_items], weight=25)
-#        self.matrix_dict = self.matrix.to_dict(nutr_no=True)
-#        self.max_total_food = 8
-#        self.total_nutr = len(self.vector_base_items)
-
-
-#    def search_steps(self, base_size, low_grow, data, extra_data=[], min_diff=10):
-#        down_vectors = []
-#        every = 5
-#        count = 0
-#        for foods in data:
-#            foods_extra = foods+extra_data
-#            rows = [self.matrix_dict[ndb_no] for ndb_no, _ in foods_extra]
-#            sum_nutr = [(sublist[0][0], sum(e[1] for e in sublist)) for sublist in zip(*rows)]
-#            diff = [(b[0], t[1]-b[1]) for t, b in zip(sum_nutr, self.vector_base_items)]
-#            up_diff = list(filter(lambda x: x[1] >= 0, diff))
-#            low_diff = list(filter(lambda x: x[1] < 0, diff))
-#            if len(low_diff) <= min_diff:
-#                return EvalSimilarFood(foods_extra, low_diff, sum_nutr, self.total_nutr)
-
-#            down_vectors.append(low_diff)
-#            if count == every:
-#                null_grow = self.grown(down_vectors)
-#                down_vectors = []
-#                count = 0
-#                low_grow.append(null_grow)
-#            count += 1
-#        return None
-
-#    def grown(self, vectors):
-#        null_grow = set([])
-#        for sublist in zip(*vectors):
-#            if sublist[0][1] != 0:
-#                grow_ = abs((((sublist[-1][1] / sublist[0][1])**(1./len(sublist))) - 1) * 100)
-                #print grow_, sublist[0][1], sublist[-1][1]
-#                if grow_ <= 1: #1%
-#                    null_grow.add(sublist[0][0])
-
-#        return null_grow
-
-#    def random_select(self, size):
-#        import random
-#        indexes = set([])
-        #keys = self.matrix.keys()
-#        for i in range(100):
-#            blocks = []
-#            while len(blocks) < size:
-                #i = random.randint(0, len(keys) - 1)
-#                i = random.randint(0, len(self.matrix.rows) - 1)
-#                if not i in indexes:
-#                    indexes.add(i)
-                    #blocks.append((keys[i], None))
-#                    blocks.append((self.matrix.rows[i][0], None))
-#            indexes = set([])
-#            yield blocks
-
-#    def random(self, extra_food=[], min_amount_food=2, max_amount_food=5, min_diff=10):
-#        counting = {}
-#        for food_size in range(min_amount_food, max_amount_food):
-#            data = self.random_select(food_size)
-#            low = []
-#            foods = self.search_steps(food_size, low, data, extra_data=extra_food, min_diff=min_diff)
-#            for s in low:
-#                for nutr_no in s:
-#                    counting[nutr_no] = counting.get(nutr_no, 0) + 1
-#            if foods is not None:
-#                return foods, True
-#        return sorted(counting.items(), key=lambda x: x[1], reverse=True), False
-
-#    def search(self):
-#        _, cursor = conection()
-#        step_best = 1
-#        count = {}
-#        nutrs_no = {}
-#        max_amount_food = 5
-#        min_amount_food = 2
-#        min_diff = 10
-#        results_best = []
-#        best_extra_food = []
-#        while True:
-#            results, ok = self.random(
-#                extra_food=best_extra_food[:step_best], 
-#                min_amount_food=min_amount_food, 
-#                max_amount_food=max_amount_food,
-#                min_diff=min_diff)
-
-#            if ok:
-#                results_best.append(results)
-#                min_diff -= 1
-#                step_best = 1
-#                continue
-#            elif not ok and max_amount_food + len(best_extra_food[:step_best]) >= self.max_total_food + 1:
-#                break
-#            elif step_best > 10:
-#                max_amount_food += 1
-#                step_best = 1
-#            else:
-#                step_best += 1
-
-#            new = False
-#            for nutr_no, _ in results:
-#                if not nutr_no in nutrs_no:
-#                    nutrs_no.setdefault(nutr_no, set([]))
-#                    new = True
-#                    query = query_build(nutr_no, self.category_to_search, order_by="DESC")
-#                    cursor.execute(query)
-#                    for r in cursor.fetchall()[:10]:
-#                        count[r[0]] = count.get(r[0], 0) + 1
-#                        nutrs_no[nutr_no].add(r[0]) 
-#            if new:
-#                best_extra_food = sorted(count.items(), key=lambda x: x[1], reverse=True)
-
-#        return results_best
-
-#class EvalSimilarFood(object):
-#    def __init__(self, result, low_nutr, sum_nutr, total_nutr):
-#        self.result = self.sum_equals(result)
-#        self.low_nutr = low_nutr
-#        self.sum_nutr = sum_nutr
-#        if total_nutr > 0:
-#            self.total = 100 - (len(low_nutr) * 100 / total_nutr)
-#        else:
-#            self.total = 0
-#        self.transform_data = None
-
-#    def sum_equals(self, result):
-#        base = {}
-#        for ndb_no, _ in result:
-#            base.setdefault(ndb_no, 0)
-#            base[ndb_no] += 25
-#        return base.items()
-
-#    def ids2name(self, similar_food):
-#        ndb_nos = [ndb_no for ndb_no, _ in self.result]
-#        not_ndb_not_found = [ndb_no for ndb_no, _ in self.low_nutr]
-#        o_foods = [similar_food.matrix_dict[ndb_no] for ndb_no in ndb_nos]
-#        nutrs_ids = nutr_features_ids(similar_food.matrix.column)
-#        nutrs_ids = {k: v for k, v in nutrs_ids}
-#        total_nutrients = [(nutrs_ids[nutr_no], total) for nutr_no, total in self.sum_nutr]
-#        nutrs_ids_base = nutr_features_ids([k for k, _ in similar_food.vector_base_items])
-#        nutrs_ids_base = {k: v for k, v in nutrs_ids_base}
-#        food_base_nutrients = [(nutrs_ids_base[k], v) for k, v in similar_food.vector_base_items]
-#        food_not_found_nutr = [nutrs_ids[e] for e in not_ndb_not_found]
-#        foods = []
-#        ndb_nos_name = [(data[1][0], data[1][1], data[0][1]) for data in zip(self.result, get_many_food(ndb_nos))]
-#        for ndb_no, name, _ in ndb_nos_name:
-#            for nutr_no, v in similar_food.matrix_dict[ndb_no]:
-#                foods.append((name, nutrs_ids[nutr_no], v))
-
-#        self.transform_data = {
-#            "food_base_nutrients": food_base_nutrients,
-#            "foods": foods,
-#            "total_nutrients": total_nutrients,
-#            "food_not_found_nutr": ", ".join(food_not_found_nutr),
-#            "o_foods": ndb_nos_name,
-#            "total_porcentaje": self.total
-#        }
-#        return self.transform_data
 
 class MatrixNutr(object):
     def __init__(self, name=None, rows=None):
@@ -1311,58 +1153,6 @@ class MatrixNutr(object):
         if nutr_no is True:
             return {ndb_no: list(zip(self.column, vector)) for ndb_no, vector in self.rows}
         return {ndb_no: vector for ndb_no, vector in self.rows}
-
-#class NodeNeighbors(object):
-#    def __init__(self, category):
-#        self.nodes = {}
-#        self.category = category
-        
-#    def add(self, key, best):
-#        self.nodes[key] = best
-
-#    def sequence(self, k, items=10):
-#        data = []
-#        nk = k
-#        category = self.category[nk]
-#        while len(data) < items:
-#            ndb_no = self.nodes[nk]
-#            if ndb_no is None:
-#                return data
-#            if self.category[ndb_no] == category:
-#                data.append(ndb_no)
-#            nk = ndb_no
-#        return data
-
-#    def get(self, k):
-#        return self.nodes[k]
-
-#class OrderSimilarity(object):
-#    def __init__(self, data_list):
-#        self.nodes = self.list2order(data_list)
-
-#    def list2order(self, data_list):
-#        nodes = NodeNeighbors({e["ndb_no"]: e["category"] for e in data_list})
-#        nodes.add(data_list[0]["ndb_no"], None)
-#        for x1, base in zip(data_list, data_list[1:]):
-#            nodes.add(base["ndb_no"], x1["ndb_no"])
-#        nodes.add(data_list[-1]["ndb_no"], data_list[-2]["ndb_no"])
-#        return nodes
-
-#    def get_top(self, k, level=10):
-#        return self.nodes.sequence(k, items=level).pop()
-
-#def boost_food(ndb_no):
-#    import csv
-#    with open(PREPROCESSED_DATA_DIR+"order_matrix.csv", 'rb') as csvfile:
-#        data_list = []
-#        csvreader = csv.reader(csvfile, delimiter=',',
-#                        quotechar='"', quoting=csv.QUOTE_MINIMAL)
-#        for row in csvreader:
-#            data_list.append({"ndb_no": row[0], "category": row[1]})
-
-#    order = OrderSimilarity(data_list)
-#    food = Food(order.get_top(ndb_no, level=10))
-#    return food
 
 def intake(edad, genero, unidad_edad, rnv_type):
     conn, cursor = conection()
@@ -2596,10 +2386,20 @@ class ExamineFoodVariants(object):
                 writer.writerow(dict_)
 
 class PiramidFood(object):
-    def __init__(self):
-        self.categories = set(["0800", "1700", "0200", "0900", "2000", "0100", 
-                    "1600", "1200", "1500", "0500", "1000", "1800", "0700",
-                    "0600", "1100"])
+    def __init__(self, meat=1, dataset="foodimg"):
+        self.dataset = dataset
+        self.categories = set(["0800", "0200", "0900", "2000", "0100", 
+                    "1600", "1200", "1500", "1800", "0700", "0600", "1100"])
+        self.categories.add("2500")
+        self.categories.add("1900")
+        if meat == 1:
+            self.categories.add("1300")
+        elif meat == 2:
+            self.categories.add("1700")
+        elif meat == 3:
+            self.categories.add("1000")
+        else:
+            self.categories.add("0500")
 
     def process(self):
         all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
@@ -2607,10 +2407,10 @@ class PiramidFood(object):
         nutr_avg = {nutr_desc: (avg, caution, nutr_no) 
             for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
         
-        limit = 20
         categories_data = {}
         for category in self.categories:
-            percentaje_data = principal_nutrients_avg_percentaje(category, all_food_avg=all_food_avg)
+            percentaje_data = principal_nutrients_avg_percentaje(
+                category, all_food_avg=all_food_avg, dataset=self.dataset)
             categories_data[category] = percentaje_data
         
         nutrients = {}
@@ -2626,17 +2426,20 @@ class PiramidFood(object):
                     nutrients.setdefault(nutrdesc, [])
                     nutrients[nutrdesc].append((v, category, caution))
 
-        omegas = category_avg_omegas(ids=True)
+        omegas = category_avg_omegas(ids=True, dataset=self.dataset)
+        category_to_name = {}
         nutrients["radio"] = []
         for category, (radio_raw, category_desc) in omegas.items():
             if category in self.categories:
+                category_to_name[category] = category_desc 
                 nutrients["radio"].append((radio_raw, category, True if radio_raw > 4 else False))
 
-        base_value = 100.0 / (len(self.categories) * len(nutrients))
+        total_categories = len([c for c, v in categories_data.items() if len(v) > 0])
+        base_value = 100.0 / (total_categories * len(nutrients))
         nutrs_value_good = []
         for nutrdesc, categories_values in nutrients.items():
             categories = sorted(categories_values, reverse=True)
-            max_value = float(categories[0][0]) * (1 / WEIGHT_NUTRS.get(nutrdesc, 1) * .15)
+            max_value = float(categories[0][0]) * (1 / WEIGHT_NUTRS.get(nutrdesc, 1) * .17)
             nutrs_value_good.extend([
                 (base_value * (v / max_value), category) 
                 for v, category, caution in categories if not caution])
@@ -2655,9 +2458,7 @@ class PiramidFood(object):
                 category_new_values[category] += diff
             return category_new_values.items()
 
-        good = sorted(create_values(nutrs_value_good, len(self.categories)), key=lambda x:x[1])
-        print(sum(v[1] for v in good))
-        for v in good:
-            print(v)
-        
-        #return create_values(nutrs_value_good, len(self.categories))
+        good = sorted(create_values(nutrs_value_good, total_categories), key=lambda x:x[1])
+        print(sum(v[1] for v in good), base_value)
+        for category, value in good:
+            print(category_to_name[category], value)
