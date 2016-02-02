@@ -229,6 +229,17 @@ WEIGHT_IMMUNE_SYSTEM = {
     "320": 1, #Vitamin A
 }
 
+WEIGHT_NUTRITIONAL_ANEMIA = {
+    "303": .1, #Iron, Fe
+    "435": .1, #Folate DFE
+    "418": .1, #Vitamin B12
+
+    "401": 1, #Vitamin C
+    "320": 1, #Vitamin A
+
+    "301": 10, #Calcium
+}
+
 WEIGHT_NUTRS = {
     "601": 10.0, #Cholesterol
     "269": 8.0, #Sugars, total

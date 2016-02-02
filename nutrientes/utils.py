@@ -2117,7 +2117,8 @@ class OptionSearch(object):
             "Ayuda a la piel": weights.WEIGHT_NUTRS_SKIN,
             "Necesarios durante el embarazo": weights.WEIGHT_NUTRS_PREGNANCY,
             "Ayuda a incrementar la masa muscular": weights.WEIGHT_BODY_MASS,
-            "Ayuda al sistema inmune": weights.WEIGHT_IMMUNE_SYSTEM}
+            "Ayuda al sistema inmune": weights.WEIGHT_IMMUNE_SYSTEM,
+            "Ayuda a evitar la anemia nutricional": weights.WEIGHT_NUTRITIONAL_ANEMIA}
         return weights
 
     def extra_nutr_detail(self):
@@ -2386,17 +2387,23 @@ class ExamineFoodVariants(object):
                 writer.writerow(dict_)
 
 class PiramidFood(object):
-    def __init__(self, meat=1, dataset="foodimg"):
+    def __init__(self, meat="fish", dataset="foodimg", categories="all"):
         self.dataset = dataset
-        self.categories = set(["0800", "0200", "0900", "2000", "0100", 
-                    "1600", "1200", "1500", "1800", "0700", "0600", "1100"])
-        self.categories.add("2500")
-        self.categories.add("1900")
-        if meat == 1:
+        if categories == "meats":
+            self.categories = set(["1500", "1300", "1700", "1000", "0500"])
+        else:
+            self.categories = set(["0800", "0200", "0900", "2000", "0100", 
+                        "1600", "1200", "1800", "0700", "0600", "1100"])
+            self.categories.add("2500") #Aperitivos
+            self.categories.add("1900") #Dulces
+
+        if meat == "fish":
+            self.categories.add("1500")
+        elif meat == "beef":
             self.categories.add("1300")
-        elif meat == 2:
+        elif meat == "hunt":
             self.categories.add("1700")
-        elif meat == 3:
+        elif meat == "pig":
             self.categories.add("1000")
         else:
             self.categories.add("0500")
