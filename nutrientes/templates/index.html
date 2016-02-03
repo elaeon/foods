@@ -43,6 +43,16 @@
     {% endif %}
 </div>
 
+<div>
+<div>Dulces 1%</div>
+<div>Panes, lacteos, huevo 5%</div>
+<div>Granos, pastas, frutas y jugos 10%</div>
+<div>nueces, semillas y vegetales 18%</div>
+<div>cereales comerciales y legumbres 23%</div>
+<div>Especias y Hierbas Pescados y Mariscos 27%</div>
+<div>Agua 2.5 litros</div>
+</div>
+
 {% if table_type == "avg" %}
 <div class="table-responsive" id="tabla-categoria-alimentos">
 <table class="table table-striped table-hover table-condensed">
@@ -285,17 +295,19 @@
     <div class="panel panel-default">
         <div class="panel-heading list-group-item">
             <h3 id="meat">La carne.</h3>
-            <p>Si clasificamos las carnes en 5 grupos: pescados y mariscos, carne de res, cerdo, aves, y  finalmente animales productos de la caza. Un análisis de los nutrientes que contienen estas categorias, nos demuestra que <b>pescados y mariscos</b> son los más beneficiosos, mientras que <b>la carne de res es la menos beneficiosa</b>. Este es el ranking.</p>
+            <p>Si clasificamos las carnes en 6 grupos: pescados y mariscos, carne de res, cerdo, aves, animales producto de la caza y finalmente salchicas y carnes frias. Como resultado de analizar los nutrientes que contienen y junto con los beneficios que aportan, encontramos que los <b>pescados y mariscos</b> son los más beneficiosos, mientras que <b>las salchicas y carnes frias son las menos beneficiosas</b>. Este es el ranking.</p>
             <ol>
-                <li>Pescados y mariscos</li>
-                <li>Aves de Corral (pollo)</li>
-                <li>Cerdo</li>
-                <li>Animales productos de la caza (cordero, ternera)</li>
-                <li>Carne de res</li>
+                <li><a href="{% url 'list_food_category' '1500' 'best' %}">Pescados y mariscos</a></li>
+                <li><a href="{% url 'list_food_category' '0500' 'best' %}">Aves de Corral (pollo)</a></li>
+                <li><a href="{% url 'list_food_category' '1000' 'best' %}">Cerdo</a></li>
+                <li><a href="{% url 'list_food_category' '1700' 'best' %}">Animales productos de la caza (cordero, ternera)</a></li>
+                <li><a href="{% url 'list_food_category' '1300' 'best' %}">Carne de res</a></li>
+                <li><a href="{% url 'list_food_category' '0700' 'best' %}">Salchicas y carnes frias</a></li>
             </ol>
         </div>    
     </div>
 </div>
+
 <div class="col-sm-6 col-md-4">
     <div class="panel panel-default">
         <div class="panel-heading list-group-item">

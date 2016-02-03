@@ -227,6 +227,16 @@ def category_avg_omegas(ids=False, dataset=None):
                 AND omega.omega3 > 0
                 AND omega.ndb_no=food_des.ndb_no GROUP BY fd_group.fdgrp_cd, fd_group.fdgrp_desc_es;
             """
+            cursor.execute(query)
+        elif type(dataset) == type([]):
+            query = """SELECT AVG(omega.radio)
+                    FROM food_des, fd_group, omega
+                    WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+                    AND omega.omega3 > 0
+                    AND omega.ndb_no=food_des.ndb_no
+                    AND food_des.ndb_no IN ({ids})
+                    """.format(ids=",".join(("%s" for e in dataset)))
+            cursor.execute(query, dataset)
         else:
             query = """
             SELECT fd_group.fdgrp_cd, fd_group.fdgrp_desc_es, AVG(omega.radio)
@@ -235,8 +245,8 @@ def category_avg_omegas(ids=False, dataset=None):
             AND nutrientes_fooddescimg.ndb_no_t=food_des.ndb_no
             AND omega.omega3 > 0
             AND omega.ndb_no=food_des.ndb_no GROUP BY fd_group.fdgrp_cd, fd_group.fdgrp_desc_es;
-        """
-        cursor.execute(query)
+            """
+            cursor.execute(query)
         return {food_id: (round(avg, 1), fdgrp_desc_es) for food_id, fdgrp_desc_es, avg in cursor.fetchall()}
     else:
         query = """
@@ -1050,11 +1060,12 @@ def create_order_matrix():
 
 def principal_nutrients(category=None, sorted_=True, dataset=None):
     _, cursor = conection()
-    if category is None:
-            query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
-                FROM nut_data, nutr_def 
-                WHERE nut_data.nutr_no=nutr_def.nutr_no 
-                GROUP BY nutrdesc,units ORDER BY avg desc"""
+    if category is None and dataset is None:
+        query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
+            FROM nut_data, nutr_def 
+            WHERE nut_data.nutr_no=nutr_def.nutr_no 
+            GROUP BY nutrdesc,units ORDER BY avg desc"""
+        cursor.execute(query)
     else:
         if dataset == "foodimg":
             query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
@@ -1065,6 +1076,16 @@ def principal_nutrients(category=None, sorted_=True, dataset=None):
                 AND food_des.ndb_no=nutrientes_fooddescimg.ndb_no_t
                 AND nutrientes_fooddescimg.ndb_no_t=nut_data.ndb_no
                 GROUP BY nutrdesc,units ORDER BY avg desc""".format(category=category)
+            cursor.execute(query)
+        elif type(dataset) == type([]):
+            query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
+                    FROM nut_data, nutr_def, food_des
+                    WHERE nut_data.nutr_no=nutr_def.nutr_no
+                    AND food_des.ndb_no=nut_data.ndb_no 
+                    AND food_des.ndb_no IN ({ids})
+                    GROUP BY nutrdesc, units 
+                    ORDER BY avg""".format(ids=",".join(("%s" for e in dataset)))
+            cursor.execute(query, dataset)
         else:
             query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
                 FROM nut_data, nutr_def, food_des, fd_group 
@@ -1073,7 +1094,7 @@ def principal_nutrients(category=None, sorted_=True, dataset=None):
                 AND food_des.ndb_no=nut_data.ndb_no 
                 AND food_des.fdgrp_cd='{category}' 
                 GROUP BY nutrdesc,units ORDER BY avg desc""".format(category=category)
-    cursor.execute(query)
+            cursor.execute(query)
     nutrientes = [(nutrdesc, avg, units) for nutrdesc, avg, units in cursor.fetchall()]
     nutrientes_units_converted = convert_units_scale((avg, units) for _, avg, units in nutrientes)
     totals = [(n[0], nc) for n, nc in zip(nutrientes, nutrientes_units_converted) if nc != None]
@@ -2390,23 +2411,28 @@ class PiramidFood(object):
     def __init__(self, meat="fish", dataset="foodimg", categories="all"):
         self.dataset = dataset
         if categories == "meats":
-            self.categories = set(["1500", "1300", "1700", "1000", "0500"])
+            self.categories = set(["1500", "1300", "1700", "1000", "0500", "0700"])
+        elif categories == "no-meats":
+            self.categories = set(["0800", "0200", "0900", "2000", "1600", "1200", 
+                                "1800", "1100", "2500", "1900"]) #"0600" sopas y salsas
         else:
             self.categories = set(["0800", "0200", "0900", "2000", "0100", 
-                        "1600", "1200", "1800", "0700", "0600", "1100"])
+                        "1600", "1200", "1800", "0600", "1100"])
             self.categories.add("2500") #Aperitivos
             self.categories.add("1900") #Dulces
 
-        if meat == "fish":
-            self.categories.add("1500")
-        elif meat == "beef":
-            self.categories.add("1300")
-        elif meat == "hunt":
-            self.categories.add("1700")
-        elif meat == "pig":
-            self.categories.add("1000")
-        else:
-            self.categories.add("0500")
+            if meat == "fish":
+                self.categories.add("1500")
+            elif meat == "beef":
+                self.categories.add("1300")
+            elif meat == "hunt":
+                self.categories.add("1700")
+            elif meat == "pig":
+                self.categories.add("1000")
+            elif meat == "luncheon":
+                self.categories.add("0700")
+            else:
+                self.categories.add("0500")
 
     def process(self):
         all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
@@ -2415,12 +2441,19 @@ class PiramidFood(object):
             for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
         
         categories_data = {}
-        for category in self.categories:
+        if type(self.dataset) == type([]):
             percentaje_data = principal_nutrients_avg_percentaje(
-                category, all_food_avg=all_food_avg, dataset=self.dataset)
-            categories_data[category] = percentaje_data
+                None, all_food_avg=all_food_avg, dataset=self.dataset)
+            for ndb_no in self.dataset:
+                categories_data[ndb_no] = percentaje_data
+        else:
+            for category in self.categories:
+                percentaje_data = principal_nutrients_avg_percentaje(
+                    category, all_food_avg=all_food_avg, dataset=self.dataset)
+                categories_data[category] = percentaje_data
         
         nutrients = {}
+        category_to_name = {}
         for category, values in categories_data.items():
             for v, radio_v, nutrdesc in values:
                 if nutrdesc in nutr_avg:
@@ -2433,13 +2466,26 @@ class PiramidFood(object):
                     nutrients.setdefault(nutrdesc, [])
                     nutrients[nutrdesc].append((v, category, caution))
 
-        omegas = category_avg_omegas(ids=True, dataset=self.dataset)
-        category_to_name = {}
         nutrients["radio"] = []
-        for category, (radio_raw, category_desc) in omegas.items():
-            if category in self.categories:
-                category_to_name[category] = category_desc 
-                nutrients["radio"].append((radio_raw, category, True if radio_raw > 4 else False))
+        if type(self.dataset) == type([]):
+            for ndb_no in self.dataset:
+                food = Food(ndb_no, avg=False)
+                radio_raw = food.radio_omega_raw
+                if radio_raw > 4:
+                    caution = True
+                elif radio_raw == 0:
+                    caution = False
+                else:
+                    radio_raw = 4 / radio_raw
+                    caution = False
+                nutrients["radio"].append((radio_raw, ndb_no, caution))
+        else:
+            omegas = category_avg_omegas(ids=True, dataset=self.dataset)
+            subcategories = set([c for c, v in categories_data.items() if c in self.categories])        
+            for category, (radio_raw, category_desc) in omegas.items():
+                if category in subcategories:
+                    category_to_name[category] = category_desc 
+                    nutrients["radio"].append((radio_raw, category, True if radio_raw > 4 else False))
 
         total_categories = len([c for c, v in categories_data.items() if len(v) > 0])
         base_value = 100.0 / (total_categories * len(nutrients))
@@ -2467,5 +2513,9 @@ class PiramidFood(object):
 
         good = sorted(create_values(nutrs_value_good, total_categories), key=lambda x:x[1])
         print(sum(v[1] for v in good), base_value)
-        for category, value in good:
-            print(category_to_name[category], value)
+        if type(self.dataset) == type([]):
+            for category, value in good:
+                print(category, value)
+        else:
+            for category, value in good:
+                print(category_to_name.get(category, category), value)
