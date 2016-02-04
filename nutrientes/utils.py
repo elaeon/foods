@@ -2410,6 +2410,7 @@ class ExamineFoodVariants(object):
 class PiramidFood(object):
     def __init__(self, meat="fish", dataset="foodimg", categories="all"):
         self.dataset = dataset
+        self.base_value = 0
         if categories == "meats":
             self.categories = set(["1500", "1300", "1700", "1000", "0500", "0700"])
         elif categories == "no-meats":
@@ -2417,17 +2418,16 @@ class PiramidFood(object):
                                 "1800", "1100", "2500", "1900"]) #"0600" sopas y salsas
         else:
             self.categories = set(["0800", "0200", "0900", "2000", "0100", 
-                        "1600", "1200", "1800", "0600", "1100"])
+                        "1600", "1200", "1800", "1100"])
             self.categories.add("2500") #Aperitivos
             self.categories.add("1900") #Dulces
-
-            if meat == "fish":
-                self.categories.add("1500")
-            elif meat == "beef":
+            
+            self.categories.add("1500")
+            if meat == "beef":
                 self.categories.add("1300")
             elif meat == "hunt":
                 self.categories.add("1700")
-            elif meat == "pig":
+            elif meat == "pork":
                 self.categories.add("1000")
             elif meat == "luncheon":
                 self.categories.add("0700")
@@ -2451,7 +2451,6 @@ class PiramidFood(object):
                 percentaje_data = principal_nutrients_avg_percentaje(
                     category, all_food_avg=all_food_avg, dataset=self.dataset)
                 categories_data[category] = percentaje_data
-        
         nutrients = {}
         category_to_name = {}
         for category, values in categories_data.items():
@@ -2488,16 +2487,16 @@ class PiramidFood(object):
                     nutrients["radio"].append((radio_raw, category, True if radio_raw > 4 else False))
 
         total_categories = len([c for c, v in categories_data.items() if len(v) > 0])
-        base_value = 100.0 / (total_categories * len(nutrients))
+        self.base_value = 100.0 / (total_categories * len(nutrients))
         nutrs_value_good = []
         for nutrdesc, categories_values in nutrients.items():
             categories = sorted(categories_values, reverse=True)
             max_value = float(categories[0][0]) * (1 / WEIGHT_NUTRS.get(nutrdesc, 1) * .17)
             nutrs_value_good.extend([
-                (base_value * (v / max_value), category) 
+                (self.base_value * (v / max_value), category) 
                 for v, category, caution in categories if not caution])
             nutrs_value_good.extend([
-                (base_value * (-v / max_value), category) 
+                (self.base_value * (-v / max_value), category) 
                 for v, category, caution in categories if caution])
 
         def create_values(nutrs_value, total_categories):
@@ -2512,10 +2511,9 @@ class PiramidFood(object):
             return category_new_values.items()
 
         good = sorted(create_values(nutrs_value_good, total_categories), key=lambda x:x[1])
-        print(sum(v[1] for v in good), base_value)
         if type(self.dataset) == type([]):
             for category, value in good:
-                print(category, value)
+                yield category, value
         else:
             for category, value in good:
-                print(category_to_name.get(category, category), value)
+                yield category_to_name.get(category, category), value

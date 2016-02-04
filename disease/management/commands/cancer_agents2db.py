@@ -3,20 +3,9 @@ from optparse import make_option
 from django.conf import settings
 
 from disease import models as m_disease
-
-#import glob
-#import os
-#import hashlib
 import csv
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('--file',
-            action='store',
-            dest='file',
-            help='save data from file to db'),
-        )
-
     def handle(self, *args, **options):
         with open('{}/data/causas_cancer.csv'.format(settings.BASE_DIR), 'rb') as csvfile:
             reader = csv.reader(csvfile, delimiter=',')

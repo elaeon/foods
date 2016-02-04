@@ -83,3 +83,98 @@
    -webkit-columns: 2;
    -moz-columns: 2;
 }
+
+.pyramid-container {
+  text-align: center;
+}
+
+.inside-text {
+  position: absolute;
+  bottom: -40px;
+}
+
+#pyramid-level-9 {
+    border-bottom: 50px solid #eacebb;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    height: 0;
+    width: 150px;
+    margin-right:auto;
+    margin-left:auto;
+}
+#pyramid-level-8 {
+    border-bottom: 50px solid #d9bdaa;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    height: 0;
+    width: 200px;
+    margin-right:auto;
+    margin-left:auto;
+}
+#pyramid-level-7 {
+    border-bottom: 50px solid #ffd3b6;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    height: 0;
+    width: 250px;
+    margin-right:auto;
+    margin-left:auto;
+}
+#pyramid-level-6 {
+    border-bottom: 50px solid #ddc2a5;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    height: 0;
+    width: 300px;
+    margin-right:auto;
+    margin-left:auto;
+}
+#pyramid-level-5 {
+    border-bottom: 50px solid #f0b38a;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    height: 0;
+    width: 350px;
+    margin-right:auto;
+    margin-left:auto;
+}
+#pyramid-level-4 {
+    border-bottom: 50px solid #e0a279;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    height: 0;
+    width: 400px;
+    margin-right:auto;
+    margin-left:auto;
+}
+#pyramid-level-3 {
+    border-bottom: 50px solid #fb9f62;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    height: 0;
+    width: 450px;
+    margin-right:auto;
+    margin-left:auto;
+}
+#pyramid-level-2 {
+    border-bottom: 50px solid #ef7b2f;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    height: 0;
+    width: 500px;
+    margin-right:auto;
+    margin-left:auto;
+}
+#pyramid-level-1 {
+  position: relative;
+    border-bottom: 50px solid #de6a1e;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    height: 0;
+    width: 550px;
+    margin-right:auto;
+    margin-left:auto;
+}
+.piramid-font {
+    font-weight: bold;
+}
