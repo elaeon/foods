@@ -2089,6 +2089,25 @@ class FoodType(object):
         self.category = category
 
 
+def get_fooddescimg(category=None):
+    conn, cursor = conection()
+    if category is None:
+        query = """SELECT ndb_no_t, fdgrp_desc_es
+                FROM nutrientes_fooddescimg, food_des, fd_group 
+                WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+                AND nutrientes_fooddescimg.ndb_no_t=food_des.ndb_no"""
+    else:
+        query = """SELECT ndb_no_t
+                FROM nutrientes_fooddescimg, food_des, fd_group 
+                WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
+                AND nutrientes_fooddescimg.ndb_no_t=food_des.ndb_no
+                AND fd_group.fdgrp_cd='{category}'""".format(category=category)
+
+    cursor.execute(query)
+    data = cursor.fetchall()
+    conn.close()
+    return data
+
 class OptionSearch(object):
     def __init__(self):
         self.foods = self.get_food_db()
@@ -2098,17 +2117,10 @@ class OptionSearch(object):
         self.total_food = sum(len(self.foods[c].foods) for c in self.foods)
 
     def get_food_db(self):
-        conn, cursor = conection()
-        query = """SELECT ndb_no_t, fdgrp_desc_es
-                FROM nutrientes_fooddescimg, food_des, fd_group 
-            WHERE fd_group.fdgrp_cd=food_des.fdgrp_cd
-            AND nutrientes_fooddescimg.ndb_no_t=food_des.ndb_no"""
-        cursor.execute(query)
         foods = {}
-        for ndb_no, category in cursor.fetchall():
+        for ndb_no, category in get_fooddescimg():
             foods.setdefault(category, [])
             foods[category].append(ndb_no)
-        conn.close()
 
         return {category: FoodType(foods[category], category) for category in foods}
             
@@ -2408,9 +2420,10 @@ class ExamineFoodVariants(object):
                 writer.writerow(dict_)
 
 class PiramidFood(object):
-    def __init__(self, meat="fish", dataset="foodimg", categories="all"):
+    def __init__(self, meat="fish", dataset="foodimg", categories="all", weight_nutrs=WEIGHT_NUTRS):
         self.dataset = dataset
         self.base_value = 0
+        self.weight_nutrs = weight_nutrs
         if categories == "meats":
             self.categories = set(["1500", "1300", "1700", "1000", "0500", "0700"])
         elif categories == "no-meats":
@@ -2435,18 +2448,19 @@ class PiramidFood(object):
                 self.categories.add("0500")
 
     def process(self):
-        all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
         nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
         nutr_avg = {nutr_desc: (avg, caution, nutr_no) 
             for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
         
         categories_data = {}
         if type(self.dataset) == type([]):
+            all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje(dataset=self.dataset)}
             percentaje_data = principal_nutrients_avg_percentaje(
                 None, all_food_avg=all_food_avg, dataset=self.dataset)
             for ndb_no in self.dataset:
                 categories_data[ndb_no] = percentaje_data
         else:
+            all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
             for category in self.categories:
                 percentaje_data = principal_nutrients_avg_percentaje(
                     category, all_food_avg=all_food_avg, dataset=self.dataset)
@@ -2457,14 +2471,14 @@ class PiramidFood(object):
             for v, radio_v, nutrdesc in values:
                 if nutrdesc in nutr_avg:
                     _, caution, nutr_no = nutr_avg[nutrdesc]
-                    if nutr_no in WEIGHT_NUTRS:
+                    if nutr_no in self.weight_nutrs:
                         nutrients.setdefault(nutrdesc, [])
                         nutrients[nutrdesc].append((v, category, caution))
                 else:
-                    caution = WEIGHT_NUTRS.get(nutrdesc, 2) > 1
-                    nutrients.setdefault(nutrdesc, [])
-                    nutrients[nutrdesc].append((v, category, caution))
-
+                    if nutrdesc in self.weight_nutrs:
+                        caution = self.weight_nutrs.get(nutrdesc, 2) > 1
+                        nutrients.setdefault(nutrdesc, [])
+                        nutrients[nutrdesc].append((v, category, caution))
         nutrients["radio"] = []
         if type(self.dataset) == type([]):
             for ndb_no in self.dataset:
@@ -2487,11 +2501,15 @@ class PiramidFood(object):
                     nutrients["radio"].append((radio_raw, category, True if radio_raw > 4 else False))
 
         total_categories = len([c for c, v in categories_data.items() if len(v) > 0])
-        self.base_value = 100.0 / (total_categories * len(nutrients))
+        try:
+            self.base_value = 100.0 / (total_categories * len(nutrients))
+        except ZeroDivisionError:
+            self.base_value = 0
         nutrs_value_good = []
+        #print(nutrients.keys())
         for nutrdesc, categories_values in nutrients.items():
             categories = sorted(categories_values, reverse=True)
-            max_value = float(categories[0][0]) * (1 / WEIGHT_NUTRS.get(nutrdesc, 1) * .17)
+            max_value = categories[0][0] * ((1. / self.weight_nutrs.get(nutrdesc, 1)) * .17)
             nutrs_value_good.extend([
                 (self.base_value * (v / max_value), category) 
                 for v, category, caution in categories if not caution])
