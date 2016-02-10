@@ -14,25 +14,35 @@ class Command(BaseCommand):
         parser.add_argument('--dataset',
             default=None,
             help='Select a dataset: all or foodimg')
-        parser.add_argument('--dataset-category',
+        parser.add_argument('--number-category',
             default=None,
             help='Select a number food category: 1500, ...')
 
     def handle(self, *args, **options):
-        meat = options.get('meat', "chiken")
+        meat = options.get('meat', "chicken")
         dataset = options.get('dataset', "foodimg")
         categories = options["categories"]
-        dataset_category = options["dataset_category"]
-        if dataset_category is not None:
-            dataset = list(self.datasets(dataset_category, dataset))
-            piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, weight_nutrs={"omega9":3})
+        number_category = options["number_category"]
+        if number_category is not None:
+            dataset = list(self.datasets(number_category, dataset))
+            piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, weight_nutrs=weight_nutrs)
+            total_value = 0
+            for category, value in piramid.process():
+                print(category, Food(category, avg=False).name, value)
+                total_value += value
+            print("Total: ", total_value)
+        elif dataset == 'test':
+            dataset = ["19903", "14545", "09079", "20051", "35193", "25000", "12006"]
+            piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, 
+                weight_nutrs={"205": 3}, radio_omega=False)#{"omega3":3, "omega9": .1})
             total_value = 0
             for category, value in piramid.process():
                 print(category, Food(category, avg=False).name, value)
                 total_value += value
             print("Total: ", total_value)
         else:
-            piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, weight_nutrs=weight_nutrs)
+            piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, 
+                weight_nutrs=weight_nutrs)
             total_value = 0
             for category, value in piramid.process():
                 print(category, value)

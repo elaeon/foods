@@ -1103,11 +1103,15 @@ def principal_nutrients(category=None, sorted_=True, dataset=None):
     else:
         return totals
 
-def principal_nutrients_percentaje(category=None, dataset=None):
-    features, omegas = Food.subs_omegas(
-        [(e[0], e[0], e[1], None) 
-        for e in principal_nutrients(category=category, dataset=dataset)])
-    all_nutr = features + [(omega, omega, v, u) for omega, v, u in omegas.values()]
+def principal_nutrients_percentaje(category=None, dataset=None, ndb_no=None):
+    if dataset is not None:
+        features, omegas = Food.subs_omegas(
+            [(e[0], e[0], e[1], None) 
+            for e in principal_nutrients(category=category, dataset=dataset)])
+        all_nutr = features + [(omega, omega, v, u) for omega, v, u in omegas.values()]
+    else:
+        all_nutr = Food(ndb_no, avg=False).nutrients
+    
     sorted_data = sorted(all_nutr, key=lambda x: x[2], reverse=True)
     maximo = sum((d[2] for d in sorted_data))
     return [(d[2]*100./maximo, d[0]) for d in sorted_data if d[2]*100./maximo > 0]
@@ -1118,6 +1122,16 @@ def principal_nutrients_avg_percentaje(category, all_food_avg=None, dataset=None
     category_avg = principal_nutrients_percentaje(category, dataset=dataset)
     values = ((v, (v / all_food_avg.get(nutrdesc, 0)), nutrdesc)
                 for v, nutrdesc in category_avg if 0 < all_food_avg.get(nutrdesc, 0) <= v)
+    return sorted(values, key=lambda x:x[1], reverse=True)
+
+def principal_nutrients_avg_percentaje_no_category(all_food_avg, ndb_no):
+    print(all_food_avg)
+    print("***********")
+    category = principal_nutrients_percentaje(ndb_no=ndb_no)
+    print(category)
+    print("###########")
+    values = ((v, (v / all_food_avg.get(nutrdesc, 0)), nutrdesc)
+                for v, nutrdesc in category if 0 < all_food_avg.get(nutrdesc, 0) <= v)
     return sorted(values, key=lambda x:x[1], reverse=True)
 
 def convert_units_scale(values):
@@ -2420,10 +2434,12 @@ class ExamineFoodVariants(object):
                 writer.writerow(dict_)
 
 class PiramidFood(object):
-    def __init__(self, meat="fish", dataset="foodimg", categories="all", weight_nutrs=WEIGHT_NUTRS):
+    def __init__(self, meat="fish", dataset="foodimg", categories="all", 
+                weight_nutrs=WEIGHT_NUTRS, radio_omega=True):
         self.dataset = dataset
         self.base_value = 0
         self.weight_nutrs = weight_nutrs
+        self.radio_omega = radio_omega
         if categories == "meats":
             self.categories = set(["1500", "1300", "1700", "1000", "0500", "0700"])
         elif categories == "no-meats":
@@ -2455,10 +2471,11 @@ class PiramidFood(object):
         categories_data = {}
         if type(self.dataset) == type([]):
             all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje(dataset=self.dataset)}
-            percentaje_data = principal_nutrients_avg_percentaje(
-                None, all_food_avg=all_food_avg, dataset=self.dataset)
             for ndb_no in self.dataset:
+                percentaje_data = principal_nutrients_avg_percentaje_no_category(
+                    all_food_avg, ndb_no)
                 categories_data[ndb_no] = percentaje_data
+            print(categories_data)
         else:
             all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
             for category in self.categories:
@@ -2468,6 +2485,7 @@ class PiramidFood(object):
         nutrients = {}
         category_to_name = {}
         for category, values in categories_data.items():
+            #print(category, values)
             for v, radio_v, nutrdesc in values:
                 if nutrdesc in nutr_avg:
                     _, caution, nutr_no = nutr_avg[nutrdesc]
@@ -2479,26 +2497,27 @@ class PiramidFood(object):
                         caution = self.weight_nutrs.get(nutrdesc, 2) > 1
                         nutrients.setdefault(nutrdesc, [])
                         nutrients[nutrdesc].append((v, category, caution))
-        nutrients["radio"] = []
-        if type(self.dataset) == type([]):
-            for ndb_no in self.dataset:
-                food = Food(ndb_no, avg=False)
-                radio_raw = food.radio_omega_raw
-                if radio_raw > 4:
-                    caution = True
-                elif radio_raw == 0:
-                    caution = False
-                else:
-                    radio_raw = 4 / radio_raw
-                    caution = False
-                nutrients["radio"].append((radio_raw, ndb_no, caution))
-        else:
-            omegas = category_avg_omegas(ids=True, dataset=self.dataset)
-            subcategories = set([c for c, v in categories_data.items() if c in self.categories])        
-            for category, (radio_raw, category_desc) in omegas.items():
-                if category in subcategories:
-                    category_to_name[category] = category_desc 
-                    nutrients["radio"].append((radio_raw, category, True if radio_raw > 4 else False))
+        if self.radio_omega:
+            nutrients["radio"] = []
+            if type(self.dataset) == type([]):
+                for ndb_no in self.dataset:
+                    food = Food(ndb_no, avg=False)
+                    radio_raw = food.radio_omega_raw
+                    if radio_raw > 4:
+                        caution = True
+                    elif radio_raw == 0:
+                        caution = False
+                    else:
+                        radio_raw = 4 / radio_raw
+                        caution = False
+                    nutrients["radio"].append((radio_raw, ndb_no, caution))
+            else:
+                omegas = category_avg_omegas(ids=True, dataset=self.dataset)
+                subcategories = set([c for c, v in categories_data.items() if c in self.categories])        
+                for category, (radio_raw, category_desc) in omegas.items():
+                    if category in subcategories:
+                        category_to_name[category] = category_desc 
+                        nutrients["radio"].append((radio_raw, category, True if radio_raw > 4 else False))
 
         total_categories = len([c for c, v in categories_data.items() if len(v) > 0])
         try:
@@ -2508,6 +2527,7 @@ class PiramidFood(object):
         nutrs_value_good = []
         #print(nutrients.keys())
         for nutrdesc, categories_values in nutrients.items():
+            #print(nutrdesc, categories_values)
             categories = sorted(categories_values, reverse=True)
             max_value = categories[0][0] * ((1. / self.weight_nutrs.get(nutrdesc, 1)) * .17)
             nutrs_value_good.extend([
@@ -2517,6 +2537,7 @@ class PiramidFood(object):
                 (self.base_value * (-v / max_value), category) 
                 for v, category, caution in categories if caution])
 
+        #print(nutrs_value_good)
         def create_values(nutrs_value, total_categories):
             category_new_values = {}
             for value, category in nutrs_value:
