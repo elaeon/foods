@@ -312,6 +312,7 @@ def list_food_category(request, category_id, order, intake_params={}):
     from nutrientes.utils import alimentos_category_name, get_range
     from nutrientes.utils import alfabetic_food, ranking_nutr_perfil
     from nutrientes.utils import ExamineFoodVariants, principal_nutrients_avg_percentaje
+    from nutrientes.utils import principal_nutrients_percentaje
 
     categoria = alimentos_category_name(category_id)[0][0]
     if order == u"perfil":
@@ -327,12 +328,13 @@ def list_food_category(request, category_id, order, intake_params={}):
         variants_esp.extend([(k, v[2], "decremento") for k, v in variants if v[0] < 50 and v[2] < 0])
         types_variants.append((i, variants_esp, resumen_text))
 
+    all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
     return render(request, "food_category.html", {
         "variants": types_variants,
         "foods": foods, 
         "categoria": categoria, 
         "order": order, 
-        "best_nutr": principal_nutrients_avg_percentaje(category_id)[:20],
+        "best_nutr": principal_nutrients_avg_percentaje(category_id, all_food_avg)[:20],
         "category_id": category_id})
 
 

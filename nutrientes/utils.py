@@ -711,13 +711,6 @@ class Food(object):
         self.omegas = omegas
         if avg:
             nutavg_vector = self.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
-            if len(nutavg_vector) == 0:
-                #appended the units with blank ''
-                omegas = avg_omega()
-                allnutavg_vector = [e[1:] + [""] for e in sorted(avg_nutrients().values())] +\
-                                zip(omegas._fields[:-1], sorted(OMEGAS.keys()), omegas[:-1], ['g'] * len(omegas[:-1]))
-                nutavg_vector, _ = self.subs_omegas(allnutavg_vector)
-                self.save_matrix(PREPROCESSED_DATA_DIR + "nutavg.p", nutavg_vector)
             self.nutr_avg = {k: (name, v, u) for k, name, v, u in self.exclude_features(nutavg_vector)}
 
     def __add__(self, other):
@@ -1093,7 +1086,7 @@ def principal_nutrients(category=None, sorted_=True, dataset=None):
                 AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
                 AND food_des.ndb_no=nut_data.ndb_no 
                 AND food_des.fdgrp_cd='{category}' 
-                GROUP BY nutrdesc,units ORDER BY avg desc""".format(category=category)
+                GROUP BY nutrdesc, units ORDER BY avg desc""".format(category=category)
             cursor.execute(query)
     nutrientes = [(nutrdesc, avg, units) for nutrdesc, avg, units in cursor.fetchall()]
     nutrientes_units_converted = convert_units_scale((avg, units) for _, avg, units in nutrientes)
@@ -1104,34 +1097,28 @@ def principal_nutrients(category=None, sorted_=True, dataset=None):
         return totals
 
 def principal_nutrients_percentaje(category=None, dataset=None, ndb_no=None):
-    if dataset is not None:
+    if ndb_no is None:
         features, omegas = Food.subs_omegas(
-            [(e[0], e[0], e[1], None) 
-            for e in principal_nutrients(category=category, dataset=dataset)])
-        all_nutr = features + [(omega, omega, v, u) for omega, v, u in omegas.values()]
+            [(nutrdesc, nutrdesc, unit, None) 
+            for nutrdesc, unit in principal_nutrients(category=category, dataset=dataset)])
+        features = [(nutrdesc, v) for _, nutrdesc, v, _ in features]
+        all_nutr = features + [(nutrdesc, v[1]) for nutrdesc, v in omegas.items()]
     else:
-        all_nutr = Food(ndb_no, avg=False).nutrients
-    
-    sorted_data = sorted(all_nutr, key=lambda x: x[2], reverse=True)
-    maximo = sum((d[2] for d in sorted_data))
-    return [(d[2]*100./maximo, d[0]) for d in sorted_data if d[2]*100./maximo > 0]
+        all_nutr = [(nutrdesc, v) for nutr_no, nutrdesc, v, u in Food(ndb_no, avg=False).nutrients]
+    sorted_data = sorted(all_nutr, key=lambda x: x[1], reverse=True)
+    maximo = sum((v for _, v in sorted_data))
+    return [(v*100./maximo, nutrdesc) for nutrdesc, v in sorted_data if v*100./maximo > 0]
 
-def principal_nutrients_avg_percentaje(category, all_food_avg=None, dataset=None):
-    if all_food_avg is None:
-        all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje(dataset=dataset)}
+def principal_nutrients_avg_percentaje(category, all_food_avg, dataset=None):
     category_avg = principal_nutrients_percentaje(category, dataset=dataset)
-    values = ((v, (v / all_food_avg.get(nutrdesc, 0)), nutrdesc)
-                for v, nutrdesc in category_avg if 0 < all_food_avg.get(nutrdesc, 0) <= v)
+    values = ((v, (v / all_food_avg[nutrdesc]), nutrdesc)
+                for v, nutrdesc in category_avg if all_food_avg.get(nutrdesc, 0) <= v and all_food_avg.get(nutrdesc, 0) > 0)
     return sorted(values, key=lambda x:x[1], reverse=True)
 
 def principal_nutrients_avg_percentaje_no_category(all_food_avg, ndb_no):
-    print(all_food_avg)
-    print("***********")
-    category = principal_nutrients_percentaje(ndb_no=ndb_no)
-    print(category)
-    print("###########")
-    values = ((v, (v / all_food_avg.get(nutrdesc, 0)), nutrdesc)
-                for v, nutrdesc in category if 0 < all_food_avg.get(nutrdesc, 0) <= v)
+    category = principal_nutrients_percentaje(ndb_no=ndb_no)            
+    values = ((v, (v / all_food_avg[nutrdesc]), nutrdesc)
+                for v, nutrdesc in category if all_food_avg.get(nutrdesc, 0) <= v and all_food_avg.get(nutrdesc, 0) > 0)
     return sorted(values, key=lambda x:x[1], reverse=True)
 
 def convert_units_scale(values):
@@ -2437,7 +2424,6 @@ class PiramidFood(object):
     def __init__(self, meat="fish", dataset="foodimg", categories="all", 
                 weight_nutrs=WEIGHT_NUTRS, radio_omega=True):
         self.dataset = dataset
-        self.base_value = 0
         self.weight_nutrs = weight_nutrs
         self.radio_omega = radio_omega
         if categories == "meats":
@@ -2466,7 +2452,7 @@ class PiramidFood(object):
     def process(self):
         nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
         nutr_avg = {nutr_desc: (avg, caution, nutr_no) 
-            for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
+            for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr, weights=self.weight_nutrs)}
         
         categories_data = {}
         if type(self.dataset) == type([]):
@@ -2475,28 +2461,31 @@ class PiramidFood(object):
                 percentaje_data = principal_nutrients_avg_percentaje_no_category(
                     all_food_avg, ndb_no)
                 categories_data[ndb_no] = percentaje_data
-            print(categories_data)
+                break
         else:
             all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
             for category in self.categories:
                 percentaje_data = principal_nutrients_avg_percentaje(
-                    category, all_food_avg=all_food_avg, dataset=self.dataset)
+                    category, all_food_avg, dataset=self.dataset)
                 categories_data[category] = percentaje_data
         nutrients = {}
         category_to_name = {}
         for category, values in categories_data.items():
-            #print(category, values)
             for v, radio_v, nutrdesc in values:
-                if nutrdesc in nutr_avg:
-                    _, caution, nutr_no = nutr_avg[nutrdesc]
-                    if nutr_no in self.weight_nutrs:
-                        nutrients.setdefault(nutrdesc, [])
-                        nutrients[nutrdesc].append((v, category, caution))
-                else:
-                    if nutrdesc in self.weight_nutrs:
-                        caution = self.weight_nutrs.get(nutrdesc, 2) > 1
-                        nutrients.setdefault(nutrdesc, [])
-                        nutrients[nutrdesc].append((v, category, caution))
+                #if nutrdesc in nutr_avg:
+                _, caution, nutr_no = nutr_avg[nutrdesc]
+                if nutr_no in self.weight_nutrs:
+                    nutrients.setdefault(nutrdesc, [])
+                    nutrients[nutrdesc].append((v, category, caution))
+                #else:
+                #    print("*************")
+                #    nutrdesc_ = nutrdesc.replace(" ", "")
+                #    if nutrdesc_ in self.weight_nutrs:
+                #        caution = self.weight_nutrs.get(nutrdesc, 2) > 1
+                #        nutrients.setdefault(nutrdesc, [])
+                #        nutrients[nutrdesc].append((v, category, caution))
+                #       nutr_avg[nutrdesc] = [0, False, nutrdesc_]
+
         if self.radio_omega:
             nutrients["radio"] = []
             if type(self.dataset) == type([]):
@@ -2519,37 +2508,43 @@ class PiramidFood(object):
                         category_to_name[category] = category_desc 
                         nutrients["radio"].append((radio_raw, category, True if radio_raw > 4 else False))
 
-        total_categories = len([c for c, v in categories_data.items() if len(v) > 0])
-        try:
-            self.base_value = 100.0 / (total_categories * len(nutrients))
-        except ZeroDivisionError:
-            self.base_value = 0
+
         nutrs_value_good = []
-        #print(nutrients.keys())
         for nutrdesc, categories_values in nutrients.items():
-            #print(nutrdesc, categories_values)
             categories = sorted(categories_values, reverse=True)
-            max_value = categories[0][0] * ((1. / self.weight_nutrs.get(nutrdesc, 1)) * .17)
+            key = nutr_avg.get(nutrdesc, [1,1,1])[2]
+            max_value = categories[0][0] * ((1. / self.weight_nutrs.get(key, 1)) * 9.5)
+            total_categories = len(nutrients[nutrdesc])
+            try:
+                base_value = 100.0 / (total_categories * len(nutrients))
+            except ZeroDivisionError:
+                self.base_value = 0
             nutrs_value_good.extend([
-                (self.base_value * (v / max_value), category) 
+                (base_value * (v / max_value), category) 
                 for v, category, caution in categories if not caution])
             nutrs_value_good.extend([
-                (self.base_value * (-v / max_value), category) 
+                (base_value * (-v / max_value), category) 
                 for v, category, caution in categories if caution])
+            #print([
+            #    (base_value, (-v / max_value), caution) 
+            #    for v, category, caution in categories if caution])
 
-        #print(nutrs_value_good)
-        def create_values(nutrs_value, total_categories):
+        def create_values(nutrs_value):
             category_new_values = {}
             for value, category in nutrs_value:
                 category_new_values.setdefault(category, 0)
                 category_new_values[category] += value
 
-            diff = (100.0 - sum(category_new_values.values())) / total_categories
+            total_categories = len(category_new_values)
+            if total_categories > 0:
+                diff = (100.0 - sum(category_new_values.values())) / total_categories
+            else:
+                diff = 0
             for category in category_new_values:
                 category_new_values[category] += diff
             return category_new_values.items()
 
-        good = sorted(create_values(nutrs_value_good, total_categories), key=lambda x:x[1])
+        good = sorted(create_values(nutrs_value_good), key=lambda x:x[1])
         if type(self.dataset) == type([]):
             for category, value in good:
                 yield category, value
