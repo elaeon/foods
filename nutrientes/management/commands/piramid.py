@@ -34,7 +34,7 @@ class Command(BaseCommand):
         elif dataset == 'test':
             dataset = ["19903", "14545", "09079", "20051", "35193", "25000", "12006"]
             piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, 
-                weight_nutrs={"omega9":3}, radio_omega=False)#{"omega3":3, "omega9": .1, "322": 1, "263": 2, "418": 3})
+                weight_nutrs={"322": 1, "263": 2}, radio_omega=True)#{"omega3":3, "omega9": .1, "322": 1, "263": 2, "418": 3})
             total_value = 0
             for category, value in piramid.process():
                 print(category, Food(category, avg=False).name, value)
