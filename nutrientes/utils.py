@@ -2438,8 +2438,8 @@ class PiramidFood(object):
             self.categories = set(["0800", "0200", "0900", "2000", "1600", "1200", 
                                 "1800", "1100", "2500", "1900"]) #"0600" sopas y salsas
         else:
-            self.categories = set(["0800", "0200", "0900", "2000", "0100", 
-                        "1600", "1200", "1800", "1100"])
+            self.categories = set(["0200", "0900", "2000", "0100", 
+                        "1600", "1200", "1800", "1100"]) #"0800", 
             self.categories.add("2500") #Aperitivos
             self.categories.add("1900") #Dulces
             
@@ -2454,6 +2454,20 @@ class PiramidFood(object):
                 self.categories.add("0700")
             else:
                 self.categories.add("0500")
+
+    def omega_weight(self, data):
+        nutrients_radio = {}
+        for radio_raw, ndb_no, caution in data:
+            if radio_raw == 0:
+                v = 1
+            elif 0 < radio_raw <= 1:
+                v = 1.2
+            elif 1 < radio_raw <= 4:
+                v = .5
+            else:
+                v = .8
+            nutrients_radio[ndb_no] = v
+        return nutrients_radio
 
     def process(self):
         nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
@@ -2482,48 +2496,34 @@ class PiramidFood(object):
                     nutrients.setdefault(nutrdesc, [])
                     nutrients[nutrdesc].append((v, category, caution))
 
-        nutrients_radio = {}
         if self.radio_omega:
-            if type(self.dataset) == type([]):
-                data = []
+            data = []
+            if type(self.dataset) == type([]):                
                 for ndb_no in self.dataset:
                     food = Food(ndb_no, avg=False)
                     radio_raw = food.radio_omega_raw
-                    if radio_raw > 4:
-                        caution = True
-                    else:
-                        caution = False
-                    data.append((radio_raw, ndb_no, caution))
-                #null = len([radio_raw for radio_raw, _, _ in data if radio_raw == 0]) * 100. / len(self.dataset)
-                #low = len([radio_raw for radio_raw, _, _ in data if 0 < radio_raw <= 1]) * 100. / len(self.dataset)
-                #medium = len([radio_raw for radio_raw, _, _ in data if 1 < radio_raw <= 4]) * 100. / len(self.dataset)
-                #high = len([radio_raw for radio_raw, _, _ in data if radio_raw > 4]) * 100. / len(self.dataset)
-                #print(null, low, medium, high)
-                for radio_raw, ndb_no, caution in data:
-                    if radio_raw == 0:
-                        v = 1
-                    elif 0 < radio_raw <= 1:
-                        v = 1.2
-                    elif 1 < radio_raw <= 4:
-                        v = .5
-                    else:
-                        v = .8
-                    nutrients_radio[ndb_no] = v
+                    data.append((radio_raw, ndb_no, True if radio_raw > 4 else False))
+                nutrients_radio = self.omega_weight(data)
             else:
                 omegas = category_avg_omegas(ids=True, dataset=self.dataset)
                 subcategories = set([c for c, v in categories_data.items() if c in self.categories])        
                 for category, (radio_raw, category_desc) in omegas.items():
                     if category in subcategories:
-                        category_to_name[category] = category_desc 
-                        nutrients["radio"].append((radio_raw, category, True if radio_raw > 4 else False))
+                        category_to_name[category] = category_desc
+                        data.append((radio_raw, category, True if radio_raw > 4 else False))
+            nutrients_radio = self.omega_weight(data)
+        else:
+            nutrients_radio = {}
 
         nutrs_value_good = []
         empty = [None, None, None]
+        FACTOR = 9.5
+        #FACTOR = 1
         for nutrdesc, categories_values in nutrients.items():
             #reordered if added radio omega
             max_categories_v = max(categories_values, key=lambda x:x[0])[0] 
             key = nutr_avg.get(nutrdesc, empty)[2]
-            max_value = max_categories_v * ((1. / self.weight_nutrs.get(key, 1)) * 9.5)
+            max_value = max_categories_v * ((1. / self.weight_nutrs.get(key, 1)) * FACTOR)
             total_categories = len(nutrients[nutrdesc])
             try:
                 base_value = 100.0 / (total_categories * len(nutrients))

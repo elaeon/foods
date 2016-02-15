@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from nutrientes.utils import PiramidFood, Food
-from nutrientes.weights import WEIGHT_NUTRS as weight_nutrs
+from nutrientes.weights import WEIGHT_IMMUNE_SYSTEM as weight_nutrs
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
@@ -17,15 +17,20 @@ class Command(BaseCommand):
         parser.add_argument('--number-category',
             default=None,
             help='Select a number food category: 1500, ...')
+        parser.add_argument('--radio-omega',
+            action='store_true',
+            help='Weights with radio omega')
 
     def handle(self, *args, **options):
         meat = options.get('meat', "chicken")
         dataset = options.get('dataset', "foodimg")
         categories = options["categories"]
         number_category = options["number_category"]
+        radio_omega = options["radio_omega"]
         if number_category is not None:
             dataset = list(self.datasets(number_category, dataset))
-            piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, weight_nutrs=weight_nutrs)
+            piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, 
+                    weight_nutrs=weight_nutrs, radio_omega=radio_omega)
             total_value = 0
             for category, value in piramid.process():
                 print(category, Food(category, avg=False).name, value)
@@ -34,7 +39,7 @@ class Command(BaseCommand):
         elif dataset == 'test':
             dataset = ["19903", "14545", "09079", "20051", "35193", "25000", "12006"]
             piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, 
-                weight_nutrs={"322": 1, "263": 2}, radio_omega=True)#{"omega3":3, "omega9": .1, "322": 1, "263": 2, "418": 3})
+                weight_nutrs={"322": 1, "263": 2}, radio_omega=radio_omega)#{"omega3":3, "omega9": .1, "322": 1, "263": 2, "418": 3})
             total_value = 0
             for category, value in piramid.process():
                 print(category, Food(category, avg=False).name, value)
@@ -42,7 +47,7 @@ class Command(BaseCommand):
             print("Total: ", total_value)
         else:
             piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, 
-                weight_nutrs=weight_nutrs)
+                weight_nutrs=weight_nutrs, radio_omega=radio_omega)
             total_value = 0
             for category, value in piramid.process():
                 print(category, value)
