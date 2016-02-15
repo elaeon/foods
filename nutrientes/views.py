@@ -142,11 +142,13 @@ def food(request, ndb_no, intake_params={}):
     recipe = food.food2recipe(intake_params)
     food_score = recipe.score
     resume_intake = recipe.resume_intake()
+    print_perfil = u"{edad} {unidad_edad} {genero}".format(**intake_params)
     return render(request, "food.html", {
         "food": food, 
         "food_compare": food_compare,
         "food_score": food_score,
-        "resume_intake": resume_intake})
+        "resume_intake": resume_intake,
+        "print_perfil": print_perfil})
 
 
 @perfil

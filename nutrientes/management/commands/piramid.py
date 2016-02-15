@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
 from nutrientes.utils import PiramidFood, Food
-from nutrientes.weights import WEIGHT_IMMUNE_SYSTEM as weight_nutrs
+from nutrientes.weights import WEIGHT_NUTRS as weight_nutrs
 
 class Command(BaseCommand):
     def add_arguments(self, parser):
@@ -37,9 +37,10 @@ class Command(BaseCommand):
                 total_value += value
             print("Total: ", total_value)
         elif dataset == 'test':
-            dataset = ["19903", "14545", "09079", "20051", "35193", "25000", "12006"]
+            dataset = ["19903", "14545", "09079", "20051", "35193", "25000", "12006", "12220"]
             piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, 
-                weight_nutrs={"322": 1, "263": 2}, radio_omega=radio_omega)#{"omega3":3, "omega9": .1, "322": 1, "263": 2, "418": 3})
+                weight_nutrs={"omega3":3, "omega9": .1, "322": 1, "263": 2, "418": 3}, radio_omega=radio_omega)
+            #{"omega3":3, "omega9": .1, "322": 1, "263": 2, "418": 3})
             total_value = 0
             for category, value in piramid.process():
                 print(category, Food(category, avg=False).name, value)

@@ -1088,9 +1088,9 @@ def principal_nutrients(category=None, sorted_=False, dataset=None):
                 AND food_des.fdgrp_cd='{category}' 
                 GROUP BY nutrdesc, units ORDER BY avg desc""".format(category=category)
             cursor.execute(query)
-    nutrientes = [(nutrdesc, avg, units) for nutrdesc, avg, units in cursor.fetchall()]
-    nutrientes_units_converted = convert_units_scale((avg, units) for _, avg, units in nutrientes)
-    totals = [(n[0], nc) for n, nc in zip(nutrientes, nutrientes_units_converted) if nc != None]
+    nutrients = [(nutrdesc, avg, units) for nutrdesc, avg, units in cursor.fetchall()]
+    nutrients_units_converted = convert_units_scale((avg, units) for _, avg, units in nutrients)
+    totals = [(n[0], nc) for n, nc in zip(nutrients, nutrients_units_converted) if nc != None]
     if sorted_:
         return sorted(totals, key=lambda x: x[1], reverse=True)
     else:
@@ -1104,10 +1104,12 @@ def principal_nutrients_percentaje(category=None, dataset=None, ndb_no=None):
         features = [(nutrdesc, v) for _, nutrdesc, v, _ in features]
         all_nutr = features + [(nutrdesc, v[1]) for nutrdesc, v in omegas.items()]
     else:
-        all_nutr = [(nutrdesc, v) for nutr_no, nutrdesc, v, u in Food(ndb_no, avg=False).nutrients]
+        nutrients = Food(ndb_no, avg=False).nutrients
+        nutrients_units_converted = convert_units_scale((avg, units) for _, _, avg, units in nutrients)
+        all_nutr = [(n[1], nc) for n, nc in zip(nutrients, nutrients_units_converted) if nc != None]
     sorted_data = sorted(all_nutr, key=lambda x: x[1], reverse=True)
-    maximo = sum((v for _, v in sorted_data))
-    return [(v*100./maximo, nutrdesc) for nutrdesc, v in sorted_data if v*100./maximo > 0]
+    weight_main_nutr = sum((v for _, v in sorted_data))
+    return [(v*100./weight_main_nutr, nutrdesc) for nutrdesc, v in sorted_data if v*100./weight_main_nutr > 0]
 
 def principal_nutrients_avg_percentaje(category, all_food_avg, dataset=None, ordered=True):
     category_avg = principal_nutrients_percentaje(category, dataset=dataset)
@@ -1119,7 +1121,10 @@ def principal_nutrients_avg_percentaje(category, all_food_avg, dataset=None, ord
         return values
 
 def principal_nutrients_avg_percentaje_no_category(all_food_avg, ndb_no, ordered=True):
-    category = principal_nutrients_percentaje(ndb_no=ndb_no)            
+    category = principal_nutrients_percentaje(ndb_no=ndb_no)
+    #print(ndb_no)
+    #for v, nutrdesc in category: 
+    #    print(v, all_food_avg.get(nutrdesc, 100), (v / all_food_avg.get(nutrdesc, v)), nutrdesc)          
     values = ((v, (v / all_food_avg.get(nutrdesc, v)), nutrdesc)
                 for v, nutrdesc in category if all_food_avg.get(nutrdesc, 100) <= v)
     if ordered:
@@ -1133,7 +1138,7 @@ def convert_units_scale(values):
     for v, units in values:
         unit_c = units_scale.get(units, 0)
         if unit_c != 0:
-            converted.append(float(v / unit_c))
+            converted.append(float(v) / unit_c)
         else:
             converted.append(None)
     return converted
@@ -2461,7 +2466,7 @@ class PiramidFood(object):
             if radio_raw == 0:
                 v = 1
             elif 0 < radio_raw <= 1:
-                v = 1.2
+                v = 2
             elif 1 < radio_raw <= 4:
                 v = .5
             else:
@@ -2492,10 +2497,12 @@ class PiramidFood(object):
         for category, values in categories_data.items():
             for v, radio_v, nutrdesc in values:
                 _, caution, nutr_no = nutr_avg[nutrdesc]
+                #print(category, nutr_no)
                 if nutr_no in self.weight_nutrs:
                     nutrients.setdefault(nutrdesc, [])
                     nutrients[nutrdesc].append((v, category, caution))
 
+        #print(nutrients)
         if self.radio_omega:
             data = []
             if type(self.dataset) == type([]):                
