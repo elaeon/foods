@@ -1051,14 +1051,15 @@ def create_order_matrix():
     order = [food["attr"][0] for _, food in rank.order()]
     return order
 
-def principal_nutrients(category=None, sorted_=False, dataset=None):
+def principal_nutrients(category=None, sorted_=False, dataset=None, nutr_no=None):
     _, cursor = conection()
+    params = {}
     if category is None and dataset is None:
         query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
             FROM nut_data, nutr_def 
             WHERE nut_data.nutr_no=nutr_def.nutr_no 
+            {nutr_no_query}
             GROUP BY nutrdesc,units ORDER BY avg desc"""
-        cursor.execute(query)
     else:
         if dataset == "foodimg":
             query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
@@ -1068,29 +1069,48 @@ def principal_nutrients(category=None, sorted_=False, dataset=None):
                 AND food_des.fdgrp_cd='{category}'
                 AND food_des.ndb_no=nutrientes_fooddescimg.ndb_no_t
                 AND nutrientes_fooddescimg.ndb_no_t=nut_data.ndb_no
-                GROUP BY nutrdesc,units ORDER BY avg desc""".format(category=category)
-            cursor.execute(query)
+                {nutr_no_query}
+                GROUP BY nutrdesc, units ORDER BY avg desc"""
+            params["category"] = category
         elif type(dataset) == type([]):
             query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
                     FROM nut_data, nutr_def, food_des
                     WHERE nut_data.nutr_no=nutr_def.nutr_no
                     AND food_des.ndb_no=nut_data.ndb_no 
                     AND food_des.ndb_no IN ({ids})
+                    {nutr_no_query}
                     GROUP BY nutrdesc, units 
-                    ORDER BY avg""".format(ids=",".join(("%s" for e in dataset)))
-            cursor.execute(query, dataset)
+                    ORDER BY avg"""
+            params["ids"] = ",".join(("%s" for e in dataset))
         else:
             query = """SELECT nutrdesc, AVG(nutr_val) as avg, units 
                 FROM nut_data, nutr_def, food_des, fd_group 
                 WHERE nut_data.nutr_no=nutr_def.nutr_no 
                 AND fd_group.fdgrp_cd=food_des.fdgrp_cd 
                 AND food_des.ndb_no=nut_data.ndb_no 
-                AND food_des.fdgrp_cd='{category}' 
-                GROUP BY nutrdesc, units ORDER BY avg desc""".format(category=category)
-            cursor.execute(query)
-    nutrients = [(nutrdesc, avg, units) for nutrdesc, avg, units in cursor.fetchall()]
-    nutrients_units_converted = convert_units_scale((avg, units) for _, avg, units in nutrients)
-    totals = [(n[0], nc) for n, nc in zip(nutrients, nutrients_units_converted) if nc != None]
+                AND food_des.fdgrp_cd='{category}'
+                {nutr_no_query}
+                GROUP BY nutrdesc, units ORDER BY avg desc"""
+            params["category"] = category
+            
+    if nutr_no is not None:
+        nutr_no_query = "AND nut_data.nutr_no = '{nutr_no}'".format(nutr_no=nutr_no)
+        params["nutr_no_query"] = nutr_no_query
+    else:
+        params["nutr_no_query"] = ""
+    
+    query = query.format(**params)
+    if dataset:
+        cursor.execute(query, dataset)
+    else:
+        cursor.execute(query)
+
+    if nutr_no == "208":
+        totals = [(nutrdesc, avg) for nutrdesc, avg, _ in cursor.fetchall()]
+    else:
+        nutrients = [(nutrdesc, avg, units) for nutrdesc, avg, units in cursor.fetchall()]
+        nutrients_units_converted = convert_units_scale((avg, units) for _, avg, units in nutrients)
+        totals = [(n[0], nc) for n, nc in zip(nutrients, nutrients_units_converted) if nc != None]
     if sorted_:
         return sorted(totals, key=lambda x: x[1], reverse=True)
     else:
@@ -1121,10 +1141,7 @@ def principal_nutrients_avg_percentaje(category, all_food_avg, dataset=None, ord
         return values
 
 def principal_nutrients_avg_percentaje_no_category(all_food_avg, ndb_no, ordered=True):
-    category = principal_nutrients_percentaje(ndb_no=ndb_no)
-    #print(ndb_no)
-    #for v, nutrdesc in category: 
-    #    print(v, all_food_avg.get(nutrdesc, 100), (v / all_food_avg.get(nutrdesc, v)), nutrdesc)          
+    category = principal_nutrients_percentaje(ndb_no=ndb_no)       
     values = ((v, (v / all_food_avg.get(nutrdesc, v)), nutrdesc)
                 for v, nutrdesc in category if all_food_avg.get(nutrdesc, 100) <= v)
     if ordered:
@@ -2433,10 +2450,11 @@ class ExamineFoodVariants(object):
 
 class PiramidFood(object):
     def __init__(self, meat="fish", dataset="foodimg", categories="all", 
-                weight_nutrs=WEIGHT_NUTRS, radio_omega=True):
+                weight_nutrs=WEIGHT_NUTRS, radio_omega=True, energy=True):
         self.dataset = dataset
         self.weight_nutrs = weight_nutrs
         self.radio_omega = radio_omega
+        self.with_energy = energy
         if categories == "meats":
             self.categories = set(["1500", "1300", "1700", "1000", "0500", "0700"])
         elif categories == "no-meats":
@@ -2480,6 +2498,7 @@ class PiramidFood(object):
             for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr, weights=self.weight_nutrs)}
         
         categories_data = {}
+        categories_data_energy = {}
         if type(self.dataset) == type([]):
             all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje(dataset=self.dataset)}
             for ndb_no in self.dataset:
@@ -2492,17 +2511,21 @@ class PiramidFood(object):
                 percentaje_data = principal_nutrients_avg_percentaje(
                     category, all_food_avg, dataset=self.dataset, ordered=False)
                 categories_data[category] = percentaje_data
+            if self.with_energy:
+                for category in self.categories:
+                    energy = principal_nutrients(category=category, nutr_no="208")
+                    _, energy_avg = energy[0]
+                    categories_data_energy[category] = float(energy_avg)
+
         nutrients = {}
         category_to_name = {}
         for category, values in categories_data.items():
             for v, radio_v, nutrdesc in values:
                 _, caution, nutr_no = nutr_avg[nutrdesc]
-                #print(category, nutr_no)
                 if nutr_no in self.weight_nutrs:
                     nutrients.setdefault(nutrdesc, [])
                     nutrients[nutrdesc].append((v, category, caution))
 
-        #print(nutrients)
         if self.radio_omega:
             data = []
             if type(self.dataset) == type([]):                
@@ -2563,5 +2586,9 @@ class PiramidFood(object):
             for category, value in good:
                 yield category, value
         else:
-            for category, value in good:
-                yield category_to_name.get(category, category), value
+            if len(categories_data_energy) > 0:
+                for category, value in good:
+                    yield category_to_name.get(category, category), value, categories_data_energy.get(category, 0)
+            else:
+                for category, value in good:
+                    yield category_to_name.get(category, category), value, None

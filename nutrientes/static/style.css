@@ -157,6 +157,7 @@
     margin-left:auto;
 }
 #pyramid-level-2 {
+    position: relative;
     border-bottom: 50px solid #ef7b2f;
     border-left: 25px solid transparent;
     border-right: 25px solid transparent;
@@ -166,12 +167,22 @@
     margin-left:auto;
 }
 #pyramid-level-1 {
-  position: relative;
+    position: relative;
     border-bottom: 50px solid #de6a1e;
     border-left: 25px solid transparent;
     border-right: 25px solid transparent;
     height: 0;
     width: 550px;
+    margin-right:auto;
+    margin-left:auto;
+}
+#pyramid-level-0 {
+    position: relative;
+    border-bottom: 50px solid #de6a1e;
+    border-left: 25px solid transparent;
+    border-right: 25px solid transparent;
+    height: 0;
+    width: 600px;
     margin-right:auto;
     margin-left:auto;
 }

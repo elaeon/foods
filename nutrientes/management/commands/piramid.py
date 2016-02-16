@@ -39,7 +39,8 @@ class Command(BaseCommand):
         elif dataset == 'test':
             dataset = ["19903", "14545", "09079", "20051", "35193", "25000", "12006", "12220"]
             piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, 
-                weight_nutrs={"omega3":3, "omega9": .1, "322": 1, "263": 2, "418": 3}, radio_omega=radio_omega)
+                weight_nutrs={"omega3":3, "omega9": .1, "322": 1, "263": 2, "418": 3}, 
+                radio_omega=radio_omega)
             #{"omega3":3, "omega9": .1, "322": 1, "263": 2, "418": 3})
             total_value = 0
             for category, value in piramid.process():
@@ -48,12 +49,17 @@ class Command(BaseCommand):
             print("Total: ", total_value)
         else:
             piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, 
-                weight_nutrs=weight_nutrs, radio_omega=radio_omega)
+                weight_nutrs=weight_nutrs, radio_omega=radio_omega, energy=True)
             total_value = 0
-            for category, value in piramid.process():
-                print(category, value)
+            total_energy = 0
+            total_weight = 800
+            for category, value, energy in piramid.process():
+                weight = total_weight * (value / 100)
+                energy_weight = ((weight * energy) / 100)
+                print(category, "{}%".format(value), "{}g".format(int(round(weight, 0))), "{}kcal".format(round(energy_weight, 2)))
                 total_value += value
-            print("Total: ", total_value)
+                total_energy += energy_weight
+            print("Total: ", "{}%".format(total_value), "{}kcal".format(int(round(total_energy, 0))))
 
     def datasets(self, category, dataset):
         from nutrientes.utils import get_fooddescimg, alimentos_category
