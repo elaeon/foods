@@ -237,7 +237,7 @@ WEIGHT_NUTRITIONAL_ANEMIA = {
     "401": 1, #Vitamin C
     "320": 1, #Vitamin A
 
-    "301": 10, #Calcium
+    "301": 5, #Calcium
 }
 
 WEIGHT_NUTRS = {

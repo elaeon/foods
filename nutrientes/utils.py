@@ -643,6 +643,7 @@ class Food(object):
         self.weight = weight
         self.nutr_detail = nutr_detail
         self.energy_density = 0
+        self.top_nutr = None
         if self.ndb_no is not None:
             self.get(ndb_no, avg=avg)
 
@@ -903,26 +904,29 @@ class Food(object):
         }
         return Recipe.from_light_format(light_format, data=data, features=features)
 
-    def top_nutrients(self):
-        #nutrientes = [(nutrdesc, total, units) for nutr_no, nutrdesc, total, units in self.nutrients]
-        nutrientes_units_converted = convert_units_scale((total, units) for _, _, total, units in self.nutrients)
-        totals = [(nc, n[1], 'g') for n, nc in zip(self.nutrients, nutrientes_units_converted) if nc != None]
-        totals.sort(reverse=True, key=lambda x:x[0])
-        maximum = sum([v for v, _, _ in totals])
-        return [(e[0] * 100 / maximum, e[1]) for e in totals]
+    #def top_nutrients(self):
+    #    nutrientes_units_converted = convert_units_scale((total, units) for _, _, total, units in self.nutrients)
+    #    totals = [(nc, n[1], 'g') for n, nc in zip(self.nutrients, nutrientes_units_converted) if nc != None]
+    #    totals.sort(reverse=True, key=lambda x:x[0])
+    #    maximum = sum([v for v, _, _ in totals])
+    #    return [(e[0] * 100 / maximum, e[1]) for e in totals]
 
-    def avg_nutrients_best(self):
-        diff_nutr = [(nutr_no, nutrdesc, v - self.nutr_avg[nutr_no][1], u) 
-            for nutr_no, nutrdesc, v, u in self.nutrients if nutr_no != "255"]
-        return sorted(diff_nutr, key=lambda x: x[2], reverse=True)
+    #def avg_nutrients_best(self):
+    #    diff_nutr = [(nutr_no, nutrdesc, v - self.nutr_avg[nutr_no][1], u) 
+    #        for nutr_no, nutrdesc, v, u in self.nutrients if nutr_no != "255"]
+    #    return sorted(diff_nutr, key=lambda x: x[2], reverse=True)
 
-    def top_nutrients_avg(self):
-        result = self.avg_nutrients_best()
-        return filter(lambda x:x[2] > 0, result)
+    #def top_nutrients_avg(self):
+    #    result = self.avg_nutrients_best()
+    #    return filter(lambda x:x[2] > 0, result)
 
-    def top_nutrients_detail_avg(self, limit=15):
-        return [(nutr_no, nutrdesc, self.nutr_detail.get(nutr_no, ""), mount, u)
-                for nutr_no, nutrdesc, mount, u in self.top_nutrients_avg()][:limit]
+    def top_nutrients_detail_avg(self, all_food_avg, limit=15):
+        principal_nutr = principal_nutrients_avg_percentaje_no_category(
+            all_food_avg, self.ndb_no, ordered=True)[:limit]
+        #return [(nutr_no, nutrdesc, self.nutr_detail.get(nutr_no, ""), mount, u)
+        #        for nutr_no, nutrdesc, mount, u in self.top_nutrients_avg()][:limit]
+        return [(nutrdesc, self.nutr_detail.get(nutrdesc, ""), mount)
+                for mount, _, nutrdesc, in principal_nutr][:limit]
 
     def img_obj(self):
         from nutrientes.models import FoodDescImg
@@ -963,9 +967,9 @@ class Food(object):
         approved = MIN_PORCENTAJE_EXIST(len_weights_good_w) <= GOOD_LEVEL_OF_NUTR
         if approved:
             nutrientes_units_converted = convert_units_scale((v, u) for _, (v, u), _, _ in nutr_weight.values())
-            totals = [(nc, n[2], n[3]) 
+            totals = [(n[2], n[3], nc) 
                 for n, nc in zip(nutr_weight.values(), nutrientes_units_converted) if nc != None]
-            self.weights_nutrients_approved = sorted(totals, key=lambda x:x[0], reverse=True)
+            self.top_nutr = sorted(totals, key=lambda x:x[2], reverse=True)
         return approved
 
     def nutrients_selector(self, seleccion):
@@ -2201,11 +2205,6 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
         base.update(self.extra_nutr_detail())
         return base
 
-    def order_best(self, foods, weights_best_for, limit, radio_o):
-        rank_results = best_of_selected_food(foods, weights_best_for, limit, radio_o)
-        foods_dict = {food.ndb_no: food for food in foods}
-        return ((i, foods_dict[ndb_no]) for i, ndb_no in rank_results)
-
     def best_weights(self, weights):
         if len(weights) == 1:
             return self.weights.get(weights[0], WEIGHT_NUTRS)
@@ -2220,21 +2219,26 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
                         nutrs[nutr_no] = value
             return nutrs
 
-    def best(self, type_food, weights_for=["all"], limit=10, radio_o=True, weight_avg_nutr=0.1):
-        self.weights_best_for = self.best_weights(weights_for)
-        foods = [Food(ndb_no, nutr_detail=self.nutr_detail) for ndb_no in self.select_food(type_food)]
-        weights_good = [(nutr_no, weight) for nutr_no, weight in self.weights_best_for.items() if weight <= 1]
-        candidate_food = [food for food in foods if food.is_weight_nutrients(weights_good, weight_avg_nutr)]
-        return self.order_best(candidate_food, self.weights_best_for, limit, radio_o)
-
-    def weights_best_list(self):
-        nutavg_vector = {nutr_no: nutrdesc 
-            for nutr_no, nutrdesc, _, _ in Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")}
-        return sorted([(nutavg_vector.get(nutr_no, ''), 
-                    self.nutr_detail.get(nutr_no, ''),  
-                    self.weights_best_for.get(nutr_no) > 1)
-                for nutr_no in self.weights_best_for])
-
+    def best(self, categories_food, weights_for=["all"], limit=10, radio_o=True, weight_avg_nutr=0.1):
+        foods = [Food(ndb_no, nutr_detail=self.nutr_detail) for ndb_no in self.select_food(categories_food)]
+        foods_dict = {food.ndb_no: food for food in foods}
+        if True:
+            import itertools as it            
+            piramid = PiramidFood(
+                    dataset=foods_dict.keys(),
+                    weight_nutrs=self.weights.get(weights_for[0], WEIGHT_NUTRS), 
+                    radio_omega=radio_o)
+            results = ((i, foods_dict[category]) for i, (category, value, energy) in enumerate(piramid.process(), 1))
+            for i, food in it.takewhile(lambda x: x[0] < limit, results):
+                food.top_nutr = food.top_nutrients_detail_avg(piramid.all_food_avg, limit=10)
+                yield i, food
+        else:
+            self.weights_best_for = self.best_weights(weights_for)
+            weights_good = [(nutr_no, weight) for nutr_no, weight in self.weights_best_for.items() if weight <= 1]
+            candidate_food = [food for food in foods if food.is_weight_nutrients(weights_good, weight_avg_nutr)]
+            rank_results = best_of_selected_food(candidate_food, self.weights_best_for, limit, radio_o)
+            for i, ndb_no in rank_results:
+                yield (i, foods_dict[ndb_no])
 
 class FoodVariant(object):
     def __init__(self, ndb_no, category=None):
@@ -2455,6 +2459,8 @@ class PiramidFood(object):
         self.weight_nutrs = weight_nutrs
         self.radio_omega = radio_omega
         self.with_energy = energy
+        self.all_food_avg = None
+
         if categories == "meats":
             self.categories = set(["1500", "1300", "1700", "1000", "0500", "0700"])
         elif categories == "no-meats":
@@ -2492,24 +2498,24 @@ class PiramidFood(object):
             nutrients_radio[ndb_no] = v
         return nutrients_radio
 
-    def process(self):
+    def process(self, reverse=True):
         nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
         nutr_avg = {nutr_desc: (avg, caution, nutr_no) 
             for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr, weights=self.weight_nutrs)}
         
-        categories_data = {}
         categories_data_energy = {}
+        categories_data = {}
         if type(self.dataset) == type([]):
-            all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje(dataset=self.dataset)}
+            self.all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje(dataset=self.dataset)}
             for ndb_no in self.dataset:
                 percentaje_data = principal_nutrients_avg_percentaje_no_category(
-                    all_food_avg, ndb_no, ordered=False)
+                    self.all_food_avg, ndb_no, ordered=False)
                 categories_data[ndb_no] = percentaje_data
         else:
-            all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
+            self.all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
             for category in self.categories:
                 percentaje_data = principal_nutrients_avg_percentaje(
-                    category, all_food_avg, dataset=self.dataset, ordered=False)
+                    category, self.all_food_avg, dataset=self.dataset, ordered=False)
                 categories_data[category] = percentaje_data
             if self.with_energy:
                 for category in self.categories:
@@ -2547,23 +2553,23 @@ class PiramidFood(object):
 
         nutrs_value_good = []
         empty = [None, None, None]
-        FACTOR = 9.5
-        #FACTOR = 1
         for nutrdesc, categories_values in nutrients.items():
-            #reordered if added radio omega
-            max_categories_v = max(categories_values, key=lambda x:x[0])[0] 
+            max_categories_v = max(categories_values, key=lambda x:x[0])[0]
+            #print(nutrdesc, categories_values, max_categories_v)
             key = nutr_avg.get(nutrdesc, empty)[2]
-            max_value = max_categories_v * ((1. / self.weight_nutrs.get(key, 1)) * FACTOR)
+            p = (1. / self.weight_nutrs.get(key, 1))
+            max_value = max_categories_v * p
             total_categories = len(nutrients[nutrdesc])
             try:
                 base_value = 100.0 / (total_categories * len(nutrients))
             except ZeroDivisionError:
                 self.base_value = 0
+
             nutrs_value_good.extend([
-                (base_value * (v*nutrients_radio.get(category, 1) / max_value), category) 
+                (base_value * (p*v*nutrients_radio.get(category, 1) / max_value), category) 
                 for v, category, caution in categories_values if not caution])
             nutrs_value_good.extend([
-                (base_value * (-v*nutrients_radio.get(category, 1) / max_value), category) 
+                (base_value * (-p*v*nutrients_radio.get(category, 1) / max_value), category) 
                 for v, category, caution in categories_values if caution])
 
         def create_values(nutrs_value):
@@ -2581,10 +2587,10 @@ class PiramidFood(object):
                 category_new_values[category] += diff
             return category_new_values.items()
 
-        good = sorted(create_values(nutrs_value_good), key=lambda x:x[1])
+        good = sorted(create_values(nutrs_value_good), key=lambda x:x[1], reverse=reverse)
         if type(self.dataset) == type([]):
             for category, value in good:
-                yield category, value
+                yield category, value, None
         else:
             if len(categories_data_energy) > 0:
                 for category, value in good:

@@ -32,7 +32,7 @@ class Command(BaseCommand):
             piramid = PiramidFood(meat=meat, dataset=dataset, categories=categories, 
                     weight_nutrs=weight_nutrs, radio_omega=radio_omega)
             total_value = 0
-            for category, value in piramid.process():
+            for category, value, _ in piramid.process(reverse=False):
                 print(category, Food(category, avg=False).name, value)
                 total_value += value
             print("Total: ", total_value)
@@ -43,7 +43,7 @@ class Command(BaseCommand):
                 radio_omega=radio_omega)
             #{"omega3":3, "omega9": .1, "322": 1, "263": 2, "418": 3})
             total_value = 0
-            for category, value in piramid.process():
+            for category, value, _ in piramid.process(reverse=False):
                 print(category, Food(category, avg=False).name, value)
                 total_value += value
             print("Total: ", total_value)
@@ -53,7 +53,7 @@ class Command(BaseCommand):
             total_value = 0
             total_energy = 0
             total_weight = 800
-            for category, value, energy in piramid.process():
+            for category, value, energy in piramid.process(reverse=False):
                 weight = total_weight * (value / 100)
                 energy_weight = ((weight * energy) / 100)
                 print(category, "{}%".format(value), "{}g".format(int(round(weight, 0))), "{}kcal".format(round(energy_weight, 2)))
