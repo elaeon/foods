@@ -126,7 +126,7 @@
 <div class="col-sm-6 col-md-4">
     <div class="panel panel-default">
         <div class="panel-heading list-group-item">
-            <p style="text-align:justify;">Lograr la medida adecuada de alimentos para conceguir el máximo aporte nutricional, es un tema de interés y que muchas veces no se sabe a ciencia cierta como logarlo. La siguiente tabla, muestra una posibilidad en cuanto a la proporción de alimento que debe de consumirse diariamente en base a una dieta baja en grasas saturadas, colesterol, azucares y sal. Estos datos se obtuvieron analizando los alimentos, y se puede consultar en el código del mismo programa con el comando "manage.py piramid".</p>
+            <p style="text-align:justify;">Lograr la medida adecuada de alimentos para conceguir el máximo aporte nutricional, es un tema de interés y que muchas veces no se sabe a ciencia cierta como logarlo. La siguiente tabla, muestra una posibilidad en cuanto a la proporción de alimento que debe de consumirse diariamente en base a <b>una dieta baja en grasas saturadas, colesterol, azucares y sal</b>. Estos datos se obtuvieron analizando los alimentos, y se puede consultar en el código del mismo programa con el comando "manage.py piramid".</p>
             <h4>Productos Recomendados.</h4>
             <ul>
                 <li>Pescados y mariscos</li>
@@ -144,6 +144,11 @@
                 <li><a href="{% url 'view_food' '25001' %}">Palomitas de maiz, bajo en grasa</a></li>
                 <li><a href="{% url 'view_food' '25030' %}">Verduras fritas (TERRA CHIPS)</a></li>
                 </ul>
+                <li>Especias y hiervas</li>
+                <ul>
+                <li><a href="{% url 'view_food' '02063' %}">Romeritos</a></li>
+                <li><a href="{% url 'view_food' '02066' %}">Menta verde fresca o seca</a></li>
+                </ul>
             </ul>
             <div>Para más detalle sobre los alimentos ir a <a href="{% url 'recommended_food' %}">busqueda por beneficios.</a>
             </div>
@@ -155,16 +160,16 @@
     <div class="panel panel-default">
         <div class="panel-heading list-group-item">
             <div class="pyramid-container">
-            <div id="pyramid-level-9" class="piramid-font"><div style="font-size:65%;">Lacteos y Productos Derivados del Huevo 1%</div> <div style="font-size:75%;">(~10g)</div></div>
-            <div id="pyramid-level-8" class="piramid-font">Dulces 4% <div style="font-size:75%;">(~37g)</div></div>
-            <div id="pyramid-level-7" class="piramid-font">Frutas y jugos 6.3% <div style="font-size:75%;">(~51g)</div></div>
-            <div id="pyramid-level-6" class="piramid-font"><div style="font-size:75%;">Pollo 10.8% ó carne de cerdo 8.8% ó cordero, ternera, conejo 7.7% ó carne de res 6.7%</div> <div style="font-size:75%;">(~60g a ~87g)</div></div>
-            <div id="pyramid-level-5" class="piramid-font">Granos de cereales, pasta y aperitivos 14% <div style="font-size:75%;">(~123g)</div></div>
-            <div id="pyramid-level-4" class="piramid-font">Legumbres, productos horneados 16.3%<div style="font-size:75%;">(~135g)</div></div>
-            <div id="pyramid-level-3" class="piramid-font">Vegetales, nueces y semillas 18.4% <div style="font-size:75%;">(~147g)</div></div>
-            <div id="pyramid-level-2" class="piramid-font">Especias, hiervas, pescados y mariscos 27.4% <div style="font-size:75%;">(~220g)</div></div>
+            <div id="pyramid-level-9" class="piramid-font"><div style="font-size:65%;">Lacteos y Productos Derivados del Huevo 4%</div> <div style="font-size:75%;">(~32g)</div></div>
+            <div id="pyramid-level-8" class="piramid-font">Dulces 6.1% <div style="font-size:75%;">(~49g)</div></div>
+            <div id="pyramid-level-7" class="piramid-font">Frutas y jugos 7.2% <div style="font-size:75%;">(~58g)</div></div>
+            <div id="pyramid-level-6" class="piramid-font"><div style="font-size:75%;">Pollo 10% ó carne de cerdo 8.9% ó cordero, ternera, conejo 9.1% ó carne de res 8%</div> <div style="font-size:75%;">(~64g a ~80g)</div></div>
+            <div id="pyramid-level-5" class="piramid-font">Granos de cereales, pasta y aperitivos 15.5% <div style="font-size:75%;">(~124g)</div></div>
+            <div id="pyramid-level-4" class="piramid-font">Legumbres, productos horneados 16.7%<div style="font-size:75%;">(~135g)</div></div>
+            <div id="pyramid-level-3" class="piramid-font">Vegetales, nueces y semillas 17.9% <div style="font-size:75%;">(~143g)</div></div>
+            <div id="pyramid-level-2" class="piramid-font">Especias, hiervas, pescados y mariscos 22.5% <div style="font-size:75%;">(~179g)</div></div>
             <div id="pyramid-level-1" class="piramid-font">Agua 2 litros</div>
-            <div>En base a un consumo de ~800g o ~1967kcal</div>
+            <div>En base a un consumo de ~800g o ~2016kcal</div>
             </div>
         </div>
     </div>

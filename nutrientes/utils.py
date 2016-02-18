@@ -2460,29 +2460,54 @@ class PiramidFood(object):
         self.radio_omega = radio_omega
         self.with_energy = energy
         self.all_food_avg = None
-
+        self.categories_name = {}
+        self.meats = set(["1500", "1300", "1700", "1000", "0500", "0700"])
+        self.no_meats = set(["0800", "0200", "0900", "2000", "1600", "1200", "1800", 
+            "1100", "2500", "1900", "0100"])
+        
         if categories == "meats":
-            self.categories = set(["1500", "1300", "1700", "1000", "0500", "0700"])
+            self.categories_name["1500"] = "Pescados y mariscos" 
+            self.categories_name["1300"] = "Carne de res"  
+            self.categories_name["1700"] = "Cordero, ternera y productos de la caza"
+            self.categories_name["1000"] = "Productos de cerdo"
+            self.categories_name["0500"] = "Productos de aves de corral"
+            self.categories_name["0700"] = "Salchicas y carnes frias"
         elif categories == "no-meats":
-            self.categories = set(["0800", "0200", "0900", "2000", "1600", "1200", 
-                                "1800", "1100", "2500", "1900"]) #"0600" sopas y salsas
+            self.categories_name["0100"] = "Lacteos y productos derivados del huevo"
+            self.categories_name["0800"] = "Cereales comerciales"
+            self.categories_name["0200"] = "Especias y hierbas"
+            self.categories_name["0900"] = "Frutas y jugos"
+            self.categories_name["2000"] = "Granos de cereales y pasta"
+            self.categories_name["1600"] = "Legrumbres"
+            self.categories_name["1200"] = "Nueces y semillas"
+            self.categories_name["1800"] = "Productos horneados"
+            self.categories_name["1100"] = "Vegetales y productos vegetales"
+            self.categories_name["2500"] = "Aperitivos"
+            self.categories_name["1900"] = "Dulces" #"0600" sopas y salsas
         else:
-            self.categories = set(["0200", "0900", "2000", "0100", 
-                        "1600", "1200", "1800", "1100"]) #"0800", 
-            self.categories.add("2500") #Aperitivos
-            self.categories.add("1900") #Dulces
-            
-            self.categories.add("1500")
+            self.categories_name["0100"] = "Lacteos y productos derivados del huevo"
+            #self.categories_name["0800"] = "Cereales comerciales"
+            self.categories_name["0200"] = "Especias y hierbas"
+            self.categories_name["0900"] = "Frutas y jugos"
+            self.categories_name["2000"] = "Granos de cereales y pasta"
+            self.categories_name["1600"] = "Legrumbres"
+            self.categories_name["1200"] = "Nueces y semillas"
+            self.categories_name["1800"] = "Productos horneados"
+            self.categories_name["1100"] = "Vegetales y productos vegetales"
+            self.categories_name["2500"] = "Aperitivos"
+            self.categories_name["1900"] = "Dulces" #"0600" sopas y salsas
+            self.categories_name["1500"] = "Pescados y mariscos" 
+
             if meat == "beef":
-                self.categories.add("1300")
+                self.categories_name["1300"] = "Carne de res" 
             elif meat == "hunt":
-                self.categories.add("1700")
+                self.categories_name["1700"] = "Cordero, ternera y productos de la caza"
             elif meat == "pork":
-                self.categories.add("1000")
+                self.categories_name["1000"] = "Productos de cerdo"
             elif meat == "luncheon":
-                self.categories.add("0700")
+                self.categories_name["0700"] = "Salchicas y carnes frias"
             else:
-                self.categories.add("0500")
+                self.categories_name["0500"] = "Productos de aves de corral"
 
     def omega_weight(self, data):
         nutrients_radio = {}
@@ -2492,9 +2517,9 @@ class PiramidFood(object):
             elif 0 < radio_raw <= 1:
                 v = 2
             elif 1 < radio_raw <= 4:
-                v = .5
+                v = 2
             else:
-                v = .8
+                v = 1
             nutrients_radio[ndb_no] = v
         return nutrients_radio
 
@@ -2513,18 +2538,17 @@ class PiramidFood(object):
                 categories_data[ndb_no] = percentaje_data
         else:
             self.all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
-            for category in self.categories:
+            for category in self.categories_name:
                 percentaje_data = principal_nutrients_avg_percentaje(
                     category, self.all_food_avg, dataset=self.dataset, ordered=False)
                 categories_data[category] = percentaje_data
             if self.with_energy:
-                for category in self.categories:
+                for category in self.categories_name:
                     energy = principal_nutrients(category=category, nutr_no="208")
                     _, energy_avg = energy[0]
                     categories_data_energy[category] = float(energy_avg)
 
         nutrients = {}
-        category_to_name = {}
         for category, values in categories_data.items():
             for v, radio_v, nutrdesc in values:
                 _, caution, nutr_no = nutr_avg[nutrdesc]
@@ -2539,13 +2563,11 @@ class PiramidFood(object):
                     food = Food(ndb_no, avg=False)
                     radio_raw = food.radio_omega_raw
                     data.append((radio_raw, ndb_no, True if radio_raw > 4 else False))
-                nutrients_radio = self.omega_weight(data)
             else:
                 omegas = category_avg_omegas(ids=True, dataset=self.dataset)
-                subcategories = set([c for c, v in categories_data.items() if c in self.categories])        
+                subcategories = set([c for c, v in categories_data.items() if c in self.categories_name])        
                 for category, (radio_raw, category_desc) in omegas.items():
                     if category in subcategories:
-                        category_to_name[category] = category_desc
                         data.append((radio_raw, category, True if radio_raw > 4 else False))
             nutrients_radio = self.omega_weight(data)
         else:
@@ -2558,7 +2580,7 @@ class PiramidFood(object):
             #print(nutrdesc, categories_values, max_categories_v)
             key = nutr_avg.get(nutrdesc, empty)[2]
             p = (1. / self.weight_nutrs.get(key, 1))
-            max_value = max_categories_v * p
+            max_value = max_categories_v * p * 2 #Maximum omega value in nutrients_radio
             total_categories = len(nutrients[nutrdesc])
             try:
                 base_value = 100.0 / (total_categories * len(nutrients))
@@ -2594,7 +2616,40 @@ class PiramidFood(object):
         else:
             if len(categories_data_energy) > 0:
                 for category, value in good:
-                    yield category_to_name.get(category, category), value, categories_data_energy.get(category, 0)
+                    yield category, value, categories_data_energy.get(category, 0)
             else:
                 for category, value in good:
-                    yield category_to_name.get(category, category), value, None
+                    yield category, category, value, None
+    
+    def build_piramid(self, total_weight=800):
+        data = self.process()
+        container = []
+        total_value = 0
+        total_energy = 0
+        total_weight_sum = 0
+        other_meats = self.meats.symmetric_difference(set(["1500"]))
+        meats_container = []
+        for category, value, energy in self.process(reverse=False):
+            weight = total_weight * (value / 100)
+            energy_weight = ((weight * energy) / 100)
+            if category in other_meats:
+                meats_container.append((self.categories_name[category], 
+                    round(value, 1), int(round(weight, 0)), round(energy_weight, 2)))
+            else:
+                container.append((self.categories_name[category], 
+                    round(value, 1), int(round(weight, 0)), round(energy_weight, 2)))
+            total_value += value
+            total_energy += energy_weight
+            total_weight_sum += weight
+        n_data = []
+        n_data.append(meats_container[0])
+        for c1 in container[:3]:
+            n_data.append((c1[0], c1[1], c1[2]))
+        for c1, c2 in zip(container[1:][::2], container[1:][1::2])[1:]:
+            n_data.append(("{}-{}".format(c1[0], c2[0]), c1[1] + c2[1], c1[2] + c2[2]))
+        for row in sorted(n_data, key=lambda x: x[1]):
+            print(row)
+        print("Total: ", 
+            "{}%".format(total_value), 
+            "{}kcal".format(int(round(total_energy, 0))), 
+            "{}g".format(int(round(total_weight_sum, 0))))

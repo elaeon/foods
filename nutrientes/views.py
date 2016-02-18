@@ -571,7 +571,7 @@ def recomended_food(request):
             limit = int(radio_omega_form.cleaned_data["data_size"])
             type_food_raw = [form.cleaned_data["key"] 
                 for form in type_food_formset.forms if form.cleaned_data["check"]]
-            weight_avg_nutr = float(radio_omega_form.cleaned_data["quantity"])
+            #weight_avg_nutr = float(radio_omega_form.cleaned_data["quantity"])
             if len(type_food_raw) > 0:
                 best_for = [form.cleaned_data["key"] 
                     for form in weight_formset.forms if form.cleaned_data["check"]]
@@ -580,8 +580,8 @@ def recomended_food(request):
                     type_food_raw, 
                     weights_for=best_for, 
                     limit=limit, 
-                    radio_o=radio_o, 
-                    weight_avg_nutr=weight_avg_nutr)
+                    radio_o=radio_o) 
+                    #weight_avg_nutr=weight_avg_nutr)
                 return render(request, "recommended_food.html", {
                     "foods": foods,
                     "weight_formset": weight_formset,

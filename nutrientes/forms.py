@@ -66,4 +66,4 @@ class WeightFoodForm(forms.Form):
 class OmegaRadioForm(forms.Form):
     radio_omega = forms.BooleanField(required=False)
     data_size = forms.ChoiceField(choices=[(i,i) for i in range(10, 60, 10)])
-    quantity = forms.ChoiceField(choices=[("1", "Excelente"), ("0.5", "Buena"), ("0.3", "Regular"), ("0.1", "Baja")])
+    #quantity = forms.ChoiceField(choices=[("1", "Excelente"), ("0.5", "Buena"), ("0.3", "Regular"), ("0.1", "Baja")])

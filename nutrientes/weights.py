@@ -230,9 +230,9 @@ WEIGHT_IMMUNE_SYSTEM = {
 }
 
 WEIGHT_NUTRITIONAL_ANEMIA = {
-    "303": .1, #Iron, Fe
-    "435": .1, #Folate DFE
-    "418": .1, #Vitamin B12
+    "303": .01, #Iron, Fe
+    "435": .5, #Folate DFE
+    "418": 1, #Vitamin B12
 
     "401": 1, #Vitamin C
     "320": 1, #Vitamin A
