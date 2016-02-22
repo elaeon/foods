@@ -34,6 +34,21 @@ class EnergyDensity(models.Model):
     def __unicode__(self):
         return self.ndb_no_t
 
+class NutrIntake(models.Model):
+    nutr_no = models.CharField(max_length=3)
+    type = models.TextField()
+    genero = models.CharField(max_length=10)
+    unidad_edad = models.CharField(max_length=10)
+    value = models.FloatField()
+    edad_range = models.CharField(max_length=10)
+    rnv_type = models.IntegerField(db_index=True)
+
+    def __unique__(self):
+        return self.nutr_no
+
+    class Meta:
+        unique_together = ('nutr_no', 'type', 'genero', 'unidad_edad', 'edad_range')
+
 # Create your models here.
 #class Recipe(models.Model):
 #    name = models.TextField()

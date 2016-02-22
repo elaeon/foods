@@ -60,6 +60,14 @@ def nutr_features(order_by="sr_order"):
     conn.close()
     return data
 
+def nutr_intake_nutrs(rnv_type=1):
+    conn, cursor = conection()
+    query = """SELECT nutr_no FROM nutr_intake WHERE rnv_type=%s GROUP BY nutr_no;"""
+    cursor.execute(query, [rnv_type])
+    data = cursor.fetchall()
+    conn.close()
+    return data
+
 def perfiles(rnv_type=1):
     conn, cursor = conection()
     query = """SELECT genero, edad_range, unidad_edad 
@@ -322,15 +330,9 @@ def get_many_food(ids):
     return cursor.fetchall()
 
 def best_of_query(nutr_no_list, category_food, exclude=None):
-    _, cursor = conection()
     nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
     nutr_avg = {nutr_no: (avg, caution) 
         for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr) if nutr_no in nutr_no_list}
-    querys = []
-    for nutr_no, (avg, caution) in nutr_avg.items():
-        query = query_build(nutr_no, category_food, exclude=exclude)
-        cursor.execute(query)
-        querys.append((nutr_no, caution, avg, cursor.fetchall()))
 
     def get_ids_intersection(cat):
         if len(cat.values()) > 0:
@@ -341,8 +343,8 @@ def best_of_query(nutr_no_list, category_food, exclude=None):
         else:
             return set([])
 
-    rank = Rank(querys)
-    rank.base_food = get_ids_intersection(rank.category_nutr)
+    rank = Rank(nutrs=nutr_avg, category_food=category_food, exclude=exclude)
+    rank.reference_food = get_ids_intersection(rank.category_nutr)
     return rank
 
 def ranking_nutr(category_food=None):
@@ -427,15 +429,24 @@ def ranking_nutr_perfil(perfil, edad_range, category_food=None):
 
 
 class Rank(object):
-    def __init__(self, base_food_querys, weights=WEIGHT_NUTRS):
+    def __init__(self, weights=WEIGHT_NUTRS, nutrs=None, category_food=None, exclude=None):
         self.foods = {}
-        self.category_nutr = {}
-        self.base_food = None
-        self.base_food_querys = base_food_querys
+        self.reference_food = None
+        self.base_food_querys = self.generate_base_food(nutrs, category_food, exclude)
         self.category_nutr = self.get_categories_nutr()
         self.ranks = None
         self.results = None
         self.weight_nutrs = weights
+
+    def generate_base_food(self, nutrs, category_food, exclude):
+        conn, cursor = conection()
+        querys = []
+        for nutr_no, (avg, caution) in nutrs.items():
+            query = query_build(nutr_no, category_food, exclude=exclude)
+            cursor.execute(query)
+            querys.append((nutr_no, caution, avg, cursor.fetchall()))
+        conn.close()
+        return querys
 
     def get_categories_nutr(self):
         category_nutr = {}
@@ -450,23 +461,23 @@ class Rank(object):
 
     def ids2data_sorted(self):
         data = OrderedDict()
-        if self.base_food is None:
-            self.base_food = set(self.foods.keys())
+        if self.reference_food is None:
+            self.reference_food = set(self.foods.keys())
         #print(u"15212" in self.base_food)
         for nutr_no in self.category_nutr.keys():
             data.setdefault(nutr_no, [])
             reverse = not bool(self.category_nutr[nutr_no]["caution"])
-            for ndb_no in self.base_food:
+            for ndb_no in self.reference_food:
                 nutr_val = self.category_nutr[nutr_no]["data"].get(ndb_no, 0.0)
                 data[nutr_no].append((ndb_no, self.foods.get(ndb_no, None), nutr_val))
             data[nutr_no].sort(reverse=reverse, key=lambda x: x[2])
         return data
     
-    def rank_weight_data(self, category_nutr):
+    def rank_weight_data(self, weight_data):
         positions = {}
-        for nutr_no in category_nutr.keys():
+        for nutr_no in weight_data.keys():
             weight = self.weight_nutrs.get(nutr_no, 1)
-            for i, v in self.rank2natural(category_nutr[nutr_no], f_index=lambda x: x[2]):
+            for i, v in self.rank2natural(weight_data[nutr_no], f_index=lambda x: x[2]):
                 positions.setdefault(v[0], {"attr": v[:2], "i": 0, "val": []})
                 positions[v[0]]["i"] += i * weight
                 # we evaluate if is 'caution' v[5]
@@ -485,10 +496,7 @@ class Rank(object):
         self.ranks.setdefault(ndb_no, {})
         self.ranks[ndb_no][nutr_no] = position
 
-    def get_values_food(self, ndb_no):
-        if self.ranks is None:
-            category_nutr = self.ids2data_sorted()
-            self.rank_weight_data(self, category_nutr)            
+    def get_values_food(self, ndb_no):   
         return self.ranks[ndb_no]
 
     @classmethod
@@ -537,6 +545,8 @@ class Rank(object):
 
 
 def query_build(nutr_no, category_food, name=None, order_by=None, exclude=None):
+    """ Given a nutr_no parameter this function return a sequence of foods.
+    """
     attrs = {"nutr_no": nutr_no}
     if nutr_no.startswith("omega"):
         query = """
@@ -584,19 +594,12 @@ def radio_omega(category=None):
     cursor.execute(query)
     return cursor.fetchall()
 
-def best_of_general_2(category=None, name=None):
-    _, cursor = conection()
+def best_of_general_2(category=None):
     nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
     # hasheamos las llaves para mantener el orden
     nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
 
-    querys = []
-    for nutr_no, (avg, caution) in nutr_avg.items():
-        query = query_build(nutr_no, category)
-        cursor.execute(query)
-        querys.append((nutr_no, caution, avg, cursor.fetchall()))
-
-    rank = Rank(querys)
+    rank = Rank(nutrs=nutr_avg, category_food=category)
     rank.weight_order(omegas=radio_omega(category=category))
     return rank
 
@@ -1038,22 +1041,6 @@ def create_matrix(ndb_nos, exclude_nutr=None, only=None, weight=100):
                 for ndb_no in ndb_nos]
     matrix = MatrixNutr(rows=rows)
     return matrix
-
-def create_order_matrix():
-    _, cursor = conection()
-    nutr = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
-    # hasheamos las llaves para mantener el orden
-    nutr_avg = {nutr_no:(avg, caution) for nutr_no, nutr_desc, avg, _, caution in mark_caution_nutr(nutr)}
-
-    querys = []
-    for nutr_no, (avg, caution) in nutr_avg.items():
-        query = query_build(nutr_no, None)
-        cursor.execute(query)
-        querys.append((nutr_no, caution, avg, cursor.fetchall()))
-
-    rank = Rank(querys)
-    order = [food["attr"][0] for _, food in rank.order()]
-    return order
 
 def principal_nutrients(category=None, sorted_=False, dataset=None, nutr_no=None):
     _, cursor = conection()
@@ -2122,6 +2109,7 @@ class FoodType(object):
         self.category = category
 
 
+##fix: we can use the model fooddescimg
 def get_fooddescimg(category=None):
     conn, cursor = conection()
     if category is None:
@@ -2653,3 +2641,12 @@ class PiramidFood(object):
             "{}%".format(total_value), 
             "{}kcal".format(int(round(total_energy, 0))), 
             "{}g".format(int(round(total_weight_sum, 0))))
+
+
+def get_food_all_nutr_intake(rnv_type=1):
+    perfil = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}
+    nutrs = set((e[0] for e in nutr_intake_nutrs(rnv_type=rnv_type)))
+    nutrs.remove("255")
+    rank = best_of_query(nutrs, None)
+    data = [Food(ndb_no, avg=False) for ndb_no in rank.reference_food]
+    return sorted(((food.score(perfil), food.ndb_no, food.group["name"]) for food in data), reverse=True)
