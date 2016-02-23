@@ -61,6 +61,7 @@ def calc_radio_omega_all():
     ndb_nos = Food.alimentos(limit="limit 9000")
     for ndb_no in ndb_nos:
         food = Food(ndb_no, avg=False)
+        omegas = food.get_omegas(raw=False)
         query = """ SELECT COUNT(*) 
                     FROM omega 
                     WHERE ndb_no='{ndb_no}'""".format(
@@ -71,18 +72,18 @@ def calc_radio_omega_all():
                         SET omega3={omega3}, omega6={omega6}, omega7={omega7}, omega9={omega9}, radio={radio}
                         WHERE ndb_no='{ndb_no}'""".format(
                 ndb_no=ndb_no,
-                omega3=food.omegas.get("omega 3", [0,0])[1],
-                omega6=food.omegas.get("omega 6", [0,0])[1],
-                omega7=food.omegas.get("omega 7", [0,0])[1],
-                omega9=food.omegas.get("omega 9", [0,0])[1],
+                omega3=omegas.get("omega3", [0,0])[1],
+                omega6=omegas.get("omega6", [0,0])[1],
+                omega7=omegas.get("omega7", [0,0])[1],
+                omega9=omegas.get("omega9", [0,0])[1],
                 radio=food.radio_omega_raw)
         else:
             query = """INSERT INTO omega VALUES ('{ndb_no}', {omega3}, {omega6}, {omega7}, {omega9}, {radio});""".format(
                 ndb_no=ndb_no, 
-                omega3=food.omegas.get("omega 3", [0,0])[1],
-                omega6=food.omegas.get("omega 6", [0,0])[1],
-                omega7=food.omegas.get("omega 7", [0,0])[1],
-                omega9=food.omegas.get("omega 9", [0,0])[1],
+                omega3=omegas.get("omega3", [0,0])[1],
+                omega6=omegas.get("omega6", [0,0])[1],
+                omega7=omegas.get("omega7", [0,0])[1],
+                omega9=omegas.get("omega9", [0,0])[1],
                 radio=food.radio_omega_raw)
         cursor.execute(query)
     conn.commit()
