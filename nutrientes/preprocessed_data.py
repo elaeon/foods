@@ -136,7 +136,6 @@ def ranking_by_perfil(data):
         conn.commit()
     conn.close()
 
-
 def calc_avg(force=False):
     from nutrientes.utils import avg_omega, avg_nutrients, OMEGAS
     nutavg_vector = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
@@ -148,10 +147,6 @@ def calc_avg(force=False):
         nutavg_vector, _ = Food.subs_omegas(allnutavg_vector)
         Food.save_matrix(PREPROCESSED_DATA_DIR + "nutavg.p", nutavg_vector)
 
-def insert_update_db_ranking():
-    data = ranking_global_perfil()
-
-
 def calc_energy_density():
     from nutrientes.models import EnergyDensity
     for ndb_no in Food.alimentos(limit="limit 9000"):
@@ -162,15 +157,4 @@ def calc_energy_density():
             EnergyDensity.objects.get_or_create(
                 ndb_no_t=ndb_no, 
                 defaults={"energy_density": energy_density})
-        print(ndb_no, energy_density)
 
-def recalc_preprocessed_data():
-    #print "Generate Omegas"
-    #calc_radio_omega_all()
-    #print "Generate AVG"
-    #calc_avg(force=True)
-    #print "Generate Matrix"
-    #matrix_food()
-    print "Generate Ranks"
-    insert_update_db_ranking()
-    #calc_energy_density()

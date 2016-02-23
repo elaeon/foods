@@ -677,16 +677,17 @@ class Food(object):
         else:
             return "%s:1" % (self.radio_omega_raw,)
 
-    @classmethod
-    def get_raw_nutrients(self, ndb_no):
-        _, cursor = conection()
+    def get_raw_nutrients(self):
+        conn, cursor = conection()
         query  = """SELECT nutr_def.nutr_no, nutrdesc, nutr_val, units
                 FROM nut_data, nutr_def
                 WHERE nutr_def.nutr_no=nut_data.nutr_no
                 AND nutr_val > 0
-                AND nut_data.ndb_no='{ndb_no}' ORDER BY sr_order""".format(ndb_no=ndb_no)
+                AND nut_data.ndb_no='{ndb_no}' ORDER BY sr_order""".format(ndb_no=self.ndb_no)
         cursor.execute(query)
-        return cursor.fetchall()
+        data = cursor.fetchall()
+        conn.close()
+        return data
 
     @classmethod
     def get_food(self, ndb_no):
@@ -701,7 +702,7 @@ class Food(object):
     def get(self, ndb_no=None, avg=True):
         if self.ndb_no is None and ndb_no is not None:
             self.ndb_no = ndb_no
-        records = self.get_raw_nutrients(self.ndb_no)
+        records = self.get_raw_nutrients()
         #Energy#ENERC_KJ, 'Vitamin A, IU', 'Folate, food', 'Folate, total', Folic acid
         e_data = exclude_data(records, exclude=set(["268", "318", "432", "417", "431"]))
         food = self.get_food(self.ndb_no)
@@ -710,17 +711,28 @@ class Food(object):
         self.group = {"name": food[0][1], "id": food[0][2]}
         features, omegas = self.subs_omegas([(nutr_no, nut, self.portion_value(v), u) 
                             for nutr_no, nut, v, u in e_data])
-        self.nutrients = features + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
+        #self.nutr = {k: (name, v, u) for k, name, v, u in self.exclude_features(nutavg_vector)}
+        nutrients = features + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
+        self.nutrs = OrderedDict([(k, (name, v, u)) for k, name, v, u in nutrients])
+        self.nutrients = nutrients
         self.radio_omega_raw = self.radio_raw(omegas.get("omega 6", [0,0,0])[1], omegas.get("omega 3", [0,0,0])[1])
         self.omegas = omegas
         if avg:
             nutavg_vector = self.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
             self.nutr_avg = {k: (name, v, u) for k, name, v, u in self.exclude_features(nutavg_vector)}
 
+    def nutrients2tuple(self):
+        return [(k, name, v, u) for k, (name, v, u) in self.nutrs.items()]
+
+    def get_omegas(self):
+        omegas = [omega.replace(" ", "") for omega in OMEGAS.keys()]
+        return [self.nutrs.get(omega, [0,0,0]) for omega in omegas]
+
     def __add__(self, other):
         if isinstance(other, Food):
             if self.ndb_no == other.ndb_no:
-                nutrients = [(x[0], x[1], x[2]+y[2], x[3]) for x, y in zip(self.nutrients, other.nutrients)]
+                #nutrients = [(x[0], x[1], x[2]+y[2], x[3]) for x, y in zip(self.nutrients, other.nutrients)]
+                nutrients = [(x[0], x[1], x[2]+y[2], x[3]) for x, y in zip(self.nutrients2tuple(), other.nutrients2tuple())]
                 omegas = [(x[0], x[1], x[2]+y[2], x[3]) for x, y in zip(self.omegas, other.omegas)]
                 food = Food(ndb_no=None, avg=False, weight=self.weight+other.weight)
                 food.ndb_no = self.ndb_no
