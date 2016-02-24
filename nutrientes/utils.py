@@ -989,14 +989,14 @@ class Food(object):
             return round(v, 0)
             
         nutr_weight = {}
-        nutrients = {nutr_no: (v, u) for nutr_no, _, v, u in self.nutrients}
+        #nutrients = {nutr_no: (v, u) for nutr_no, _, v, u in self.nutrients}
         for w_nutr_no, weight in weights_good:
             if weight == 1:
                 val_min = self.nutr_avg.get(w_nutr_no, [0,0])[1] * (weight_avg_nutr * .3) 
             else:
                 val_min = self.nutr_avg.get(w_nutr_no, [0,0])[1] * weight_avg_nutr
-            v_u = nutrients.get(w_nutr_no, [-1, None])
-            if val_min <= v_u[0]:
+            v_u = self.nutrs.get(w_nutr_no, ["", -1, None])
+            if val_min <= v_u[1]:
                 nutr_weight[w_nutr_no] = (
                     weight,
                     v_u,
