@@ -199,8 +199,8 @@ def get_omegas():
     return cursor.fetchall()
 
 def mark_caution_nutr(features, weights=WEIGHT_NUTRS):
-    caution_nutr = {nutr_no: weight for nutr_no, weight in weights.items() if weight > 1}
-    return [(nutr_no, nut, v, u, int(nutr_no in caution_nutr)) for nutr_no, nut, v, u in features]
+    #caution_nutr = {nutr_no: weight for nutr_no, weight in weights.items() if weight > 1}
+    return [(nutr_no, nut, v, u, int(weights.get(nutr_no, 0) > 1)) for nutr_no, nut, v, u in features]
 
 def category_food():
     _, cursor = conection()
@@ -635,7 +635,6 @@ def normal(x, u, s):
 
 class Food(object):
     def __init__(self, ndb_no=None, avg=True, weight=100, nutr_detail=None):
-        self.nutrients = None
         self.name = None
         self.name_en = None
         self.group = None
@@ -716,7 +715,6 @@ class Food(object):
         if nutrients is None:
             nutrients = features + [(k, v[0] , v[1], v[2]) for k, v in omegas.items()]
         self.nutrs = OrderedDict([(k, (name, v, u)) for k, name, v, u in nutrients])
-        self.nutrients = nutrients
         if omegas is None:
             omegas = self.get_omegas(raw=False)
         self.radio_omega_raw = self.radio_raw(omegas.get("omega6", [0,0,0])[1], omegas.get("omega3", [0,0,0])[1])
@@ -829,7 +827,6 @@ class Food(object):
 
     def exclude_features(self, all_nutr):
         """nutr_no, nut, float(v), u in self.nutrients"""
-        #base = set([n[0] for n in self.nutrients])
         return [n for n in all_nutr if n[0] in self.nutrs]
 
     @classmethod
@@ -920,7 +917,7 @@ class Food(object):
             for n in nutrients)
 
     def mark_nutrients(self):
-        return mark_caution_nutr(self.nutrients)
+        return mark_caution_nutr(self.nutrs2tuple())
 
     def caution_good_nutr_avg(self):
         good = len(list(filter(lambda x: x[5], self.mark_caution_good_nutrients())))
@@ -1015,7 +1012,7 @@ class Food(object):
 
     def nutrients_selector(self, seleccion):
         if seleccion == "nutrients":
-            return self.nutrients
+            return self.nutrs2tuple()
         else:
             return self.top_nutrients_avg()
 
@@ -1029,9 +1026,9 @@ class Food(object):
                     data_nutr.setdefault(nutr_no, {})
                     data_nutr[nutr_no][ndb_no] = v
 
-        nutr_no, _, _, _ = self.nutrients[0]
-        data_s = set(data_nutr.get(nutr_no, {}).keys())
-        for nutr_no, _, _, _ in self.nutrients[1:]:
+        nutrs = self.nutrs.keys()
+        data_s = set(data_nutr.get(nutrs[0], {}).keys())
+        for nutr_no in nutrs[1:]:
             try:
                 tmp = set(data_nutr[nutr_no].keys())
                 data_s = data_s.intersection(tmp)
@@ -1151,7 +1148,7 @@ def principal_nutrients_percentaje(category=None, dataset=None, ndb_no=None):
             [(nutrdesc, nutrdesc, unit, None) 
             for nutrdesc, unit in principal_nutrients(category=category, dataset=dataset)])
         features = [(nutrdesc, v) for _, nutrdesc, v, _ in features]
-        all_nutr = features + [(nutrdesc, v[1]) for nutrdesc, v in omegas.items()]
+        all_nutr = features + [(nutrdesc, v) for _, (nutrdesc, v, _) in omegas.items()]
     else:
         nutrients = Food(ndb_no, avg=False).nutrients
         nutrients_units_converted = convert_units_scale((avg, units) for _, _, avg, units in nutrients)
@@ -2165,13 +2162,10 @@ def get_fooddescimg(category=None):
     conn.close()
     return data
 
-class OptionSearch(object):
+class OptionWeightNutr(object):
     def __init__(self):
-        self.foods = self.get_food_db()
         self.weights = self.set_weights()
-        self.nutr_detail = self.fill_nutr_detail()
-        self.weights_best_for = None
-        self.total_food = sum(len(self.foods[c].foods) for c in self.foods)
+        self.weights_best_for = None           
 
     def get_food_db(self):
         foods = {}
@@ -2180,15 +2174,6 @@ class OptionSearch(object):
             foods[category].append(ndb_no)
 
         return {category: FoodType(foods[category], category) for category in foods}
-            
-
-    def join(self, food_values):
-        import itertools
-        data_list = itertools.chain.from_iterable(food_values)
-        return data_list
-
-    def select_food(self, type_food):
-        return self.join(self.foods[type_].foods for type_ in type_food)
 
     @classmethod
     def set_weights(self):
@@ -2210,6 +2195,22 @@ class OptionSearch(object):
             "Ayuda al sistema inmune": weights.WEIGHT_IMMUNE_SYSTEM,
             "Ayuda a evitar la anemia nutricional": weights.WEIGHT_NUTRITIONAL_ANEMIA}
         return weights
+
+
+class OptionSearch(OptionWeightNutr):
+    def __init__(self):
+        super(OptionSearch, self).__init__()
+        self.foods = self.get_food_db()
+        self.nutr_detail = self.fill_nutr_detail()
+        self.total_food = sum(len(self.foods[c].foods) for c in self.foods)
+
+    def join(self, food_values):
+        import itertools
+        data_list = itertools.chain.from_iterable(food_values)
+        return data_list
+
+    def select_food(self, type_food):
+        return self.join(self.foods[type_].foods for type_ in type_food)
 
     def extra_nutr_detail(self):
         return {"omega3": """Los ácidos grasos omega 3 son ácidos grasos poliinsaturados esenciales (el organismo humano no los puede fabricar a partir de otras sustancias). Algunas fuentes de omega 3 pueden contener otros ácidos grasos como los omega 6. Se ha demostrado experimentalmente que el consumo de grandes cantidades de omega-3 aumenta considerablemente el tiempo de coagulación de la sangre, son benéficos para el corazón y entre sus efectos positivos se pueden mencionar, entre otros: acciones antiinflamatorias y anticoagulantes, disminución de los niveles de colesterol y triglicéridos y la reducción de la presión sanguínea. Estos ácidos grasos también pueden reducir los riesgos y síntomas de otros trastornos, incluyendo diabetes, accidente cerebrovascular, algunos cánceres, artritis reumatoidea, asma, enfermedad intestinal inflamatoria, colitis ulcerativa y deterioro mental.  Los estudios han demostrado que los omega-3 y omega-6 no sólo hay que tomarlos en cantidades suficientes, además hay que guardar una cierta proporción entre ambos tipos, de preferencia 1:1.""",
@@ -2252,7 +2253,8 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
                     dataset=foods_dict.keys(),
                     weight_nutrs=self.weights.get(weights_for[0], WEIGHT_NUTRS), 
                     radio_omega=radio_o)
-            results = ((i, foods_dict[category]) for i, (category, value, energy) in enumerate(piramid.process(), 1))
+            results = ((i, foods_dict[category]) 
+                for i, (category, value, energy) in enumerate(piramid.process(), 1))
             for i, food in it.takewhile(lambda x: x[0] < limit, results):
                 food.top_nutr = food.top_nutrients_detail_avg(piramid.all_food_avg, limit=10)
                 yield i, food
@@ -2263,6 +2265,20 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
             rank_results = best_of_selected_food(candidate_food, self.weights_best_for, limit, radio_o)
             for i, ndb_no in rank_results:
                 yield (i, foods_dict[ndb_no])
+
+class OptionSearchCategory(OptionWeightNutr):
+    def __init__(self):
+        super(OptionSearchCategory, self).__init__()
+        self.foods = self.get_food_db()
+
+    def best(self, dataset, weights_for=["all"], radio_o=True):
+        piramid = PiramidFood(
+            #meat=meat,
+            dataset=dataset,
+            weight_nutrs=self.weights.get(weights_for[0], WEIGHT_NUTRS), 
+            radio_omega=radio_o,
+            energy=True)
+        return piramid.build_piramid()
 
 class FoodVariant(object):
     def __init__(self, ndb_no, category=None):
@@ -2502,7 +2518,7 @@ class PiramidFood(object):
             self.categories_name["0200"] = "Especias y hierbas"
             self.categories_name["0900"] = "Frutas y jugos"
             self.categories_name["2000"] = "Granos de cereales y pasta"
-            self.categories_name["1600"] = "Legrumbres"
+            self.categories_name["1600"] = "Legumbres"
             self.categories_name["1200"] = "Nueces y semillas"
             self.categories_name["1800"] = "Productos horneados"
             self.categories_name["1100"] = "Vegetales y productos vegetales"
@@ -2514,7 +2530,7 @@ class PiramidFood(object):
             self.categories_name["0200"] = "Especias y hierbas"
             self.categories_name["0900"] = "Frutas y jugos"
             self.categories_name["2000"] = "Granos de cereales y pasta"
-            self.categories_name["1600"] = "Legrumbres"
+            self.categories_name["1600"] = "Legumbres"
             self.categories_name["1200"] = "Nueces y semillas"
             self.categories_name["1800"] = "Productos horneados"
             self.categories_name["1100"] = "Vegetales y productos vegetales"
@@ -2646,7 +2662,6 @@ class PiramidFood(object):
                     yield category, category, value, None
     
     def build_piramid(self, total_weight=800):
-        data = self.process()
         container = []
         total_value = 0
         total_energy = 0
@@ -2654,6 +2669,8 @@ class PiramidFood(object):
         other_meats = self.meats.symmetric_difference(set(["1500"]))
         meats_container = []
         for category, value, energy in self.process(reverse=False):
+            if value < 0:
+                continue
             weight = total_weight * (value / 100)
             energy_weight = ((weight * energy) / 100)
             if category in other_meats:
@@ -2670,14 +2687,11 @@ class PiramidFood(object):
         for c1 in container[:3]:
             n_data.append((c1[0], c1[1], c1[2]))
         for c1, c2 in zip(container[1:][::2], container[1:][1::2])[1:]:
-            n_data.append(("{}-{}".format(c1[0], c2[0]), c1[1] + c2[1], c1[2] + c2[2]))
-        for row in sorted(n_data, key=lambda x: x[1]):
-            print(row)
-        print("Total: ", 
-            "{}%".format(total_value), 
+            n_data.append(("{}, {}".format(c1[0], c2[0]), c1[1] + c2[1], c1[2] + c2[2]))
+        totals = ("{}%".format(total_value), 
             "{}kcal".format(int(round(total_energy, 0))), 
             "{}g".format(int(round(total_weight_sum, 0))))
-
+        return totals, sorted(n_data, key=lambda x: x[1])
 
 def get_food_all_nutr_intake(rnv_type=1):
     perfil = {"edad": 40, "unidad_edad": u"años", "genero": "H", "rnv_type": 1}

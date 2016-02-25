@@ -592,3 +592,45 @@ def recomended_food(request):
                 return basic_state()
     else:
         return basic_state()
+
+def piramid_food(request):
+    from nutrientes.utils import PiramidFood
+    from nutrientes.utils import OptionSearchCategory, Food
+    from nutrientes.forms import CategoryForm, WeightFoodForm, OmegaRadioForm
+    from django.forms.formsets import formset_factory
+
+    CategoryFormSet = formset_factory(CategoryForm, extra=0)
+    WeightFoodFormSet = formset_factory(WeightFoodForm, extra=0)
+    search = OptionSearchCategory()
+    initial_w = [{'key': k, 'name': k} for k in sorted(search.weights)]
+    initial = [{'key': k, 'food_type': v} 
+            for k, v in sorted(search.foods.items(), key=lambda x: x[1].category)]
+
+    if request.method == "POST":
+        type_food_formset = CategoryFormSet(request.POST, initial=initial, prefix='type_food')
+        weight_formset = WeightFoodFormSet(request.POST, initial=initial_w, prefix='weight')
+        if type_food_formset.is_valid() and weight_formset.is_valid():
+            best_for = [form.cleaned_data["key"] 
+                    for form in weight_formset.forms if form.cleaned_data["check"]]
+            if len(best_for) > 0:
+                best_for_text = ", ".join(best_for)
+            else:
+                best_for_text = "Baja en grasas saturadas, colesterol, azucares y sal"
+                best_for = ["all"]
+    else:
+        type_food_formset = CategoryFormSet(initial=initial, prefix='type_food')
+        weight_formset = WeightFoodFormSet(initial=initial_w, prefix='weight')
+        best_for_text = "Baja en grasas saturadas, colesterol, azucares y sal"
+        best_for = ["all"]
+
+    piramid_totals, piramid_rows = search.best(
+        None, 
+        weights_for=best_for,
+        radio_o=True)
+    return render(request, "piramids.html", {
+            "piramid_height": 9 - len(piramid_rows),
+            "piramid_totals": piramid_totals,
+            "piramid_rows": ((9 - i, row) for i, row in enumerate(piramid_rows, 0)),
+            "weight_formset": weight_formset,
+            "type_food_formset": type_food_formset,
+            "best_for_text": best_for_text})
