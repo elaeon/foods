@@ -2269,11 +2269,19 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
 class OptionSearchCategory(OptionWeightNutr):
     def __init__(self):
         super(OptionSearchCategory, self).__init__()
-        self.foods = self.get_food_db()
+        self.foods = self.get_meat()
 
-    def best(self, dataset, weights_for=["all"], radio_o=True):
+    def get_meat(self):
+        foods = {"chicken": "Productos de aves de corral", 
+            "beef": "Carne de res", 
+            "hunt": "Cordero, ternera y productos de la caza",
+            "pork": "Productos de cerdo",
+            "luncheon": "Salchicas y carnes frias"}
+        return {category: FoodType([], foods[category]) for category in foods}
+
+    def best(self, dataset, meat=None, weights_for=["all"], radio_o=True):
         piramid = PiramidFood(
-            #meat=meat,
+            meat=meat,
             dataset=dataset,
             weight_nutrs=self.weights.get(weights_for[0], WEIGHT_NUTRS), 
             radio_omega=radio_o,
@@ -2546,6 +2554,8 @@ class PiramidFood(object):
                 self.categories_name["1000"] = "Productos de cerdo"
             elif meat == "luncheon":
                 self.categories_name["0700"] = "Salchicas y carnes frias"
+            elif meat == "chicken":
+                self.categories_name["0500"] = "Productos de aves de corral"
             else:
                 self.categories_name["0500"] = "Productos de aves de corral"
 

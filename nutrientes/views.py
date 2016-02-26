@@ -603,15 +603,19 @@ def piramid_food(request):
     WeightFoodFormSet = formset_factory(WeightFoodForm, extra=0)
     search = OptionSearchCategory()
     initial_w = [{'key': k, 'name': k} for k in sorted(search.weights)]
-    initial = [{'key': k, 'food_type': v} 
+    meat = "chicken"
+    initial = [{'key': k, 'food_type': v, 'check': k == meat} 
             for k, v in sorted(search.foods.items(), key=lambda x: x[1].category)]
-
     if request.method == "POST":
         type_food_formset = CategoryFormSet(request.POST, initial=initial, prefix='type_food')
         weight_formset = WeightFoodFormSet(request.POST, initial=initial_w, prefix='weight')
         if type_food_formset.is_valid() and weight_formset.is_valid():
             best_for = [form.cleaned_data["key"] 
                     for form in weight_formset.forms if form.cleaned_data["check"]]
+            type_food_raw = [form.cleaned_data["key"] 
+                for form in type_food_formset.forms if form.cleaned_data["check"]]
+            if len(type_food_raw) >= 1:
+                meat = type_food_raw[0]
             if len(best_for) > 0:
                 best_for_text = ", ".join(best_for)
             else:
@@ -625,6 +629,7 @@ def piramid_food(request):
 
     piramid_totals, piramid_rows = search.best(
         None, 
+        meat=meat,
         weights_for=best_for,
         radio_o=True)
     return render(request, "piramids.html", {

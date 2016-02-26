@@ -32,12 +32,10 @@ $('#select_all_cat').click(function(event) {
             <button class="btn btn-info dropdown-toggle" type="button" 
             id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" 
             data-placement="top" title="Eligeme" aria-haspopup="true">
-            Categorias de alimentos
+            Categorias de carnes
             <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-            <li><p style="background-color:#ddd">
-                <input type="checkbox" id="select_all_cat">&nbsp;<b>Elegir todas las categorias</b></p></li>
             {% for form in type_food_formset.forms %}
             <li><p>{{ form.key }}{{ form.check }}&nbsp;{{ form.food_type.category }}</p></li>
             {% endfor %}
