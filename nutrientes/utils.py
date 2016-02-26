@@ -610,7 +610,7 @@ def best_of_selected_food(foods, weights, limit, radio_o=True):
 
     nutr_detail = {}
     for food in foods:
-        base_nutr = [e for e in food.nutrients if e[0] in weights]
+        base_nutr = [nutr_no for nutr_no in food.nutrs if nutr_no in weights]
         for nutr_no, nutrdesc, v, u in base_nutr:
             nutr_detail.setdefault(nutr_no, [])
             nutr_detail[nutr_no].append((food.ndb_no, food.name, v, u))
@@ -645,6 +645,7 @@ class Food(object):
         self.nutr_detail = nutr_detail
         self.energy_density = 0
         self.top_nutr = None
+        self.nutrs = None
         if self.ndb_no is not None:
             self.get(ndb_no, avg=avg)
 
@@ -724,6 +725,18 @@ class Food(object):
 
     def nutrs2tuple(self):
         return [(k, name, v, u) for k, (name, v, u) in self.nutrs.items()]
+
+    def nutrs2grams(self):
+        scaled = convert_units_scale((v, u) for _, v, u in self.nutrs.values())
+        nutrs_name = [(nutr_no, nutrdesc) for nutr_no, (nutrdesc, _, _) in self.nutrs.items()]
+        converted = []
+        not_converted = []
+        for (nutr_no, nutrdesc), v in zip(nutrs_name, scaled):
+            if v is None:
+                not_converted.append((nutr_no, nutrdesc))
+            else:
+                converted.append((nutr_no, (nutrdesc, v, 'g')))
+        return OrderedDict(converted), OrderedDict(not_converted)
 
     def get_omegas(self, raw=True):
         omegas = []
@@ -1554,7 +1567,7 @@ class Recipe(object):
     def vector_features(self):
         return [food.vector_features(
             self.features,
-            food.nutrients).items() for food in self.foods.values()]
+            food.nutrs2tuple()).items() for food in self.foods.values()]
 
     def set_features(self, features):
         self.features = features
