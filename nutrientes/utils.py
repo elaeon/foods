@@ -937,8 +937,6 @@ class Food(object):
         nutrs, _ = self.nutrs.homogenize_scale()
         nutrs_avg, _ = self.nutrs_avg.homogenize_scale()
         nutrients = mark_caution_nutr(nutrs.dict2tuple())
-        for nutr_no, nutrdesc, v, u, caution in nutrients:
-            print(nutr_no, nutrdesc, v, self.nutrs_avg[nutr_no][1])
         return [(nutr_no, nutrdesc, v, u, 
                 int((v > nutrs_avg[nutr_no][1]) and caution), 
                 int((v > nutrs_avg[nutr_no][1]) and not caution))
