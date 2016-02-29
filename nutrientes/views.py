@@ -135,7 +135,7 @@ def ajax_search(request):
 
 @perfil
 def food(request, ndb_no, intake_params={}):
-    from nutrientes.utils import Food
+    from nutrientes.utils import Food, principal_nutrients_percentaje
 
     food = Food(ndb_no)
     food_compare = request.session.get("food_compare", {})
@@ -226,7 +226,7 @@ def food_compare(request, intake_params):
                 for ndb_no in food_list.keys():
                     foods.append(Food(ndb_no))
                 for food in foods:
-                    dicts.append({v[0]: v for v in food.nutrients})
+                    dicts.append(food.nutrs)
                     names.append(food.name)
                 common_table = create_common_table(dicts)
                 if len(food_list) == 2:

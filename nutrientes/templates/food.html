@@ -11,7 +11,7 @@
 </h2>
 <a href="{% url 'list_food_category' food.group.id 'normal' %}">{{ food.group.name }}</a>
 
-<p>Radio omega 6|omega 3:
+<p><b>Radio omega 6|omega 3:</b>
 {% if food.radio_omega_raw > 4 %}
     <span style="color: red;">
 {% else %}
@@ -20,6 +20,8 @@
 {{ food.radio }}
 </span>
 </p>
+<p><b>Calorias: </b>{{ food.energy.1 }}{{ food.energy.2 }}</p>
+<p><b>Densidad energetica: </b>{{ food.calc_energy_density }}</p>
 <div style="margin-bottom:5px;">
 <a tabindex="0" class="btn btn-xs btn-success" role="button" data-trigger="focus" title="Agregar alimento" onclick="javascript:agregar();">+Agregar</a>
 <!--<a tabindex="0" href="{% url 'equivalents' food.ndb_no %}" class="btn btn-xs btn-success" role="button" data-trigger="focus" title="alimento similar">Ver sustitutos</a>-->
@@ -80,6 +82,7 @@
 </div>
 {% endwith %}
 <div id="chartContainer"></div>
+<div id="barContainer2"></div>
 <div id="barContainer"></div>
 
 </div>
@@ -180,12 +183,13 @@ function transform_good(value) {
     return "-";
 }
 var data = [];
-{% for _, nutrient, value, unit, caution, good in food.mark_caution_good_nutrients %}
+{% for _, nutrient, value, unit, caution, good in food.mark_caution_good_nutrients_grams %}
 data.push({nombre: '{{ nutrient }}', valor: {{ value }}, unidad: '{{ unit }}', tipo: "{{ food.name_limit }}", caution: transform_bad("{{ caution }}"), good: transform_good('{{ good }}')})
 {% endfor %}
-{% for _, v in food.nutr_avg.items %}
+{% for _, v in food.nutrs_avg.homogenize_scale.0.items %}
 data.push({nombre: '{{ v.0 }}', valor: {{ v.1 }}, unidad: '', tipo: 'promedio', caution: "-", good: "-"})
 {% endfor %}
+
 
 var svg = dimple.newSvg("#chartContainer", 1100, 600);
 var myChart = new dimple.chart(svg, data);
@@ -215,7 +219,7 @@ y.useLog = true;
 y.logBase = 10;
 myChart.draw();
 x.titleShape.text("Nutriente");
-y.tickFormat = ',.2f';
+y.tickFormat = ',.7f';
 y.titleShape.text("Cantidad por cada 100g");
 svg.append("text")
    .attr("x", myChart._xPixels() + myChart._widthPixels() / 2)
@@ -224,6 +228,31 @@ svg.append("text")
    .style("font-family", "sans-serif")
    .style("font-weight", "bold")
    .text("Gráfica de nutrientes")
+
+var percentaje  = [];
+{% for _, nutrdesc, value in food.top_nutrients_radio %}
+percentaje.push({nutriente: '{{ nutrdesc }}', radio: {{ value }}})
+{% endfor %}
+
+var svg = dimple.newSvg("#barContainer2", 1100, 450);
+var barChart = new dimple.chart(svg, percentaje);
+barChart.setBounds(60, 50, 950, 200);
+var x = barChart.addCategoryAxis("x", "nutriente");
+x.showGridlines = true;
+var y = barChart.addMeasureAxis("y", "radio");
+y.showGridlines = false;
+var l = barChart.addSeries(null, dimple.plot.bar);
+x.addOrderRule("-value");
+barChart.draw();
+x.titleShape.text("Nutriente");
+y.tickFormat = ',.2f';
+svg.append("text")
+   .attr("x", barChart._xPixels() + barChart._widthPixels() / 2)
+   .attr("y", barChart._yPixels() - 20)
+   .style("text-anchor", "middle")
+   .style("font-family", "sans-serif")
+   .style("font-weight", "bold")
+   .text("Gráfica donde se muestran los principales nutrientes del alimento.");
 
 var nutrients = [];
 {% for _, nutrdesc, value in resume_intake %}
@@ -251,6 +280,6 @@ svg.append("text")
    .style("text-anchor", "middle")
    .style("font-family", "sans-serif")
    .style("font-weight", "bold")
-   .text("Gráfica de nutrientes, porcentaje cubierto en base al perfil: {{ print_perfil }}");
+   .text("Porcentaje de nutrientes cubierto para satisfacer el consumo diario, para el perfil: {{ print_perfil }}");
 </script>
 {% endblock %}

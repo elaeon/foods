@@ -140,11 +140,16 @@ def categories_foods():
 
 def avg_nutrients():
     _, cursor = conection()
-    query = """SELECT nutr_no, AVG(nutr_val) FROM nut_data GROUP BY nutr_no"""
+    #query = """SELECT nutr_no, AVG(nutr_val) FROM nut_data GROUP BY nutr_no"""
+    query = """SELECT nut_data.nutr_no, AVG(nutr_val), units 
+        FROM nut_data, nutr_def 
+        WHERE nut_data.nutr_no=nutr_def.nutr_no 
+        GROUP BY nut_data.nutr_no, units"""
     cursor.execute(query)
-    nutr = {e[0]:[i, e[0], e[1]] for i, e in enumerate(nutr_features())}
-    for nutr_no, avg in cursor.fetchall():
-        nutr[nutr_no].append(float(avg))
+    nutr = NutrDict((nutr_no, [nutrdesc, None, None]) for nutr_no, nutrdesc in nutr_features())
+    for nutr_no, avg, units in cursor.fetchall():
+        nutr[nutr_no][1] = float(avg)
+        nutr[nutr_no][2] = units
     return nutr
 
 def avg_omega():
@@ -268,7 +273,8 @@ def category_avg_omegas(ids=False, dataset=None):
         return {food_group: round(avg, 1) for food_group, avg in cursor.fetchall()}
 
 def category_food_list():
-    nutr = avg_nutrients()
+    nutavg_vector = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
+    nutr = {k: (nutrdesc, v, u) for k, nutrdesc, v, u in nutavg_vector}
     category_results = {}
     category_food_l = category_food()
     #fixed size list, because some categories could don't have values for a nutrient
@@ -279,7 +285,7 @@ def category_food_list():
     for i, nutr_no in enumerate(["601", "606", "269", "262", "307", "208", "209"]):
         cat_nutr = avg_nutrients_group_nutr(nutr_no, order_by="fd_group.fdgrp_desc_es")
         for cat_avg in cat_nutr:
-            category_results[cat_avg[0]][i] = round(float(cat_avg[1]) - nutr[nutr_no][3] , 1)
+            category_results[cat_avg[0]][i] = round(float(cat_avg[1]) - nutr[nutr_no][1] , 1)
 
     omegas = category_avg_omegas()
     for category_food_e, cat_id, count in category_food_l:
@@ -633,17 +639,33 @@ def normal(x, u, s):
     return math.exp(-((x-u)**2)/(2*(s**2)))/(s*((2*math.pi)**.5))
 
 
+class NutrDict(OrderedDict):
+    def dict2tuple(self):
+        return [(k, name, v, u) for k, (name, v, u) in self.items()]
+
+    def homogenize_scale(self):
+        scaled = convert_units_scale((v, u) for _, v, u in self.values())
+        nutrs_name = [(nutr_no, nutrdesc) for nutr_no, (nutrdesc, _, _) in self.items()]
+        converted = []
+        not_converted = []
+        for (nutr_no, nutrdesc), v in zip(nutrs_name, scaled):
+            if v is None:
+                not_converted.append((nutr_no, nutrdesc))
+            else:
+                converted.append((nutr_no, (nutrdesc, v, 'g')))
+        return NutrDict(converted), not_converted
+
 class Food(object):
     def __init__(self, ndb_no=None, avg=True, weight=100, nutr_detail=None):
         self.name = None
         self.name_en = None
         self.group = None
         self.radio_omega_raw = 0
-        self.nutr_avg = None
+        self.nutrs_avg = None
         self.ndb_no = ndb_no
         self.weight = weight
         self.nutr_detail = nutr_detail
-        self.energy_density = 0
+        self.energy_density = None
         self.top_nutr = None
         self.nutrs = None
         if self.ndb_no is not None:
@@ -664,10 +686,15 @@ class Food(object):
             return 0
 
     def calc_energy_density(self):
-        try:
-            self.energy_density = self.nutrs["208"] / self.weight
-        except KeyError:
-            return None
+        if self.energy_density is None:
+            try:
+                self.energy_density = self.nutrs["208"][1] / self.weight
+            except KeyError:
+                pass
+        return self.energy_density
+
+    def energy(self):
+        return self.nutrs.get("208", None)
 
     def radio(self):
         omegas = self.get_omegas(raw=False)
@@ -715,28 +742,13 @@ class Food(object):
     def generate_nutrs_from_data(self, features=None, omegas=None, avg=True, nutrients=None):
         if nutrients is None:
             nutrients = features + [(k, v[0] , v[1], v[2]) for k, v in omegas.items()]
-        self.nutrs = OrderedDict([(k, (name, v, u)) for k, name, v, u in nutrients])
+        self.nutrs = NutrDict([(k, (name, v, u)) for k, name, v, u in nutrients])
         if omegas is None:
             omegas = self.get_omegas(raw=False)
         self.radio_omega_raw = self.radio_raw(omegas.get("omega6", [0,0,0])[1], omegas.get("omega3", [0,0,0])[1])
         if avg is True:
             nutavg_vector = self.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
-            self.nutr_avg = {k: (name, v, u) for k, name, v, u in self.exclude_features(nutavg_vector)}
-
-    def nutrs2tuple(self):
-        return [(k, name, v, u) for k, (name, v, u) in self.nutrs.items()]
-
-    def nutrs2grams(self):
-        scaled = convert_units_scale((v, u) for _, v, u in self.nutrs.values())
-        nutrs_name = [(nutr_no, nutrdesc) for nutr_no, (nutrdesc, _, _) in self.nutrs.items()]
-        converted = []
-        not_converted = []
-        for (nutr_no, nutrdesc), v in zip(nutrs_name, scaled):
-            if v is None:
-                not_converted.append((nutr_no, nutrdesc))
-            else:
-                converted.append((nutr_no, (nutrdesc, v, 'g')))
-        return OrderedDict(converted), OrderedDict(not_converted)
+            self.nutrs_avg = NutrDict((k, (name, v, u)) for k, name, v, u in self.exclude_features(nutavg_vector))
 
     def get_omegas(self, raw=True):
         omegas = []
@@ -747,17 +759,17 @@ class Food(object):
         if raw is True:
             return omegas
         else:
-            return {omega: (name, v, u) for omega, name, v, u  in omegas}
+            return NutrDict((omega, (name, v, u)) for omega, name, v, u  in omegas)
 
     def __add__(self, other):
         if isinstance(other, Food):
             if self.ndb_no == other.ndb_no:
                 nutrients = [(x[0], x[1], x[2]+y[2], x[3]) 
-                    for x, y in zip(self.nutrs2tuple(), other.nutrs2tuple())]
+                    for x, y in zip(self.nutrs.dict2tuple(), other.nutrs.dict2tuple())]
                 ndb_no = self.ndb_no
             else:
-                nutrients_random = self.nutrs2tuple()
-                nutrients_random.extend(other.nutrs2tuple())
+                nutrients_random = self.nutrs.dict2tuple()
+                nutrients_random.extend(other.nutrs.dict2tuple())
                 fields = self.create_vector_fields_nutr()
                 nutrs = self.vector_features(fields, nutrients_random)
                 ndb_no = None
@@ -899,7 +911,7 @@ class Food(object):
         if matrix is None:
             matrix = MatrixNutr(name=PREPROCESSED_DATA_DIR + 'matrix.csv')
         fields = self.create_vector_fields_nutr()
-        vector_base = self.vector_features(fields, self.nutrs2tuple())
+        vector_base = self.vector_features(fields, self.nutrs.dict2tuple())
         foods = self.min_distance((self.ndb_no, vector_base.values()), matrix.rows, top=top)
         if raw:
             return ((ndb_no, v) for ndb_no, v in foods)
@@ -921,21 +933,22 @@ class Food(object):
         cursor.execute(query)
         return (x[0] for x in cursor.fetchall())
 
-    def mark_caution_good_nutrients(self):
-        #nutr_no, nutr, v, u, caution, good
-        nutrients = self.mark_nutrients()
-        return ((n[0], n[1], n[2], n[3], 
-                int((n[2] > self.nutr_avg[n[0]][1]) and n[4]), 
-                int((n[2] > self.nutr_avg[n[0]][1]) and not n[4]))
-            for n in nutrients)
-
-    def mark_nutrients(self):
-        return mark_caution_nutr(self.nutrs2tuple())
+    def mark_caution_good_nutrients_grams(self):
+        nutrs, _ = self.nutrs.homogenize_scale()
+        nutrs_avg, _ = self.nutrs_avg.homogenize_scale()
+        nutrients = mark_caution_nutr(nutrs.dict2tuple())
+        for nutr_no, nutrdesc, v, u, caution in nutrients:
+            print(nutr_no, nutrdesc, v, self.nutrs_avg[nutr_no][1])
+        return [(nutr_no, nutrdesc, v, u, 
+                int((v > nutrs_avg[nutr_no][1]) and caution), 
+                int((v > nutrs_avg[nutr_no][1]) and not caution))
+            for nutr_no, nutrdesc, v, u, caution in nutrients]
 
     def caution_good_nutr_avg(self):
-        good = len(list(filter(lambda x: x[5], self.mark_caution_good_nutrients())))
-        bad = len(list(filter(lambda x: x[4], self.mark_caution_good_nutrients())))
-        return {"total": len(self.nutrs),
+        caution_good_nutrients = self.mark_caution_good_nutrients_grams()
+        good = len(list(filter(lambda x: x[5], caution_good_nutrients)))
+        bad = len(list(filter(lambda x: x[4], caution_good_nutrients)))
+        return {"total": len(caution_good_nutrients),
             "good": good,
             "bad": bad}
 
@@ -955,27 +968,23 @@ class Food(object):
         }
         return Recipe.from_light_format(light_format, data=data, features=features)
 
-    #def top_nutrients(self):
-    #    nutrientes_units_converted = convert_units_scale((total, units) for _, _, total, units in self.nutrients)
-    #    totals = [(nc, n[1], 'g') for n, nc in zip(self.nutrients, nutrientes_units_converted) if nc != None]
-    #    totals.sort(reverse=True, key=lambda x:x[0])
-    #    maximum = sum([v for v, _, _ in totals])
-    #    return [(e[0] * 100 / maximum, e[1]) for e in totals]
+    def top_nutrients_radio(self):
+        all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje()}
+        principal_nutr = principal_nutrients_avg_percentaje_no_category(
+            all_food_avg, self.ndb_no, ordered=True)
+        return [(nutrdesc, nutrdesc, radio)
+                for percentaje, radio, nutrdesc, in principal_nutr]
 
-    #def avg_nutrients_best(self):
-    #    diff_nutr = [(nutr_no, nutrdesc, v - self.nutr_avg[nutr_no][1], u) 
-    #        for nutr_no, nutrdesc, v, u in self.nutrients if nutr_no != "255"]
-    #    return sorted(diff_nutr, key=lambda x: x[2], reverse=True)
-
-    #def top_nutrients_avg(self):
-    #    result = self.avg_nutrients_best()
-    #    return filter(lambda x:x[2] > 0, result)
+    def top_nutrients_percentaje(self):
+        all_food_avg = {nutrdesc: v for v, nutrdesc in principal_nutrients_percentaje(ndb_no=self.ndb_no)}
+        principal_nutr = principal_nutrients_avg_percentaje_no_category(
+            all_food_avg, self.ndb_no)
+        return [(nutrdesc, nutrdesc, percentaje)
+                for percentaje, radio, nutrdesc, in principal_nutr]
 
     def top_nutrients_detail_avg(self, all_food_avg, limit=15):
         principal_nutr = principal_nutrients_avg_percentaje_no_category(
             all_food_avg, self.ndb_no, ordered=True)[:limit]
-        #return [(nutr_no, nutrdesc, self.nutr_detail.get(nutr_no, ""), mount, u)
-        #        for nutr_no, nutrdesc, mount, u in self.top_nutrients_avg()][:limit]
         return [(nutrdesc, self.nutr_detail.get(nutrdesc, ""), mount)
                 for mount, _, nutrdesc, in principal_nutr][:limit]
 
@@ -1002,15 +1011,15 @@ class Food(object):
         #nutrients = {nutr_no: (v, u) for nutr_no, _, v, u in self.nutrients}
         for w_nutr_no, weight in weights_good:
             if weight == 1:
-                val_min = self.nutr_avg.get(w_nutr_no, [0,0])[1] * (weight_avg_nutr * .3) 
+                val_min = self.nutrs_avg.get(w_nutr_no, [0,0])[1] * (weight_avg_nutr * .3) 
             else:
-                val_min = self.nutr_avg.get(w_nutr_no, [0,0])[1] * weight_avg_nutr
+                val_min = self.nutrs_avg.get(w_nutr_no, [0,0])[1] * weight_avg_nutr
             v_u = self.nutrs.get(w_nutr_no, ["", -1, None])
             if val_min <= v_u[1]:
                 nutr_weight[w_nutr_no] = (
                     weight,
                     v_u,
-                    self.nutr_avg[w_nutr_no][0], 
+                    self.nutrs_avg[w_nutr_no][0], 
                     self.nutr_detail.get(w_nutr_no, ""))
 
         GOOD_LEVEL_OF_NUTR = len([w for w, _, _, _ in nutr_weight.values() if w < 1])
@@ -1025,7 +1034,7 @@ class Food(object):
 
     def nutrients_selector(self, seleccion):
         if seleccion == "nutrients":
-            return self.nutrs2tuple()
+            return self.nutrs.dict2tuple()
         else:
             return self.top_nutrients_avg()
 
@@ -1163,12 +1172,10 @@ def principal_nutrients_percentaje(category=None, dataset=None, ndb_no=None):
         features = [(nutrdesc, v) for _, nutrdesc, v, _ in features]
         all_nutr = features + [(nutrdesc, v) for _, (nutrdesc, v, _) in omegas.items()]
     else:
-        nutrients = Food(ndb_no, avg=False).nutrients
-        nutrients_units_converted = convert_units_scale((avg, units) for _, _, avg, units in nutrients)
-        all_nutr = [(n[1], nc) for n, nc in zip(nutrients, nutrients_units_converted) if nc != None]
-    sorted_data = sorted(all_nutr, key=lambda x: x[1], reverse=True)
-    weight_main_nutr = sum((v for _, v in sorted_data))
-    return [(v*100./weight_main_nutr, nutrdesc) for nutrdesc, v in sorted_data if v*100./weight_main_nutr > 0]
+        all_nutr, _ = Food(ndb_no, avg=False).nutrs.homogenize_scale()
+        all_nutr = [(nutrdesc, v) for k, (nutrdesc, v, u) in all_nutr.items()]
+    weight_main_nutr = sum((v for _, v in all_nutr))
+    return [(v*100./weight_main_nutr, nutrdesc) for nutrdesc, v in all_nutr if v*100./weight_main_nutr > 0]
 
 def principal_nutrients_avg_percentaje(category, all_food_avg, dataset=None, ordered=True):
     category_avg = principal_nutrients_percentaje(category, dataset=dataset)
@@ -1567,7 +1574,7 @@ class Recipe(object):
     def vector_features(self):
         return [food.vector_features(
             self.features,
-            food.nutrs2tuple()).items() for food in self.foods.values()]
+            food.nutrs.dict2tuple()).items() for food in self.foods.values()]
 
     def set_features(self, features):
         self.features = features

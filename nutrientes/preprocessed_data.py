@@ -141,9 +141,8 @@ def calc_avg(force=False):
     from nutrientes.utils import avg_omega, avg_nutrients, OMEGAS
     nutavg_vector = Food.get_matrix(PREPROCESSED_DATA_DIR + "nutavg.p")
     if len(nutavg_vector) == 0 or force:
-        #appended the units with blank ''
         omegas = avg_omega()
-        allnutavg_vector = [e[1:] + [""] for e in sorted(avg_nutrients().values())] +\
+        allnutavg_vector = avg_nutrients().dict2tuple() +\
                         zip(omegas._fields[:-1], sorted(OMEGAS.keys()), omegas[:-1], ['g'] * len(omegas[:-1]))
         nutavg_vector, _ = Food.subs_omegas(allnutavg_vector)
         Food.save_matrix(PREPROCESSED_DATA_DIR + "nutavg.p", nutavg_vector)
