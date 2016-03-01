@@ -217,18 +217,11 @@ def food_compare(request, intake_params):
                 request.session["intake_names_list"] = request.session["intake_names_list"]
             return redirect("index")
         else:
-            from nutrientes.utils import create_common_table
-            dicts = []
-            names = []
             nutr = []
             if len(food_list.keys()) >= 2:
                 from nutrientes.utils import Food
                 for ndb_no in food_list.keys():
                     foods.append(Food(ndb_no))
-                for food in foods:
-                    dicts.append(food.nutrs)
-                    names.append(food.name)
-                common_table = create_common_table(dicts)
                 if len(food_list) == 2:
                     from nutrientes.utils import ExamineFoodVariants
                     v = ExamineFoodVariants()
@@ -240,7 +233,7 @@ def food_compare(request, intake_params):
                             data.append((k, v))
                     nutr = sorted(data, key=lambda x: x[1])
             return render(request, "compare_food.html", 
-                {"foods": foods, "common_table": common_table, "names": names, "nutr": nutr})
+                {"foods": foods, "nutr": nutr})
     else:
         return redirect("index")
 

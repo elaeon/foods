@@ -15,13 +15,8 @@ WEIGHT_NUTRS_OSTEOPOROSIS = {
 }
 
 WEIGHT_NUTRS_LOW_SUGAR = {
-    "omega7": 2.5,
-    "omega9": 2.5,
-
-    "410": .1, #Pantothenic acid, 
-    "404": .1, #Thiamin
     "269": 10.0, #Sugars, total
-    "205": 1.5, #Carbohydrate, by difference
+    "205": 10.0, #Carbohydrate, by difference
     "211": 8.0, #Glucose (dextrose)
     "212": 8.0, #Fructose
     "210": 8.0, #Sucrose
@@ -240,6 +235,15 @@ WEIGHT_NUTRITIONAL_ANEMIA = {
     "301": 5, #Calcium
 }
 
+WEIGHT_LOW_SODIUM = {
+    "307": 10.0, #Sodium, Na
+}
+
+WEIGHT_CARBOHIDRATES_METABOLISM = {
+    "410": 1, #Pantothenic acid,
+    "404": 1, #Thiamin
+}
+
 WEIGHT_NUTRS = {
     "601": 10.0, #Cholesterol
     "269": 8.0, #Sugars, total
@@ -258,7 +262,7 @@ WEIGHT_NUTRS = {
     "213": 4.0, #Lactose
     "287": 4.0, #Galactose
     "214": 3.0, #Maltose    
-    "429": 5.0, #Dihydrophylloquinone
+    "429": 9.0, #Dihydrophylloquinone
     "613": 9.0, #16:0
     "614": 9.0, #18:0
     "687": 9.0, #17:1

@@ -8,7 +8,9 @@
 {% for food in foods %}
 <div class="col-md-3" style="padding: 20px;">
 <p><a href="{% url 'view_food' food.ndb_no %}">{{ food.name }}</a></p>
-<p>Radio {{ food.radio }}</p>
+<p><b>Radio:</b> {{ food.radio }}</p>
+<p><b>Calorias: </b>{{ food.energy.1 }}{{ food.energy.2 }}</p>
+<p><b>Densidad energetica: </b>{{ food.calc_energy_density }}</p>
 {% with food.caution_good_nutr_avg as nutr %}
 <div class="color-swatches">
     <a tabindex="0" class="btn btn-xs btn-info" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="Total nutrientes" data-content="Total de nutrientes">{{ nutr.total }}</a>
@@ -22,10 +24,7 @@
 
 <div id="chartContainer"></div>
 
-<div id="text-chart">
-	<div id="chart1"></div>
-</div>
-
+{% if nutr %}
 <div>Base: {{ foods.0.name }}</div>
 <div>Meta: {{ foods.1.name }}</div>
 <div class="table-responsive" id="tabla-categoria-alimentos">
@@ -45,8 +44,9 @@
 </tr>
 {% endfor %}
 </table>
-</div>
+{% endif %}
 
+</div>
 </div>
 </div>
 {% endblock %}
@@ -54,73 +54,28 @@
 {% block js %}
 <script type="text/javascript" src="{% static 'd3.js' %}"></script>
 <script type="text/javascript" src="{% static 'dimple.v2.1.2.min.js' %}"></script>
-<script type="text/javascript" src="{% static 'radar-chart.js' %}"></script>
-<script type="text/javascript">
-names = []
-{% for name in names %}
-names.push('{{ name }}');
-{% endfor %}
-
-var options = {
-    w:600,
-    h:600,
-    factor:1,
-    factorLegend:1,
-    levels:1,
-    //maxValue: 
-    maxValue: {},
-    legend: names,
-    legendText: 'Food',
-    zoomOut: 1,
-    ExtraWidthX: 200,
-    ExtraWidthY: 200,
-    defaultValue: 2005
-}
-data_r = [];
-
-{% for food in common_table %}
-    data_r0 = [];
-    {% for _, nutrient, value, unit in food %}
-    data_r0.push({"value": {{ value }}, "axis": "{{ nutrient }}"});
-    {% endfor %}
-    data_r.push(data_r0);
-{% endfor %}
-RadarChart.draw("#chart1", data_r, options);
 </script>
 
 <script type="text/javascript">
 var data = [];
 {% for food in foods %}
-    {% for _, nutrient, value, unit in food.nutrients %}
-    data.push({nutr: '{{ nutrient }}', value: {{ value }}, unit: '{{ unit }}', tipo: '{{ food.name }}'})
+    {% for _, nutrdesc, radio in food.top_nutrients_radio %}
+    data.push({nutriente: '{{ nutrdesc }}', radio: {{ radio }}, tipo: '{{ food.name }}'})
     {% endfor %}
 {% endfor %}
 
-
 var svg = dimple.newSvg("#chartContainer", 900, 600);
 var myChart = new dimple.chart(svg, data);
-myChart.assignColor("normal", "#0066ff", null, .5);
-myChart.assignColor("avg", "#aa0000", null, .3);
 myChart.setBounds(60, 30, 750, 305);
-var x = myChart.addCategoryAxis("x", "nutr");
+var x = myChart.addCategoryAxis("x", "nutriente");
 x.showGridlines = true;
+x.addOrderRule("nutriente");
 //var x = myChart.addCategoryAxis("x", ["nutr", "tipo"]);
-//x.showGridlines = true;
-var y = myChart.addMeasureAxis("y", "value");
-y.showGridlines = false;
-//var s = myChart.addSeries("tipo", dimple.plot.scatter);
-var l = myChart.addSeries("tipo", dimple.plot.line);
-//var s = myChart.addSeries("tipo", dimple.plot.bar);
-//l.stacked = false;
-//x.addOrderRule("nutr");
-
-//l.interpolation = "step";
-//l.interpolation = "cardinal";
-//myChart.addLegend(60, 10, 700, 20, "right");
-myChart.addLegend(900, 100, 60, 300, "right");
+var y = myChart.addMeasureAxis("y", "radio");
+y.showGridlines = true;
+var l = myChart.addSeries("tipo", dimple.plot.scatter);
+myChart.addLegend(10, 10, 350, 45, "right");
 //myChart.setStoryboard("nutr");
-y.useLog = true;
-y.logBase = 10;
 myChart.draw();
 x.titleShape.text("Nutriente");
 y.tickFormat = ',.2f';

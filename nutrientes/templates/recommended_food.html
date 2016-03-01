@@ -89,9 +89,9 @@ $('#select_all_cat').click(function(event) {
 {% else %}
 <br>
 {% endif %}
-<div class="row row-eq-height">
+<div class="row">
 {% for i, food in foods %}
-<div class="col-md-6">
+<div class="col-sm-6 col-md-4">
     <div class="panel panel-default">
         <div class="panel-heading list-group-item">
             <span class="badge">{{ i }}</span>
@@ -111,10 +111,8 @@ $('#select_all_cat').click(function(event) {
         {% endthumbnail %}
         <div style="margin-left:10px;">
         <div><b>Radio omega:</b> {{ food.radio }}</div>
-        <p style="font-weight:bold;">Nutrientes destacados.</p>
-        {% for nutrdesc, detail, mount in food.top_nutr %}
-        <a tabindex="0" class="btn btn-xs btn-default" role="button" data-container="body" data-placement="right" data-toggle="popover" data-trigger="focus" title="{{ nutrdesc }}" data-content="{{ detail }}" style="font-size:70%;">{{ nutrdesc }}</a>
-        {% endfor %}
+        <div><b>Calorias: </b>{{ food.energy.1 }}{{ food.energy.2 }}</div>
+        <div><b>Densidad energetica: </b>{{ food.calc_energy_density }}</div>
         </div>
         </div>
     </div>

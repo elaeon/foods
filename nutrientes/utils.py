@@ -980,12 +980,6 @@ class Food(object):
         return [(nutrdesc, nutrdesc, percentaje)
                 for percentaje, radio, nutrdesc, in principal_nutr]
 
-    def top_nutrients_detail_avg(self, all_food_avg, limit=15):
-        principal_nutr = principal_nutrients_avg_percentaje_no_category(
-            all_food_avg, self.ndb_no, ordered=True)[:limit]
-        return [(nutrdesc, self.nutr_detail.get(nutrdesc, ""), mount)
-                for mount, _, nutrdesc, in principal_nutr][:limit]
-
     def img_obj(self):
         from nutrientes.models import FoodDescImg
         try:
@@ -1065,26 +1059,26 @@ class Food(object):
         foods = self.min_distance((self.ndb_no, v_base), vectors, top=5)
         return ((ndb_no, self.get_food(ndb_no), v) for ndb_no, v in foods)
 
-def create_common_table(dicts):
-    common_keys = set(dicts[0].keys())
-    not_common_keys = set(dicts[0].keys())
-    global_keys = {}
-    for dict_ in dicts[1:]:
-        not_common_keys = not_common_keys.union(dict_.keys())
-        common_keys = common_keys.intersection(dict_.keys())
+#def create_common_table(dicts):
+#    common_keys = set(dicts[0].keys())
+#    not_common_keys = set(dicts[0].keys())
+#    global_keys = {}
+#    for dict_ in dicts[1:]:
+#        not_common_keys = not_common_keys.union(dict_.keys())
+#        common_keys = common_keys.intersection(dict_.keys())
     
-    for dict_ in dicts:
-        for k, v in dict_.items():
-            if k not in global_keys:
-                global_keys[k] = v[1]
-    not_common_keys = not_common_keys.difference(common_keys)
+#    for dict_ in dicts:
+#        for k, v in dict_.items():
+#            if k not in global_keys:
+#                global_keys[k] = v[1]
+#    not_common_keys = not_common_keys.difference(common_keys)
 
-    table = []
-    for dict_ in dicts:
-        data_c = [dict_[key] for key in common_keys]
-        data_nc = [dict_.get(key, ('', global_keys[key], 0, '')) for key in not_common_keys]
-        table.append(data_c+data_nc)
-    return table
+#    table = []
+#    for dict_ in dicts:
+#        data_c = [dict_[key] for key in common_keys]
+#        data_nc = [dict_.get(key, ('', global_keys[key], 0, '')) for key in not_common_keys]
+#        table.append(data_c+data_nc)
+#    return table
 
 def create_matrix(ndb_nos, exclude_nutr=None, only=None, weight=100):
     if only is not None:
@@ -2211,7 +2205,9 @@ class OptionWeightNutr(object):
             "Necesarios durante el embarazo": weights.WEIGHT_NUTRS_PREGNANCY,
             "Ayuda a incrementar la masa muscular": weights.WEIGHT_BODY_MASS,
             "Ayuda al sistema inmune": weights.WEIGHT_IMMUNE_SYSTEM,
-            "Ayuda a evitar la anemia nutricional": weights.WEIGHT_NUTRITIONAL_ANEMIA}
+            "Ayuda a evitar la anemia nutricional": weights.WEIGHT_NUTRITIONAL_ANEMIA,
+            "Ayuda a metabolizar los carbohidratos": weights.WEIGHT_CARBOHIDRATES_METABOLISM,
+            "Bajo en sodio": weights.WEIGHT_LOW_SODIUM}
         return weights
 
 
@@ -2266,28 +2262,26 @@ Las dietas modernas usualmente tienen una proporción 10:1 de ácidos grasos ome
         foods = [Food(ndb_no, nutr_detail=self.nutr_detail) for ndb_no in self.select_food(categories_food)]
         foods_dict = {food.ndb_no: food for food in foods}
         if True:
-            import itertools as it            
+            import itertools as it
             piramid = PiramidFood(
                     dataset=foods_dict.keys(),
                     weight_nutrs=self.weights.get(weights_for[0], WEIGHT_NUTRS), 
                     radio_omega=radio_o)
             results = ((i, foods_dict[category]) 
                 for i, (category, value, energy) in enumerate(piramid.process(), 1))
-            for i, food in it.takewhile(lambda x: x[0] < limit, results):
-                food.top_nutr = food.top_nutrients_detail_avg(piramid.all_food_avg, limit=10)
-                yield i, food
+            return it.takewhile(lambda x: x[0] < limit, results)
         else:
             self.weights_best_for = self.best_weights(weights_for)
             weights_good = [(nutr_no, weight) for nutr_no, weight in self.weights_best_for.items() if weight <= 1]
             candidate_food = [food for food in foods if food.is_weight_nutrients(weights_good, weight_avg_nutr)]
             rank_results = best_of_selected_food(candidate_food, self.weights_best_for, limit, radio_o)
-            for i, ndb_no in rank_results:
-                yield (i, foods_dict[ndb_no])
+            return ((i, foods_dict[ndb_no]) for i, ndb_no in rank_results) 
 
 class OptionSearchCategory(OptionWeightNutr):
     def __init__(self):
         super(OptionSearchCategory, self).__init__()
         self.foods = self.get_meat()
+        self.categories_name = None
 
     def get_meat(self):
         foods = {"chicken": "Productos de aves de corral", 
@@ -2304,7 +2298,20 @@ class OptionSearchCategory(OptionWeightNutr):
             weight_nutrs=self.weights.get(weights_for[0], WEIGHT_NUTRS), 
             radio_omega=radio_o,
             energy=True)
+        self.categories_name = piramid.categories_name
         return piramid.build_piramid()
+
+    def best_foods(self, radio_o=True, limit=10, weights_for=["all"]):
+        import itertools as it
+        for category, category_name in self.categories_name.items():
+            dataset = [ndb_no for ndb_no, _ in alimentos_category(category, limit='limit 9000')]
+            piramid = PiramidFood(
+                dataset=dataset,
+                weight_nutrs=self.weights.get(weights_for[0], WEIGHT_NUTRS), 
+                radio_omega=radio_o)
+            results = ((i, Food(category))
+                for i, (category, value, energy) in enumerate(piramid.process(), 1))
+            yield category_name, it.takewhile(lambda x: x[0] < limit, results)
 
 class FoodVariant(object):
     def __init__(self, ndb_no, category=None):
@@ -2711,7 +2718,8 @@ class PiramidFood(object):
             total_energy += energy_weight
             total_weight_sum += weight
         n_data = []
-        n_data.append(meats_container[0])
+        if len(meats_container) > 0:
+            n_data.append(meats_container[0])
         for c1 in container[:3]:
             n_data.append((c1[0], c1[1], c1[2]))
         for c1, c2 in zip(container[1:][::2], container[1:][1::2])[1:]:
