@@ -87,18 +87,20 @@ def principal_nutrients_graph(request):
 
 def nutrient_selection(request):
     from collections import defaultdict
-    from nutrientes.utils import nutr_features_group, categories_foods, Food
+    from nutrientes.utils import nutr_features_group, categories_foods
 
     features = nutr_features_group(order_by="nutrdesc")
-    fields, omegas = Food.subs_omegas([(e[0], e[1], 0, e[2]+"#"+unicode(e[3])) for e in features])
-    nutr = fields + [(v[0], k, v[1], v[2]) for k, v in omegas.items()]
     categories = categories_foods()
     
     nutr_group = defaultdict(list)
-    for nutr_no, name, _, group_and_desc in nutr:
-        group_name, desc = group_and_desc.split("#")
-        nutr_group[group_name].append((nutr_no, name, desc))
+    for nutr_no, nutrdesc, group_name, desc in features:
+        nutr_group[group_name].append((nutr_no, nutrdesc, desc))
 
+    nutr_group["aceites mono-poliinsaturados"] = [
+        ("omega3", "Omega 3", ""),
+        ("omega6", "Omega 6", ""),
+        ("omega7", "Omega 7", ""),
+        ("omega9", "Omega 9", "")]
     nutr_group_order = sorted(nutr_group.items())
     return render(request, "nutrient_selection.html", {
         "nutr_group": nutr_group_order, 
